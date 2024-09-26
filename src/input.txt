@@ -7,5 +7,6 @@ state s1{
     timer_sec(int c){
         int b = 10
         print(int,a)
+        print(int,b)
     }
 }

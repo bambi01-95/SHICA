@@ -19,6 +19,10 @@ XXX:     Proble
 #include <errno.h>
 #include <sys/select.h>
 #include <termios.h>
+
+FILE* SOURCE_FILE;
+#define getchar() fgetc(SOURCE_FILE)
+
 #define TEST 0
 
 
@@ -2996,6 +3000,13 @@ oop CodeWrite(oop program){
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 */
 
+int has_txt_extension(const char *filename) {
+    const char *ext = strrchr(filename, '.');  // ファイル名中の最後の'.'を探す
+    if (ext != NULL && strcmp(ext, ".txt") == 0) {
+        return 1;  // .txt拡張子がある場合は1を返す
+    }
+    return 0;      // それ以外の場合は0を返す
+}
 
 
 
@@ -3012,6 +3023,23 @@ oop printByteCode();
 
 int main(int argc, char const *argv[])
 {
+    // コマンドライン引数の確認
+
+    if (argc == 2){
+
+    // ファイル名の拡張子をチェック
+    if (!has_txt_extension(argv[1])) {
+        fprintf(stderr, "エラー: ファイルは .txt 拡張子でなければなりません\n");
+        return 1;
+    }
+
+    // ファイルを読み込みモードで開く
+    SOURCE_FILE = fopen(argv[1], "r");
+    if (SOURCE_FILE == NULL) {
+        perror("ファイルを開けませんでした");
+        return 1;
+    }
+
     setting_stdlib();
     nil   = newObject(Undefined);
     sys_false = _newInteger(0);
@@ -3025,7 +3053,6 @@ int main(int argc, char const *argv[])
     Local_VNT   = newArray(0);
     Global_VNT  = newArray(0);
     
-if(argc>1){
     printf("    compile     %d%s\n",argc,argv[0]);
     printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
     emitII(MSET,0);
@@ -3055,7 +3082,7 @@ if(argc>1){
     free(program);
     free(symbols);
     memoryClear();
-}else{
+}else if(argc == 1){
     printf("    execute     %d %s\n",argc,argv[0]);
 
     printf("\n \x1b[31m read code ******************\x1b[0m\n\n");
@@ -3090,7 +3117,10 @@ if(argc>1){
     printf("%f\n",cpusec);
     double percent = 100.0*cpusec/realsec;                          // 使用率を100分率で計算
     printf("CPU使用率%f %%\n", percent);                            // 表示
-}
+    }else{
+        fprintf(stderr, "使用方法: %s <ファイル名>\n", argv[0]);
+        return 1;
+    }
     return 0;
 }
 
