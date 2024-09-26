@@ -1,0 +1,15 @@
+;;; test-cycle.txt -- test collection of cyclic garbage
+;;;
+;;; usage:
+;;;   make clean all
+;;;   time ./mstest < test-cycle.txt
+;;;   time ./rctest < test-cycle.txt
+
+(set 'list '(1 2 3 4 5))
+(set-cdr (cdr (cdr (cdr (cdr list)))) list) ;; circular
+
+(gc) ;; => 2448
+
+(set 'list ()) ;; isolate the circular structure
+
+(gc) ;; => 2048

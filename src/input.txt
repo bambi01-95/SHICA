@@ -1,0 +1,11 @@
+
+state s1{
+    int a = 11
+    entry(){
+        timer_sec(2)
+    }
+    timer_sec(int c){
+        int b = 10
+        print(int,a)
+    }
+}
