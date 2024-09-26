@@ -30,7 +30,7 @@ XXX:     Proble
 FILE* SOURCE_FILE;
 #define getchar() fgetc(SOURCE_FILE)
 
-#define TEST 0
+#define TEST 1
 
 
 #define user_error(COND,MSG,LINE) ({ \
@@ -4526,13 +4526,19 @@ s_PRINT,
 
 char* INSTNAME[s_PRINT + 1] = {
 "HALT",
-"i_load",
-"l_load",
-"f_load",
-"d_load",
-"c_load",
-"s_load",
-"k_load",
+"i_load",/* value */
+"l_load",/* value */
+"f_load",/* value */
+"d_load",/* value */
+"c_load",/* value */
+"s_load",/* value */
+"k_load",/* value */
+//in progress
+"il_load",/* vnt adress */
+"ll_load",/* vnt adress */
+"fl_load",/* vnt adress */
+"dl_load",/* vnt adress */
+
 "i_EQ",
 "i_NE",
 "i_LT",
@@ -4577,6 +4583,7 @@ char* INSTNAME[s_PRINT + 1] = {
 "d_SUB",
 "d_MUL",
 "d_DIV",
+
 "s_EQ",
 "s_NE",
 "s_LT",
@@ -4590,20 +4597,25 @@ char* INSTNAME[s_PRINT + 1] = {
 "s_MUL",
 "s_DIV",
 "s_MOD",
-"EOE", 
-"TRANS",
+
+"EOE",   /* end of event function*/
+"TRANS", /*transition: state change*/
 "THREAD",/* make thread for event */
 "SET_EVENT",
 "GLOBAL",
 "GLOBAL_END",
 "ENTRY",
-
+/*don't change order start*/
 "GET",
 "GET_L",
 "GET_G",
 "DEFINE",
-"DEFINE_L",
-"DEFINE_G",
+"DEFINE_L", /* pos */
+"DEFINE_G", /* pos */
+"DEFINE_List",    /* vnt index */ //in progress
+"DEFINE_List_L",  /* vnt index */
+"DEFINE_List_G",  /* vnt index */
+/*don't change order end*/
 "CALL",
 "CALL_P",
 "CALL_E",
@@ -4612,7 +4624,7 @@ char* INSTNAME[s_PRINT + 1] = {
 "MSUB",
 "MPOP",
 "MPICK",
-"MSET", //global value size settting
+"MSET",//global value size settting
 "JUMP",
 "JUMPF",
 "i_PRINT",
@@ -4620,7 +4632,7 @@ char* INSTNAME[s_PRINT + 1] = {
 "f_PRINT",
 "d_PRINT",
 "c_PRINT",
-"s_PRINT"
+"s_PRINT",
 };
 
 
@@ -6096,7 +6108,6 @@ oop printByteCode();
 int main(int argc, char const *argv[])
 {
     // コマンドライン引数の確認
-
     if (argc == 2){
 
     // ファイル名の拡張子をチェック
@@ -7485,7 +7496,7 @@ line();printf("%s\n",INSTNAME[inst]);
             }
             case JUMPF:{
 #if TEST  
-line();printf("%s\n",INSTNAME[inst]);
+line();printf("%s [%d]\n",INSTNAME[inst],inst);
 #endif
                 getInt(mpc);//get offset
                 oop cond = Array_pop(mstack);

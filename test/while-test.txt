@@ -1,0 +1,8 @@
+
+state s1{
+    timer_sec(int s){
+        for(int i =0;i<10;i+=1){
+            print(int,i)
+        }
+    }
+}
