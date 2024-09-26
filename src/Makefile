@@ -8,7 +8,10 @@ clean:
 	rm -f code code.c
 
 test: 
-	echo "implement test code"
-	sleep 5
+	sleep 2
 	./code ../test/while-test.txt
+	./code
+	
+	sleep 2
+	./code ../test/if-number-test.txt
 	./code

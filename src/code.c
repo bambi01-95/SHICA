@@ -30,7 +30,7 @@ XXX:     Proble
 FILE* SOURCE_FILE;
 #define getchar() fgetc(SOURCE_FILE)
 
-#define TEST 1
+#define TEST 0
 
 
 #define user_error(COND,MSG,LINE) ({ \
@@ -323,7 +323,7 @@ union Object {
     struct SetVar   SetVar;
     struct SetVarG SetVarG;
     struct SetVarL SetVarL;
-    //in progress
+
     struct GetArray	 { enum Type _type;enum Type typeset;  oop array, index; int line;}GetArray;
     struct SetArray	 { enum Type _type;enum Type typeset;  oop array, index, value; int line;}SetArray;
 
@@ -354,7 +354,7 @@ union Object {
     struct _Float     _Float    ;
     struct _Double    _Double   ;
     struct _Char      _Char     ;
-    //in progress
+
     struct _IntegerArray {enum Type _type;oop* array; int size, capacity;}_IntegerArray;
     struct Thread     Thread;
 };
@@ -487,7 +487,7 @@ oop _newStrChar(char* number)
 // }
 
 
-// in progress
+
 oop _newIntegerArray(int size){
     oop node = newObject(_IntegerArray);
     node->_IntegerArray.capacity = size;/*Free size*/
@@ -6107,6 +6107,11 @@ oop printByteCode();
 
 int main(int argc, char const *argv[])
 {
+    nil   = newObject(Undefined);
+    sys_false = _newInteger(0);
+    sys_true  = _newInteger(1);
+    none  = _newInteger(2);
+
     // コマンドライン引数の確認
     if (argc == 2){
 
@@ -6116,6 +6121,9 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
+
+
+
     // ファイルを読み込みモードで開く
     SOURCE_FILE = fopen(argv[1], "r");
     if (SOURCE_FILE == NULL) {
@@ -6124,10 +6132,6 @@ int main(int argc, char const *argv[])
     }
 
     setting_stdlib();
-    nil   = newObject(Undefined);
-    sys_false = _newInteger(0);
-    sys_true  = _newInteger(1);
-    none  = _newInteger(2);
     entry_sym = intern("entry");
     ARRAY_DEF(heke,1,2);
     newSymbol("exit");
@@ -7073,7 +7077,7 @@ line();printf("%s\n",INSTNAME[inst]);
                 Array_push(mstack,newBoolean(l <  r));
                 continue;
             }
-            case i_LE:{
+            case i_LE:{//inprogress
 #if TEST  
 line();printf("%s\n",INSTNAME[inst]);
 #endif
@@ -7498,7 +7502,7 @@ line();printf("%s\n",INSTNAME[inst]);
 #if TEST  
 line();printf("%s [%d]\n",INSTNAME[inst],inst);
 #endif
-                getInt(mpc);//get offset
+                getInt(mpc);//get offset inpro
                 oop cond = Array_pop(mstack);
                 //FIXME: usign sys_false and sys_true
                 if(cond == sys_false)mpc += int_value;//offset

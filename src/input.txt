@@ -1,12 +1,22 @@
-
 state s1{
-    int a = 11
     entry(){
-        timer_sec(2)
-    }
-    timer_sec(int c){
-        int b = 10
-        print(int,a)
-        print(int,b)
+        if(1<10){
+            print(int,10)
+        }
+        if(10<1){
+            print(int,11)
+        }
     }
 }
+
+// state s1{
+//     int a = 11
+//     entry(){
+//         timer_sec(2)
+//     }
+//     timer_sec(int c){
+//         int b = 10
+//         print(int,a)
+//         print(int,b)
+//     }
+// }
