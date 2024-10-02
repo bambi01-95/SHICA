@@ -1,0 +1,10 @@
+state s1{
+    entry(){
+        if(1<10){
+            print(int,10)
+        }
+        if(10<1){
+            print(int,11)
+        }
+    }
+}
