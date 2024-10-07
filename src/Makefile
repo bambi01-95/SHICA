@@ -1,12 +1,10 @@
 # Makefile for compiling and running code using leg and gcc
-
 run: 
-	./leg -o code.c code.leg
 	gcc -o code code.c
 
-test: 
-	gcc -o test test.c
+parser:
+	./parser/leg -o ./parser/parser.c ./parser/parser.leg
+	gcc -c -o ./parser/parser.o ./parser/parser.c
 
 clean:
 	rm -f code code.c
-

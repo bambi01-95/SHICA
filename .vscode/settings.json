@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "lex": "tex",
+        "*.txt": "plaintext",
+        "*.leg": "c"
+    }
+}
