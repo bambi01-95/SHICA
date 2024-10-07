@@ -523,7 +523,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
 	case SetVar:{
         //int a = 10 or int add(int a,int b){return a + b} or state default{ event ... }
-        int t     = get(exp,SetVar,typeset); //setting type of symbol
+        int t     = get(exp,SetVar,typeset); //setting type of symbolfdfdfd
         oop id    = get(exp,SetVar,id);      //get symbol
         oop value = get(exp,SetVar,rhs);     //get value, = 10 or (int a,int b){return a + b}
         switch(getType(get(id,Symbol,value))){

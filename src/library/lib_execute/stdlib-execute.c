@@ -3,7 +3,21 @@
 #include "../../object/object.c"
 #include "../stdlib.h"
 
-// EVENT FUNCTION
+#include "../../executer/executer.c"
+
+/*
+    threads: multi function thread space
+    argsCond: それぞれのconditionの内容が入っている
+*/
+
+// int getNonBocking();
+// oop eventFunction(oop threads, oop argsCond){
+//     int data = getNonBocking();
+//     for(threads;;){
+//         if
+//     }
+// }
+
 oop eve_loop(oop t){
     if(t->Thread.flag == 0){
         oop data = newArray(2);

@@ -129,6 +129,10 @@ int main(int argc, char const *argv[])
         printf("%f\n",cpusec);
         double percent = 100.0*cpusec/realsec;                          // 使用率を100分率で計算
     printf("CPU使用率%f %%\n", percent);                            // 表示
+    printf("\n\n  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *\n");
+    printf(" *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *\n");
+    printf("*  *  *  *  *  *  *  *  *  *  *  *  *  *  *  * \n\n");
+    
 
     }else{
 

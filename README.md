@@ -1,33 +1,56 @@
 # SHICA
 SHICA event programing
 
-src/
-
-    ./leg: https://www.piumarta.com/software/peg/
-
-    ./code.leg: main code that includes parser, compiler and executer
-
-    ./code.c: that is generated from code.leg using leg
-
-    ./input.txt: test input code
-
-lib/
-
-    ./mingc/: written by prof Ian Piumarta
-
-
------------------------------------
-code compile
-
-    use MAKEFILE
-
-
-
-------------------------------------
-SHICA compile
-
-    ./code filename.txt
-
-SHICA execute
-
-    ./code
+├── README.md
+├── lib
+│   └── mingc: written by prof Ian Piumarta
+│       ├── Makefile
+│       ├── bench-fib.txt
+│       ├── fatal.c
+│       ├── msgc.c: mark and sweep
+│       ├── mstest.c
+│       ├── rcgc.c: refference counter
+│       ├── rctest.c
+│       ├── test-cycle.txt
+│       ├── test-opt.txt
+│       ├── test-sys.txt
+│       ├── test.txt
+│       └── vmgen.leg
+├── src
+│   ├── Makefile
+│   ├── code
+│   ├── code.c
+│   ├── code.stt
+│   ├── compiler
+│   │   └── compiler.c
+│   ├── executer
+│   │   └── executer.c
+│   ├── input.txt
+│   ├── inst
+│   │   └── inst.c
+│   ├── library
+│   │   ├── lib_compile
+│   │   │   ├── lib_compile.c
+│   │   │   └── stdlib-compile.c
+│   │   ├── lib_execute
+│   │   │   ├── lib_execute.c
+│   │   │   └── stdlib-execute.c
+│   │   ├── library.h
+│   │   └── stdlib.h
+│   ├── object
+│   │   ├── object.c
+│   │   └── object.h
+│   ├── parser
+│   │   ├── leg: https://www.piumarta.com/software/peg/
+│   │   ├── parser.c
+│   │   ├── parser.h
+│   │   └── parser.leg
+│   └── print
+│       └── print.c
+└── test
+    ├── Makefile
+    ├── code.stt
+    ├── for-test.txt
+    ├── if-ineq-test.txt
+    ├── if-number-test.txt
+    └── while-test.txt
