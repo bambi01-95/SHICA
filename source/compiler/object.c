@@ -56,16 +56,7 @@ oop sys_true  = 0;
 oop none  = 0;
 oop entry_sym = 0;
 
-typedef unsigned char byte;
-byte   *memory  = 0;  // memory is a huge array of bytes
-size_t  memsize = 0;  // this is the current size of data stored in memory
-size_t  memcap  = 0;  // this is the maximum dize of data that memory can hold
 
-const unsigned int SIZE_INST   = sizeof(unsigned char);
-const unsigned int SIZE_INT    = sizeof(int);            //size of int
-const unsigned int SIZE_LONG   = sizeof(long long int);  //size of long long int
-const unsigned int SIZE_FLOAT  = sizeof(float);          //size of float
-const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
 typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;

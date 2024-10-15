@@ -1,10 +1,13 @@
 #ifndef EXECUTER_C
 #define EXECUTER_C
 
-#include "../object/object.c"
-#include "../inst/inst.c"
-
-#include "../library/lib_execute/lib_execute.c"
+#include "./object.c"
+#include "./tool.c"
+#include "../common/inst.c"
+#include "../common/liblist/library.h"
+#include "../common/liblist/stdlib.h"
+#include "../common/memory.c"
+#include "./library/stdlib-execute.c"
 
 
 
@@ -257,8 +260,6 @@ line();printf("%s\n",INSTNAME[inst]);
 #define mpc    process->Thread.pc
 #define mrbp   process->Thread.rbp
 #define mstack process->Thread.stack
-
-
 
 #define api()     _Integer_value(Array_pop(mstack))
 #define apl()     Array_pop(mstack)->_Long.value

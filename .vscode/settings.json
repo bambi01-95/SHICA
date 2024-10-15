@@ -2,6 +2,7 @@
     "files.associations": {
         "lex": "tex",
         "*.txt": "plaintext",
-        "*.leg": "c"
+        "*.leg": "c",
+        "stdio.h": "c"
     }
 }
