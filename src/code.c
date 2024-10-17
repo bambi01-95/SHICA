@@ -13,7 +13,7 @@ FILE* SOURCE_FILE;
 
 #include "inst/inst.c"
 
-#include "compiler/compiler.c"
+#include "compiler/compiler.c" 
 
 #include "executer/executer.c"
 
@@ -92,7 +92,6 @@ int main(int argc, char const *argv[])
         free(program);
         free(symbols);
         memoryClear();
-
     }else if(argc == 1){
 
         printf("    execute     %d %s\n",argc,argv[0]);
@@ -133,7 +132,6 @@ int main(int argc, char const *argv[])
     printf(" *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *\n");
     printf("*  *  *  *  *  *  *  *  *  *  *  *  *  *  *  * \n\n");
     
-
     }else{
 
         fprintf(stderr, "使用方法: %s <ファイル名>\n", argv[0]);

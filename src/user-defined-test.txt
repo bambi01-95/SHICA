@@ -1,0 +1,15 @@
+
+trigger cur_time_eve = {
+    int t = time() //call stdlib time()
+    if(t%2 == 0){
+        enqueue(t) //-> t->queue(t)
+    }
+}
+
+state user_def_eve_test{
+    cur_time_eve(int t){
+        print(t)
+    }
+}
+
+

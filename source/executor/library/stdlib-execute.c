@@ -1,9 +1,9 @@
 #ifndef STDLIB_EXECUTE_C
 #define STDLIB_EXECUTE_C
-#include "../../object/object.c"
-#include "../stdlib.h"
+#include "../object.c"
+#include "../../common/liblist/stdlib.h"
 
-#include "../../executer/executer.c"
+// #include "../../executer/executer.c" //<<<<<<<bobobo
 
 /*
     threads: multi function thread space
