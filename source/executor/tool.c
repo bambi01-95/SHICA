@@ -8,111 +8,7 @@ void printlnObject(oop node, int indent)
     printf("%*s", indent*2, "");
     switch (getType(node)) {
 	case Undefined:	printf("nil\n");				break;
-	case Integer:	printf("%s\n", get(node, Integer,number));	break;
-	case Symbol :	printf("%s\n", get(node, Symbol,name));		break;
-    case Float :    printf("%s\n",get(node,   Float,number));     break;
-    case String :   printf("%s\n", get(node, String, value));   break;// c5
-    case Key:       printf("%s\n", get(node, Key,    pass));    break;
-	case Pair: {
-	    printf("Pair\n");
-	    printlnObject(get(node, Pair,a), indent+1);
-	    printlnObject(get(node, Pair,b), indent+1);
-	    break;
-	}
-	case Function: {
-	    printf("function()\n");
-	    printlnObject(get(node, Function,parameters), indent+2);
-	    printlnObject(get(node, Function,body), indent+1);
-	    break;
-	}
-	case Binop: {
-	    switch (get(node, Binop,op)) {
-		case NE:  printf("NE\n"); break;
-		case EQ:  printf("EQ\n"); break;
-		case LT:  printf("LT\n"); break;
-		case LE:  printf("LE\n"); break;
-		case GE:  printf("GE\n"); break;
-		case GT:  printf("GT\n"); break;
-		case ADD: printf("ADD\n"); break;
-		case SUB: printf("SUB\n"); break;
-		case MUL: printf("MUL\n"); break;
-		case DIV: printf("DIV\n"); break;
-		case MOD: printf("MOD\n"); break;
-		default:  assert(!"this cannot happen binop");
-	    }
-	    printlnObject(get(node, Binop,lhs), indent+1);
-	    printlnObject(get(node, Binop,rhs), indent+1);
-	    break;
-	}
-	case Unyop: {
-	    switch (get(node, Unyop,op)) {
-		case NEG: printf("NEG\n"); break;
-		default:  assert(!"this cannot happen unyop");
-	    }
-	    printlnObject(get(node, Unyop,rhs), indent+1);
-	    break;
-	}
-	case GetVar: {
-	    printf("GetVar %s\n", get(get(node, GetVar,id), Symbol,name));
-	    break;
-	}
-	case SetVar: {
-	    printf("SetVar %s\n", get(get(node, SetVar,id), Symbol,name));
-	    printlnObject(get(node, SetVar,rhs), indent+1);
-	    break;
-	}
-	case Call: {
-	    printf("Call\n");
-	    printlnObject(get(node, Call,function), indent+1);
-	    printlnObject(get(node, Call,arguments), indent+1);
-	    break;
-	}
-	case Print: {
-	    printf("Print\n");
-	    printlnObject(get(node, Print,argument), indent+1);
-	    break;
-	}
-	case If: {
-	    printf("If\n");
-	    printlnObject(get(node, If,condition), indent+1);
-	    printlnObject(get(node, If,statement1), indent+1);
-	    printlnObject(get(node, If,statement2), indent+1);
-	    break;
-	}
-	case While: {
-	    printf("While\n");
-	    printlnObject(get(node, While,condition), indent+1);
-	    printlnObject(get(node, While,statement), indent+1);
-	    break;
-	}
-	case Block: {
-	    printf("Block...\n");
-	    break;
-	}
-    case Event:{
-        printf("Event\n");
-        break;
-    }
-    case State:{
-        printf("State\n");
-        break;
-    }
-    case Run:{
-        printf("Run\n");
-        break;
-    }
-    case Continue:{
-        printf("Continue\n");
-        break;
-    }
-    case Break:{
-        printf("Break\n");
-        break;
-    }
-    case Return:{
-        printf("Return\n");
-        break;
-    }
+    case String :   printf("%s\n", get(node, String, value));   break;
     case END:{
         printf("END\n");
         break;
@@ -123,11 +19,6 @@ void printlnObject(oop node, int indent)
         for(int i = 0;i<size;i++){
             printlnObject(node->Array.elements[i],indent+1);
         }
-        break;
-    }
-    case Assoc:{
-        printf("type %2d, index %3d",node->Assoc.kind,node->Assoc.index);
-        printlnObject(node->Assoc.symbol,indent);
         break;
     }
     case _Integer:printf("%d\n",_Integer_value(node));break;

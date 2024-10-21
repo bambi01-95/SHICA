@@ -62,8 +62,6 @@ typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;
 
 enum Type {
     Undefined,
-    // Operator,
-    // Integer, 
     // Float, 
     String,
     // List_d1,
@@ -115,116 +113,16 @@ enum Type {
 
 char *TYPENAME[END+1] = {
 "Undefined",
-"Operator",
-"Integer", 
-"Float", 
-"String",
-    "List_d1",
-"Key",    
-"Symbol",  
-"Function", 
-"Event",
-"State", 
 
-"Pair", 
-"Assoc",
-"Array",
-
-"Binop", 
-"Unyop",  
-
-"GetVar", 
-"SetVar",  
-"SetVarG",
-"SetVarL",
-    "SetArray",
-    "GetArray",
-"Call",  
-"Run",   
-
-"Print", 
-"If",       
-"While", 
-"For",
-"Block",
-"Continue",
-"Break",
-"Return",
-
-"Primitive",
-"EventFunc",
-
-"_BasePoint",
-"_Undefined",
-"_Integer",
-"_Long",
-"_Float",
-"_Double",
-"_Char",
-"_IntegerArray",
-"Thread",
 "END",
 };
 
-
-
-enum binop { AND, OR, ADD, SUB, MUL, DIV, MOD, LT, LE, GE, GT, EQ, NE };
-enum unyop { NEG, AINC, BINC, ADEC, BDEC};
-
 struct Undefined { enum Type type; };
-struct Operator  { enum Type type; char value;};    // for operator
-struct Integer 	 { enum Type type;  char* number; int line; };
-struct Float     { enum Type type;  char* number; int line;};
 struct String    { enum Type type;  char *value; };
-struct Key       { enum Type type;  char *pass; };
-struct Symbol  	 { enum Type type;  char *name;  oop value; };
-struct Function	 { enum Type type;  oop parameters, body;int position;enum Type kind;};
-struct Event     { enum Type type; oop id, parameters, body; };
-struct State     { enum Type type; oop *events; int size,index; };
-
-struct Pair  	 { enum Type type;  oop a, b; };
-struct Assoc     { enum Type type;  oop symbol; enum Type kind; int index; };
 struct Array     { enum Type type;  oop *elements; int size,number; int capacity;};
-
-struct Binop   	 { enum Type type;  enum binop op;  oop lhs, rhs;       int line;};
-struct Unyop   	 { enum Type type;  enum unyop op;  oop rhs;            int line;};
-
-struct GetVar  	 { enum Type type;  oop id;                             int line;};
-struct SetVar  	 { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
-struct SetVarG   { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
-struct SetVarL   { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
-struct Call 	 { enum Type type;  oop function, arguments;            int line;};
-struct Run       { enum Type type; oop state; };
-
-struct Print   	 { enum Type type;  oop argument; enum Type kind;};
-struct If      	 { enum Type type;  oop condition, statement1, statement2; };
-struct While   	 { enum Type type;  oop condition, statement; };
-struct For       { enum Type type;  oop initstate, condition,  update, statement; };
-struct Block   	 { enum Type type;  oop *statements;  int size; };
-struct Continue  { enum Type type; };
-struct Break     { enum Type type; };
-struct Return    { enum Type type; oop value;};
 
 struct END       { enum Type type; };
 
-struct Primitive{    
-    enum Type type;
-    char  lib_num;
-    char func_num;
-    char* args_type_array;
-    char  size_of_args_type_array;
-    char  return_type;
-};
-
-struct EventFunc{
-    enum Type type;
-    char  lib_num;
-    char  eve_num;
-    char* args_type_array;
-    char  size_of_args_type_array;
-    char* pin_num;
-    char  size_of_pin_num;
-};
 
 #define TAGINT	1			// tag bits value for Integer  ........1
 #define TAGFLT	2			// tag bits value for Float    .......10
@@ -297,45 +195,11 @@ struct Thread{
 
 union Object {
     enum   Type     type;
-    struct Operator Operator;
-    struct Integer  Integer;
-    struct Symbol   Symbol;
     struct String   String; 
-    struct Key      Key;
-    struct Float    Float;
-    struct List_d1  { enum Type _type;enum Type Typeset; }List_d1;
 
-    struct Pair     Pair;
-    struct Function Function;
-    struct Binop    Binop;
-    struct Unyop    Unyop;
-    struct GetVar   GetVar;
-    struct SetVar   SetVar;
-    struct SetVarG SetVarG;
-    struct SetVarL SetVarL;
-
-    struct GetArray	 { enum Type _type;enum Type typeset;  oop array, index; int line;}GetArray;
-    struct SetArray	 { enum Type _type;enum Type typeset;  oop array, index, value; int line;}SetArray;
-
-    struct Call     Call;
-    struct Print    Print;
-    struct If       If;
-    struct While    While;
-    struct For      For;
-    struct Block    Block;
-
-    struct Continue Continue;
-    struct Break    Break;
-    struct Return   Return;
-    struct Assoc    Assoc;
-    struct Run      Run;
-    struct State    State;
-    struct Event    Event;
     struct END      END;
     struct Array    Array;
 
-    struct Primitive Primitive;
-    struct EventFunc EventFunc;
 
     struct _BasePoint _BasePoint;
     struct _Undefined _Undefined;
@@ -349,15 +213,6 @@ union Object {
     struct Thread     Thread;
 };
 
-// union OBJECT{
-//     struct BasePoint { enum Type type; int adress; }BasePoint;
-//     struct Undefined{ enum Type type; }Undefined;
-//     struct Integer  { enum Type type; int _value; }Integer;
-//     struct Long     { enum Type type; long long int value; }Long;
-//     struct Float    { enum Type type; float _value; };
-//     struct Double   { enum Type type; double value; };
-//     struct Char     { enum Type type; char _value; };
-// };
 
 
 int getType(oop o)
@@ -392,10 +247,21 @@ oop _newObject(size_t size, enum Type type)
 #define newObject(TYPE)	_newObject(sizeof(struct TYPE), TYPE)
 
 /*---------------------------------------------*/
+
+#if DEBUG
 oop _newInteger(int value)
 {
     return (oop)(((intptr_t)value << TAGBITS) | TAGINT);
 }
+
+#else
+oop _newInteger(int value)
+{
+    return (oop)(((intptr_t)value << TAGBITS) | TAGINT);
+}
+#endif
+
+
 
 oop _newCharInteger(char *number)
 {
@@ -476,13 +342,6 @@ oop _newStrChar(char* number)
 }
 
 #define _Char_value(A) (char)((intptr_t)A >> TAGBITS)
-//FIXME: make segmentation error
-// char _Char_value(oop obj)
-// {
-//     assert(_Char == getType(obj));
-//     out("char value");
-//     return (intptr_t)obj >> TAGBITS;
-// }
 
 
 
@@ -501,284 +360,12 @@ oop newArray(int);
 
 
 
-/*---------------------------------------------*/
-// oop newOperator(char value){
-//     oop node = newObject(Operator);
-//     node->Operator.value = value;
-//     return node;
-// }
-
-
-oop newInteger(char* number,int line)
-{
-    oop node = newObject(Integer);
-    node->Integer.number = strdup(number);
-    node->Integer.line   = line;
-    return node;
-}
-
-oop newFloat(char* number, int line){
-    oop node = newObject(Float);
-    node->Float.number = strdup(number);
-    node->Float.line = line;
-    return node;
-}
-
 oop newString(char *value){
     oop node = newObject(String);
     node->String.value = strdup(value);
     return node;
 }
 
-oop newKey(char *pass){
-    oop node = newObject(Key);
-    // is it need here? pass length 8~12 or fix num?
-    // in this time 8
-    if(8!=strlen(pass)){
-        fprintf(stderr,"Key length shoud be 8\n");
-        exit(1);
-    }
-    node->Key.pass = strdup(pass);
-    return node;
-}
-
-oop newSymbol(char *name)
-{
-    oop sym = newObject(Symbol);
-    sym->Symbol.name  = strdup(name);
-    sym->Symbol.value = sys_false;
-    return sym;
-}
-
-oop *symbols = 0;
-int nsymbols = 0;
-
-oop intern(char *name)
-{
-    // binary search for existing symbol
-    int lo = 0, hi = nsymbols - 1;
-    while (lo <= hi) {
-	int mid = (lo + hi) / 2;
-	int cmp = strcmp(name, get(symbols[mid], Symbol,name));
-	if      (cmp < 0) hi = mid - 1;
-	else if (cmp > 0) lo = mid + 1;
-	else    return symbols[mid];
-    }
-    symbols   = realloc(symbols,   sizeof(*symbols)   * (nsymbols + 1));
-    memmove(symbols + lo + 1,
-	    symbols + lo,
-	    sizeof(*symbols) * (nsymbols++ - lo));
-    return symbols[lo] = newSymbol(name);
-}
-
-oop newList_d1(enum Type t){
-    oop node = newObject(List_d1);
-    node->List_d1.Typeset = t;
-    return node;
-}
-
-void printlnObject(oop node, int indent);
-oop newPair(oop a, oop b)
-{
-    oop obj = newObject(Pair);
-    obj->Pair.a = a;
-    obj->Pair.b = b;
-    return obj;
-}
-
-oop newFunction(oop parameters, oop body)
-{
-    oop node = newObject(Function);
-    // * type need here *//
-    node->Function.parameters = parameters;
-    node->Function.body       = body;
-    node->Function.position   = 0;
-    node->Function.kind       = Undefined;
-    return node;
-}
-
-oop newBinop(enum binop op, oop lhs, oop rhs,int line)
-{
-    oop node = newObject(Binop);
-    node->Binop.op  = op;
-    node->Binop.lhs = lhs;
-    node->Binop.rhs = rhs;
-    node->Binop.line = line;
-    return node;
-}
-
-oop newUnyop(enum unyop op, oop rhs,int line)
-{
-    oop node = newObject(Unyop);
-    node->Unyop.op  = op;
-    node->Unyop.rhs = rhs;
-    node->Unyop.line = line;
-    return node;
-}
-
-oop newGetVar(oop id,int line)
-{
-    oop node = newObject(GetVar);
-    node->GetVar.id = id;
-    node->GetVar.line = line;
-    return node;
-}
-
-oop newSetVar(oop typeset, oop id, oop rhs,int line)
-{
-    oop node = newObject(SetVar);
-    node->SetVar.id  = id;
-    node->SetVar.typeset = getType(typeset);
-    node->SetVar.rhs = rhs;
-    node->SetVar.line = line;
-    return node;
-}
-
-oop newSetVarG(oop typeset, oop id, oop rhs,int line)
-{
-    oop node = newObject(SetVarG);
-    node->SetVarG.id  = id;
-    node->SetVarG.typeset = getType(typeset);
-    node->SetVarG.rhs = rhs;
-    node->SetVarG.line = line;
-    return node;
-}
-
-oop newSetVarL(oop typeset, oop id, oop rhs,int line)
-{
-    oop node = newObject(SetVarL);
-    node->SetVarL.id  = id;
-    node->SetVarL.typeset = getType(typeset);
-    node->SetVarL.rhs = rhs;
-    node->SetVarL.line = line;
-    return node;
-}
-
-//in progress
-oop newSetArray(oop typeset,oop array, oop index, oop value,int line)
-{
-    oop node = newObject(SetArray);
-    node->SetArray.typeset = getType(typeset);
-    node->SetArray.array = array;
-    node->SetArray.index = index;
-    node->SetArray.value = value;
-    node->SetArray.line  = line;
-    return node;
-}
-
-oop newGetArray(oop array, oop index,int line)
-{
-    oop node = newObject(GetArray);
-    node->GetArray.array = array;
-    node->GetArray.index = index;
-    node->SetArray.line  = line;
-    return node;
-}
-
-oop newCall(oop arguments, oop function,int line)
-{
-    oop node = newObject(Call);
-    node->Call.arguments = arguments;
-    node->Call.function  = function;
-    node->Call.line = line;
-    return node;
-}
-
-oop newPrint(oop argument,oop kind)
-{
-    oop node = newObject(Print);
-    node->Print.argument = argument;
-    node->Print.kind     = kind->type;
-    return node;
-}
-
-oop newIf(oop condition, oop s1, oop s2)
-{
-    oop node = newObject(If);
-    node->If.condition = condition;
-    node->If.statement1 = s1;
-    node->If.statement2 = s2;
-    return node;
-}
-
-oop newWhile(oop condition, oop s)
-{
-    oop node = newObject(While);
-    node->While.condition = condition;
-    node->While.statement = s;
-    return node;
-}
-
-oop newFor(oop initstate,oop condition,oop updata,oop statement){
-    oop node = newObject(For);
-    node->For.initstate = initstate;
-    node->For.condition = condition;
-    node->For.update    = updata;
-    node->For.statement = statement;
-    return node;
-}
-
-oop newBlock(void)
-{
-    oop node = newObject(Block);
-    node->Block.statements = 0;
-    node->Block.size = 0;
-    return node;
-}
-
-void Block_append(oop b, oop s)
-{
-    oop *ss = get(b, Block,statements);
-    int  sz = get(b, Block,size);
-    ss = realloc(ss, sizeof(oop) * (sz + 1));
-    ss[sz++] = s;
-    get(b, Block,statements) = ss;
-    get(b, Block,size) = sz;
-}
-// leg 9
-oop newContinue(){
-    return newObject(Continue);
-}
-oop newBreak(){
-    return newObject(Break);
-}
-oop newReturn(oop value){
-    oop node =  newObject(Return);
-    node->Return.value = value;
-    return node;
-}
-
-oop newRun(oop s){
-    oop node = newObject(Run);
-    node->Run.state = s;
-    return node;
-}
-
-oop newState(void)
-{
-    oop node = newObject(State);
-    node->State.events = 0;
-    node->State.size   = 0;
-    return node;
-}
-
-oop newEvent(oop id,oop params,oop body){
-    oop node = newObject(Event);
-    node->Event.id = id;
-    node->Event.parameters = params;
-    node->Event.body   = body;
-    return node;
-}
-
-void State_append(oop s, oop e)
-{
-    oop *ss = get(s, State,events);
-    int  sz = get(s, State,size);
-    ss = realloc(ss, sizeof(oop) * (sz + 1));
-    ss[sz++] = e;
-    get(s, State,events) = ss;
-    get(s, State,size)   = sz;
-}
 
 oop newEND(void){
     oop node = newObject(END);
@@ -791,13 +378,6 @@ oop new_Basepoint(int adress){
     return node;
 }
 
-oop newAssoc(oop symbol,enum Type kind,int index){
-    oop node = newObject(Assoc);
-    node->Assoc.symbol = symbol;
-    node->Assoc.kind   = kind;
-    node->Assoc.index  = index;
-    return node;
-}
 
 
 oop newArray(int capacity){
