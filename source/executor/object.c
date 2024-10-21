@@ -2,6 +2,10 @@
     #define TEST 0
 #endif
 
+#ifndef DEBUG
+    #define DEBUG 1
+#endif 
+
 #ifndef OBJECT_C
 #define OBJECT_C
 #include <stdlib.h>
@@ -24,15 +28,44 @@ typedef union Object Object;
 typedef Object *oop;
 typedef oop (*Func)(oop);
 
-
+/* for what wwww */
 #define user_error(COND,MSG,LINE) ({ \
     if(COND){ \
-        if(TEST==1)printf("[VM LINE %d]",__LINE__); \
+        if(TEST==1)printf("[line %d]",__LINE__); \
         fprintf(stderr,"line %d: %s\n",LINE,MSG); \
         exit(1); \
     } \
 })
 
+void debug_log(char *file,int line,const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    printf("[LOG] %s line %d:",file,line);
+    vprintf(format, args);  // 可変引数を処理
+    printf("\n");
+    va_end(args);
+}
+#define DEBUG_LOG(...) debug_log(__FILE__, __LINE__, __VA_ARGS__)
+
+//file1 & line1: that call function that include debug_error()
+//file2 & line2: that call debug_error()
+void debug_error(char* file1,int line1,char* file2,int line2,const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    fprintf(stderr, "[ERROR] %s line %d\n",file1,line1);
+    fprintf(stderr, "        %s line %d:",file2,line2);
+    vfprintf(stderr, format, args);  // エラーメッセージは stderr に出力
+    fprintf(stderr, "\n");
+    va_end(args);
+}
+// #define DEBUG_ERROR(...) debug_error(__FILE__, __LINE__, __VA_ARGS__)
+#define DEBUG_ERROR_COND(COND,...) ({ \
+    if(COND){ \
+        debug_error(__FILE__,__LINE__,file,line,__VA_ARGS__);\
+    }\
+})
+
+//FIXME: use above
 void fatal(char *msg, ...)
 {
     va_list ap;
@@ -62,74 +95,43 @@ typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;
 
 enum Type {
     Undefined,
-    // Float, 
-    String,
-    // List_d1,
-    // Key,    
-    // Symbol,  
-    // Function, 
-    // Event,
-    // State, 
-
-    // Pair, 
-    // Assoc,
-    Array,
-
-    // Binop, 
-    // Unyop,  
-
-    // GetVar, 
-    // SetVar,  
-    // SetVarG,
-    // SetVarL,
-    // SetArray,
-    // GetArray,
-    // Call,  
-    // Run,     
-
-    // Print, 
-    // If,       
-    // While, 
-    // For,
-    // Block,
-    // Continue,
-    // Break,
-    // Return,
-
-    // Primitive,
-    // EventFunc,
-
     _BasePoint,
+
     _Undefined,
     _Integer,
     _Long,
     _Float,
     _Double,
     _Char,
+    String,
     _IntegerArray,
+
     Thread,
+    Array,
     END,   
 };
 
 char *TYPENAME[END+1] = {
-"Undefined",
+    "Undefined",
+    "_BasePoint",
 
-"END",
+    "_Undefined",
+    "_Char",
+    "_Integer",
+    "_Long",
+    "_Float",
+    "_Double",
+    "String",
+    "_IntegerArray",
+
+    "Thread",
+    "Array",
+    "END",   
 };
 
+
+
 struct Undefined { enum Type type; };
-struct String    { enum Type type;  char *value; };
-struct Array     { enum Type type;  oop *elements; int size,number; int capacity;};
-
-struct END       { enum Type type; };
-
-
-#define TAGINT	1			// tag bits value for Integer  ........1
-#define TAGFLT	2			// tag bits value for Float    .......10
-#define TAGCHA  3
-#define TAGBITS 2			// how many bits to use for tag bits
-#define TAGMASK ((1 << TAGBITS) - 1)	//.mask to extract just the tag bits
-
 struct _BasePoint { enum Type type; int adress; };
 struct _Undefined{ enum Type type; };
 struct _Integer  { enum Type type; int _value; };
@@ -137,6 +139,9 @@ struct _Long     { enum Type type; long long int value; };
 struct _Float    { enum Type type; float _value; };
 struct _Double   { enum Type type; double value; };
 struct _Char     { enum Type type; char _value; };
+struct String    { enum Type type;  char *value; };
+struct Array     { enum Type type;  oop *elements; int size,number; int capacity;};
+struct END       { enum Type type; };
 
 struct Default{
     unsigned int count;
@@ -180,8 +185,6 @@ union VarData{
     struct VarTI VarTI;
 };
 
-
-
 struct Thread{
     unsigned int pc,rbp,base;   
     char queue_head; 
@@ -195,35 +198,37 @@ struct Thread{
 
 union Object {
     enum   Type     type;
-    struct String   String; 
-
-    struct END      END;
-    struct Array    Array;
-
 
     struct _BasePoint _BasePoint;
     struct _Undefined _Undefined;
+
+    struct _Char      _Char     ;
     struct _Integer   _Integer  ;
     struct _Long      _Long     ;
     struct _Float     _Float    ;
     struct _Double    _Double   ;
-    struct _Char      _Char     ;
-
+    struct String     String; 
     struct _IntegerArray {enum Type _type;oop* array; int size, capacity;}_IntegerArray;
+
+    struct END      END;
+    struct Array    Array;
     struct Thread     Thread;
 };
 
 
 
+#define TAGINT	1			// tag bits value for Integer  ........1
+#define TAGFLT	2			// tag bits value for Float    .......10
+#define TAGCHA  3
+#define TAGBITS 2			// how many bits to use for tag bits
+#define TAGMASK ((1 << TAGBITS) - 1)	//.mask to extract just the tag bits
 int getType(oop o)
 {
     if ((((intptr_t)o) & TAGMASK) == TAGINT) return _Integer;
     if ((((intptr_t)o) & TAGMASK) == TAGFLT) return _Float;
-    if ((((intptr_t)o) & TAGMASK) == TAGFLT) return _Float;
+    if ((((intptr_t)o) & TAGMASK) == TAGCHA) return _Char;
     return o->type;
 }
-
-
 
 oop _check(oop node, enum Type type, char *file, int line)
 {
@@ -235,7 +240,11 @@ oop _check(oop node, enum Type type, char *file, int line)
     return node;
 }
 
-#define get(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
+#if DEBUG
+    #define get(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
+#else
+    #define get(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
+#endif
 
 oop _newObject(size_t size, enum Type type)
 {
@@ -243,48 +252,57 @@ oop _newObject(size_t size, enum Type type)
     node->type = type;
     return node;
 }
-
 #define newObject(TYPE)	_newObject(sizeof(struct TYPE), TYPE)
 
-/*---------------------------------------------*/
 
-#if DEBUG
-oop _newInteger(int value)
-{
-    return (oop)(((intptr_t)value << TAGBITS) | TAGINT);
+oop new_Basepoint(int adress){
+    oop node = newObject(_BasePoint);
+    node->_BasePoint.adress = adress;
+    return node;
 }
 
-#else
-oop _newInteger(int value)
+oop _newChar(char value)
 {
-    return (oop)(((intptr_t)value << TAGBITS) | TAGINT);
+    return (oop)(((intptr_t)value << TAGBITS) | TAGCHA);
+}
+#if DEBUG
+char Char_value(char* file, int line, oop obj){
+    DEBUG_ERROR_COND(_Char != getType(obj),"CHAR but %d",getType(obj));
+    return (char)((intptr_t)obj >> TAGBITS);
+}
+#define _Char_value(OBJ) Char_value(__FILE__,__LINE__,OBJ)
+#else
+char _Char_value(oop obj){
+    return (char)((intptr_t)obj >> TAGBITS);
 }
 #endif
+//if error apper use this instead of above
+//#define _Char_value(A) (char)((intptr_t)A >> TAGBITS)
 
 
-
-oop _newCharInteger(char *number)
+oop _newInteger(int value)
 {
-    int value = atoi(number);
     return (oop)(((intptr_t)value << TAGBITS) | TAGINT);
 }
 
-int _Integer_value(oop obj)
+#if DEBUG
+int Integer_value(char* file, int line, oop obj)
 {
-    assert(_Integer == getType(obj));
+    DEBUG_ERROR_COND(_Integer!=getType(obj),"INTEGER but %d",getType(obj));
     return (intptr_t)obj >> TAGBITS;
 }
+#define _Integer_value(OBJ) Integer_value(__FILE__,__LINE__, OBJ)
+#else
+int _Integer_value(oop obj)
+{
+    return (intptr_t)obj >> TAGBITS;
+}
+#endif
 
 oop _newLong(long long int value){
     oop node = newObject(_Long);
     node->_Long.value = value;
     return node;
-}
-
-oop _newCharLong(char* number){
-    char *endptr;
-    long long int value = strtoll(number,&endptr,10);
-    return _newLong(value);
 }
 
 oop _newFloat(float value)
@@ -293,57 +311,27 @@ oop _newFloat(float value)
     return (oop)(((intptr_t)u.i & ~TAGMASK) | TAGFLT);
 }
 
-oop _newCharFloat(char* number)
+#if DEBUG
+float Float_value(char* file, int line, oop obj)
 {
-    double value = atof(number);
-    union { double d;  intptr_t i; } u = { .d = value };
-    return (oop)(((intptr_t)u.i & ~TAGMASK) | TAGFLT);
-}
-
-float _Float_value(oop obj)
-{
-    assert(_Float == getType(obj));
+    DEBUG_ERROR_COND(_Float != getType(obj),"FLOAT but %d",getType(obj));
     union { intptr_t i;  double d; } u = { .i = (intptr_t)obj };
     return (float)u.d;
 }
+#define _Float_value(OBJ) Float_value(__FILE__,__LINE__,OBJ)
+#else
+float _Float_value(oop obj)
+{
+    union { intptr_t i;  double d; } u = { .i = (intptr_t)obj };
+    return (float)u.d;
+}
+#endif
 
 oop _newDouble(double value){
     oop node = newObject(_Double);
     node->_Double.value = value;
     return node;
 }
-
-oop _newCharDouble(char* number){
-    char *endptr;
-    double value = strtod(number, &endptr);
-    return _newDouble(value);
-}
-
-
-
-/////////CHAR
-// #define _newChar(A) (oop)(((intptr_t)A << TAGBITS) | TAGCHA)
-oop _newChar(char value)
-{
-    return (oop)(((intptr_t)value << TAGBITS) | TAGCHA);
-}
-
-oop _newCharChar(char number)
-{
-    char value  = number;
-    return (oop)(((intptr_t)value << TAGBITS) | TAGCHA);
-}
-
-oop _newStrChar(char* number)
-{
-    assert(strlen(number)==2);
-    char value  = number[0];
-    return (oop)(((intptr_t)value << TAGBITS) | TAGCHA);
-}
-
-#define _Char_value(A) (char)((intptr_t)A >> TAGBITS)
-
-
 
 oop _newIntegerArray(int size){
     oop node = newObject(_IntegerArray);
@@ -353,28 +341,14 @@ oop _newIntegerArray(int size){
     return node;
 }
 
-
-
-
-oop newArray(int);
-
-
-
 oop newString(char *value){
     oop node = newObject(String);
     node->String.value = strdup(value);
     return node;
 }
 
-
 oop newEND(void){
     oop node = newObject(END);
-    return node;
-}
-
-oop new_Basepoint(int adress){
-    oop node = newObject(_BasePoint);
-    node->_BasePoint.adress = adress;
     return node;
 }
 
@@ -389,19 +363,22 @@ oop newArray(int capacity){
     return obj;
 }
 
+//FIXME: use get() function 
 int Array_size(oop obj){
     assert(getType(obj)==Array);
     return obj->Array.size;
 }
 
+//FIXME: use get() function
 int Array_number(oop obj){
     assert(getType(obj)==Array);
     return obj->Array.number;
 }
 
-oop Array_put(oop obj,unsigned int index,oop element)
+#if DEBUG
+oop _Array_put(char* file, int line,oop obj,unsigned int index,oop element)
 {
-    assert(getType(obj)==Array);
+    DEBUG_ERROR_COND(getType(obj)!=Array,"Array but %d",getType(obj));
     if(index >obj->Array.capacity){
         obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
         obj->Array.capacity=index + 1;
@@ -412,16 +389,54 @@ oop Array_put(oop obj,unsigned int index,oop element)
     }
     return obj->Array.elements[index]=element;
 }
+#define Array_put(OBJ,INDEX,ELEMENT) _Array_put(__FILE__,__LINE__,OBJ,INDEX,ELEMENT)
+#else
+oop Array_put(oop obj,unsigned int index,oop element)
+{
+    if(index >obj->Array.capacity){
+        obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+        obj->Array.capacity=index + 1;
+    }
+    while(obj->Array.size<(index+1)){
+        obj->Array.elements[obj->Array.size++]=nil;
+        obj->Array.number++;
+    }
+    return obj->Array.elements[index]=element;
+}
+#endif
 
+
+#if DEBUG
+oop _Array_get(char *file, int line,oop obj, unsigned int index){
+    DEBUG_ERROR_COND(getType(obj)!=Array,"Array but %d",getType(obj));
+    if(index < obj->Array.size)
+		return obj->Array.elements[index];
+	return nil;
+};
+#define Array_get(OBJ,INDEX) _Array_get(__FILE__,__LINE__,OBJ,INDEX)
+#else
 oop Array_get(oop obj, unsigned int index){
     assert(getType(obj)==Array);
     if(index < obj->Array.size)
 		return obj->Array.elements[index];
 	return nil;
 };
+#endif
 
+#if DEBUG
+oop _Array_push(char* file, int line,oop obj,oop element){
+    DEBUG_ERROR_COND(getType(obj)!=Array,"Array but %d",getType(obj));
+    if(obj->Array.size >= obj->Array.capacity){
+		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+		obj->Array.capacity += 1;
+    }
+    obj->Array.number++;
+    obj->Array.elements[obj->Array.size++] = element;
+    return obj;
+}
+#define Array_push(OBJ,ELEMENT) _Array_push(__FILE__,__LINE__,OBJ,ELEMENT)
+#else
 oop Array_push(oop obj,oop element){
-    assert(getType(obj)==Array);
     if(obj->Array.size >= obj->Array.capacity){
 		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
 		obj->Array.capacity += 1;
@@ -430,9 +445,11 @@ oop Array_push(oop obj,oop element){
     obj->Array.elements[obj->Array.size++] = element;
     return obj;
 };
+#endif
 
-oop Array_pop(oop obj){
-    assert(getType(obj)==Array);
+#if DEBUG
+oop _Array_pop(char* file,int line,oop obj){
+    DEBUG_ERROR_COND(getType(obj)!=Array,"Array but %d",getType(obj));
 	if(obj->Array.size <= 0){
 		fprintf(stderr,"Array is empty [array_pop]\n");
 		exit(1);
@@ -441,6 +458,18 @@ oop Array_pop(oop obj){
     obj->Array.elements[obj->Array.size] = nil;
     return element;
 };
+#define Array_pop(OBJ) _Array_pop(__FILE__,__LINE__,OBJ)
+#else
+oop Array_pop(oop obj){
+	if(obj->Array.size <= 0){
+		fprintf(stderr,"Array is empty [array_pop]\n");
+		exit(1);
+	}
+    oop element = obj->Array.elements[--obj->Array.size];
+    obj->Array.elements[obj->Array.size] = nil;
+    return element;
+};
+#endif
 
 oop _newThread(size_t size)
 {
