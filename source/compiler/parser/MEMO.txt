@@ -1,0 +1,13 @@
+
+
+
+
+[SHICA TO C lang. interface generator]
+
+using %{ and }%, you can define c native function with shica code.
+
+%{
+int add(int a,int b){
+    return a + b;
+}
+}%
