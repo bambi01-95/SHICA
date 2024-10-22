@@ -23,7 +23,7 @@ oop eve_loop(oop t){
         oop data = newArray(2);
         Array_push(data,new_Basepoint(1));//1st rbp, 2nd.. event args, 
         Array_push(data,_newInteger(1));
-        enqueue(t,data);
+        enqueue(t->Thread.queue,data);
     }
     return t;
 }
@@ -36,7 +36,7 @@ oop eve_timer(oop t){
         oop data = newArray(2);
         Array_push(data,new_Basepoint(1));//1st rbp, 2nd.. event args, 
         Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
-        enqueue(t,data);
+        enqueue(t->Thread.queue,data);
     }
     return t;
 }
@@ -90,7 +90,7 @@ oop eve_keyget(oop t){
         oop data = newArray(2);
         Array_push(data,new_Basepoint(1));//1st rbp, 2nd.. event args, 
         Array_push(data,_newInteger(buf));
-        enqueue(t,data);
+        enqueue(t->Thread.queue,data);
         return t;
     }
 }

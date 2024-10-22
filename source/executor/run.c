@@ -10,8 +10,6 @@
 #include "./library/stdlib-execute.c"
 
 
-
-
 // END QUEUE
 
 FLAG sub_execute(oop process,oop GM);
@@ -178,9 +176,9 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                                 }else test_impliment_limit++;
                             }
                         }
-                        else if(t->Array.elements[i]->Thread.queue_num>0){
+                        else if(t->Array.elements[i]->Thread.queue->Queue.size>0){
                                 t->Array.elements[i]->Thread.flag = 1;
-                                t->Array.elements[i]->Thread.stack = dequeue(t->Array.elements[i]);
+                                t->Array.elements[i]->Thread.stack = dequeue(t->Array.elements[i]->Thread.queue);
                                 // Array_push(t->Array.elements[i]->Thread.stack,new_Basepoint(1));//1st rbp, 2nd.. event args, 
                                 // Array_push(t->Array.elements[i]->Thread.stack,dequeue(t->Array.elements[i]));//TODO: put args of event into t[i]->stack: timer(int sec)=> sec is arg
                         }
@@ -408,15 +406,16 @@ line();printf("%s\n",INSTNAME[inst]);
                 Array_push(mstack,newString(string_value));
                 continue;
             }
-            case il_load:{
-                getInt(mpc);
-                oop list = _newIntegerArray(_Integer_value(Array_pop(mstack)));
-                for(int i=0;i<int_value;i++){
-                    list->_IntegerArray.array[i] = Array_pop(mstack);
-                }
-                Array_put(mstack,int_value,list);
-                continue;
-            }
+        // list or array of integer
+            // case il_load:{
+            //     getInt(mpc);
+            //     oop list = _newIntegerArray(_Integer_value(Array_pop(mstack)));
+            //     for(int i=0;i<int_value;i++){
+            //         list->_IntegerArray.array[i] = Array_pop(mstack);
+            //     }
+            //     Array_put(mstack,int_value,list);
+            //     continue;
+            // }
 /* _Integer */
             case i_EQ:{
 #if TEST  
@@ -829,12 +828,13 @@ line();printf("%s\n",INSTNAME[inst]);
 #if TEST  
 line();printf("%s\n",INSTNAME[inst]);
 #endif
-                getInt(mpc);
-                int index = _Integer_value(Array_pop(mstack));
-                oop data  = Array_pop(mstack);
-                //FIXME: サイズの確認とかやってない
-                GM->Thread.stack->Array.elements[int_value]->_IntegerArray.array[index] = data;
-                continue;
+                DEBUG_LOG("this is not support now");
+                // getInt(mpc);
+                // int index = _Integer_value(Array_pop(mstack));
+                // oop data  = Array_pop(mstack);
+                // //FIXME: サイズの確認とかやってない
+                // GM->Thread.stack->Array.elements[int_value]->_IntegerArray.array[index] = data;
+                // continue;
             }
             case GLOBAL_END:{
 #if TEST  
