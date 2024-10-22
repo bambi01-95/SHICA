@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <termios.h>
+#include "../../lib/mingc/msgc.c"
 
 union Object;
 typedef union Object Object;
@@ -65,17 +66,17 @@ void debug_error(char* file1,int line1,char* file2,int line2,const char *format,
     }\
 })
 
-//FIXME: use above
-void fatal(char *msg, ...)
-{
-    va_list ap;
-    va_start(ap, msg);
-    fprintf(stderr, "\n");
-    vfprintf(stderr, msg, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-    exit(1);
-}
+// //FIXME: use above
+// void fatal(char *msg, ...)
+// {
+//     va_list ap;
+//     va_start(ap, msg);
+//     fprintf(stderr, "\n");
+//     vfprintf(stderr, msg, ap);
+//     fprintf(stderr, "\n");
+//     va_end(ap);
+//     exit(1);
+// }
 
 #define out(A) printf("line %4d: %s\n",__LINE__,A)
 #define line() printf("         line %4d: ",__LINE__)
@@ -108,6 +109,7 @@ enum Type {
 
     Thread,
     Array,
+    Queue,
     END,   
 };
 
@@ -128,21 +130,6 @@ char *TYPENAME[END+1] = {
     "Array",
     "END",   
 };
-
-
-
-struct Undefined { enum Type type; };
-struct _BasePoint { enum Type type; int adress; };
-struct _Undefined{ enum Type type; };
-struct _Integer  { enum Type type; int _value; };
-struct _Long     { enum Type type; long long int value; };
-struct _Float    { enum Type type; float _value; };
-struct _Double   { enum Type type; double value; };
-struct _Char     { enum Type type; char _value; };
-struct String    { enum Type type;  char *value; };
-struct Array     { enum Type type;  oop *elements; int size,number; int capacity;};
-struct END       { enum Type type; };
-
 struct Default{
     unsigned int count;
 };
@@ -185,15 +172,30 @@ union VarData{
     struct VarTI VarTI;
 };
 
-struct Thread{
-    unsigned int pc,rbp,base;   
-    char queue_head; 
-    char queue_num; 
-    char flag; 
+
+struct Undefined { enum Type type; };
+struct _BasePoint { enum Type type; int adress; };
+struct _Undefined{ enum Type type; };
+struct _Integer  { enum Type type; int _value; };
+struct _Long     { enum Type type; long long int value; };
+struct _Float    { enum Type type; float _value; };
+struct _Double   { enum Type type; double value; };
+struct _Char     { enum Type type; char _value; };
+struct String    { enum Type type;  char *value; };
+struct Queue     { enum Type type;  oop *elements; unsigned head:4; unsigned size:4; };
+struct Array     { enum Type type;  oop *elements; int size; int capacity;};
+struct END       { enum Type type; };
+
+struct Thread{ 
     oop stack; 
-    oop queue[5];  
+    oop queue;
+    // oop queue[5];  
     Func func;
     union VarData*  vd;
+    unsigned int pc,rbp,base;  
+    // unsigned queue_head:4;
+    // unsigned queue_num:4; 
+    unsigned flag:1; 
 };
 
 union Object {
@@ -208,9 +210,10 @@ union Object {
     struct _Float     _Float    ;
     struct _Double    _Double   ;
     struct String     String; 
-    struct _IntegerArray {enum Type _type;oop* array; int size, capacity;}_IntegerArray;
+    // struct _IntegerArray {enum Type _type;oop* array; int size, capacity;}_IntegerArray;
 
     struct END      END;
+    struct Queue    Queue;
     struct Array    Array;
     struct Thread     Thread;
 };
@@ -245,6 +248,22 @@ oop _check(oop node, enum Type type, char *file, int line)
 #else
     #define get(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
 #endif
+
+
+void markObject(oop obj){
+    switch(getType(obj)){
+    case Array:{
+        for(int i = 0;i<obj->Array.size;i++){
+            gc_mark(obj->Array.elements[i]);
+        }
+        break;
+    }
+    case Thread:{
+        gc_mark(obj->Thread.stack);
+        break;
+    }
+    }
+}
 
 oop _newObject(size_t size, enum Type type)
 {
@@ -333,13 +352,13 @@ oop _newDouble(double value){
     return node;
 }
 
-oop _newIntegerArray(int size){
-    oop node = newObject(_IntegerArray);
-    node->_IntegerArray.capacity = size;/*Free size*/
-    node->_IntegerArray.size     = size;
-    node->_IntegerArray.array    = calloc(size, sizeof(oop));
-    return node;
-}
+// oop _newIntegerArray(int size){
+//     oop node = newObject(_IntegerArray);
+//     node->_IntegerArray.capacity = size;/*Free size*/
+//     node->_IntegerArray.size     = size;
+//     node->_IntegerArray.array    = calloc(size, sizeof(oop));
+//     return node;
+// }
 
 oop newString(char *value){
     oop node = newObject(String);
@@ -357,7 +376,6 @@ oop newEND(void){
 oop newArray(int capacity){
     oop obj = newObject(Array);
     obj->Array.size = 0;
-    obj->Array.number = 0;
     obj->Array.capacity = capacity;
     obj->Array.elements = calloc(capacity, sizeof(oop));
     return obj;
@@ -367,12 +385,6 @@ oop newArray(int capacity){
 int Array_size(oop obj){
     assert(getType(obj)==Array);
     return obj->Array.size;
-}
-
-//FIXME: use get() function
-int Array_number(oop obj){
-    assert(getType(obj)==Array);
-    return obj->Array.number;
 }
 
 #if DEBUG
@@ -385,7 +397,6 @@ oop _Array_put(char* file, int line,oop obj,unsigned int index,oop element)
     }
     while(obj->Array.size<(index+1)){
         obj->Array.elements[obj->Array.size++]=nil;
-        obj->Array.number++;
     }
     return obj->Array.elements[index]=element;
 }
@@ -399,7 +410,6 @@ oop Array_put(oop obj,unsigned int index,oop element)
     }
     while(obj->Array.size<(index+1)){
         obj->Array.elements[obj->Array.size++]=nil;
-        obj->Array.number++;
     }
     return obj->Array.elements[index]=element;
 }
@@ -430,7 +440,6 @@ oop _Array_push(char* file, int line,oop obj,oop element){
 		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
 		obj->Array.capacity += 1;
     }
-    obj->Array.number++;
     obj->Array.elements[obj->Array.size++] = element;
     return obj;
 }
@@ -441,7 +450,6 @@ oop Array_push(oop obj,oop element){
 		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
 		obj->Array.capacity += 1;
     }
-    obj->Array.number++;
     obj->Array.elements[obj->Array.size++] = element;
     return obj;
 };
@@ -471,12 +479,18 @@ oop Array_pop(oop obj){
 };
 #endif
 
+oop newQueue(int capacity){
+    oop node = newObject(Queue);
+    node->Queue.elements = calloc(capacity,sizeof(oop));
+    node->Queue.head = 0;
+    node->Queue.size = 0;
+    return node;
+}
 oop _newThread(size_t size)
 {
     oop node = newObject(Thread);
+    node->Thread.queue      = newQueue(5);
     node->Thread.flag       =  0;
-    node->Thread.queue_head =  0;
-    node->Thread.queue_num  =  0;
     node->Thread.pc         =  0;
     node->Thread.base       =  0;
     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
@@ -485,18 +499,16 @@ oop _newThread(size_t size)
     node->Thread.vd         = vd;
     return node;
 }
-#define newThread(TYPE)	_newThread(sizeof(struct TYPE))
+#define newThread(VD_TYPE)	_newThread(sizeof(struct VD_TYPE))
 
 oop _setThread(oop t,size_t size)
 {
     t->Thread.flag       =  0;
-    t->Thread.queue_head =  0;
-    t->Thread.queue_num  =  0;
     t->Thread.pc         =  0;
     t->Thread.base       =  0;
     t->Thread.rbp        =  0;
     t->Thread.stack      = newArray(0);
-    VD       vd = calloc(1,size);
+    VD vd = calloc(1,size);
     t->Thread.vd         = vd;
     return t;
 }
@@ -509,8 +521,8 @@ void printThread(oop t){
     printf("stack == %s\n",TYPENAME[i]);
     printf("pc     %d\n",t->Thread.pc);
     printf("rbp    %d\n",t->Thread.rbp);
-    printf("q head %d\n",t->Thread.queue_head);
-    printf("q num  %d\n",t->Thread.queue_num);
+    // printf("q head %d\n",t->Thread.queue.head);
+    // printf("q num  %d\n",t->Thread.queue_num);
     printf("flag   %d\n",t->Thread.flag);
 }
 
@@ -519,27 +531,60 @@ void printThread(oop t){
 #define FAILURE     0       /* 失敗 */
 #define QUEUE_SIZE 5          /* 待ち行列に入るデータの最大数 */
 
+#if DEBUG
+int _enqueue(char* file, int line,oop t,oop data)
+{
+    DEBUG_ERROR_COND(Queue!=getType(t),"Queue but %d",getType(t));
+    if (t->Queue.size < QUEUE_SIZE) {
+        t->Queue.elements[(t->Queue.head + t->Queue.size) % QUEUE_SIZE] = data;
+        t->Queue.size++;
+        return SUCCESS;
+    } else {
+        DEBUG_LOG("queue is full");
+        return FAILURE;
+    }
+}
+#define enqueue(OBJ,DATA) _enqueue(__FILE__,__LINE__,OBJ,DATA)
+#else
 int enqueue(oop t,oop data)
 {
-    if (t->Thread.queue_num < QUEUE_SIZE) {
-        t->Thread.queue[(t->Thread.queue_head + t->Thread.queue_num) % QUEUE_SIZE] = data;
-        t->Thread.queue_num++;
+    if (t->Queue.size < QUEUE_SIZE) {
+        t->Queue.elements[(t->Queue.head + t->Queue.size) % QUEUE_SIZE] = data;
+        t->Queue.size++;
         return SUCCESS;
     } else {
         return FAILURE;
     }
 }
+#endif
 
-oop dequeue(oop t)
+
+#if DEBUG
+oop _dequeue(char*file, int line,oop t)
 {
-    if (t->Thread.queue_num > 0) {
-        oop data = t->Thread.queue[t->Thread.queue_head];
-        t->Thread.queue_head = (t->Thread.queue_head + 1) % QUEUE_SIZE;
-        t->Thread.queue_num--;
+    DEBUG_ERROR_COND(Queue!=getType(t),"Queue but %d",getType(t));
+    if (t->Queue.size > 0) {
+        oop data = t->Queue.elements[t->Queue.head];
+        t->Queue.head = (t->Queue.head + 1) % QUEUE_SIZE;
+        t->Queue.size--;
         return data;
     } else {
         return 0;
     }
 }
+#define dequeue(OBJ) _dequeue(__FILE__,__LINE__,OBJ)
+#else
+oop dequeue(oop t)
+{
+    if (t->Queue.size > 0) {
+        oop data = t->Queue.elements[t->Queue.head];
+        t->Queue.head = (t->Queue.head + 1) % QUEUE_SIZE;
+        t->Queue.size--;
+        return data;
+    } else {
+        return 0;
+    }
+}
+#endif
 
 #endif
