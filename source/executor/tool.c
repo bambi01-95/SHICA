@@ -21,10 +21,20 @@ void printlnObject(oop node, int indent)
         }
         break;
     }
+    case Queue:{
+        int size = node->Queue.size;
+        int head = node->Queue.head;
+        printf("QUEUE\n");
+        for(int i=0;i<size;i++){
+            printlnObject(node->Queue.elements[(head + i) % QUEUE_SIZE],indent+1);
+        }
+        break;
+    }
     case _Integer:printf("%d\n",_Integer_value(node));break;
     case _Long:   printf("%lld\n",get(node,_Long,value));break;
     case _Float:  printf("%f\n",_Float_value(node));break;
     case _Double: printf("%lf\n",get(node,_Double,value));break;
+    case _BasePoint: printf("%d\n",node->_BasePoint.adress);break;
 	default:	printf("%s\n",TYPENAME[node->type]);assert(!"this cannot happen print");			break;
     }
 }
@@ -165,7 +175,7 @@ oop printCode(oop program){
                 oop symbol = Array_get(program,pc++);
                 printlnObject(symbol,1);//T
                 continue;
-            }  
+            }
             case GLOBAL:{
                 printf("GLOBAL\n");
                 continue;
