@@ -21,7 +21,6 @@
 oop eve_loop(oop t){
     if(t->Thread.flag == 0){
         oop data = newArray(2);
-        Array_push(data,new_Basepoint(1));//1st rbp, 2nd.. event args, 
         Array_push(data,_newInteger(1));
         enqueue(t->Thread.queue,data);
     }
@@ -30,11 +29,14 @@ oop eve_loop(oop t){
 
 oop eve_timer(oop t){
     time_t current_time = time(NULL);
+    // printf("vd i1 %d\n",t->Thread.vd->VarII.v_i1);
+    // printf("vd i2 %d\n",t->Thread.vd->VarII.v_i2);
+    // printf("vd diff = %ld\n",current_time - t->Thread.vd->VarTI.v_t1);
     if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
+        DEBUG_LOG("trigger eve_timer");
         t->Thread.vd->VarTI.v_t1 = current_time;
         t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
         oop data = newArray(2);
-        Array_push(data,new_Basepoint(1));//1st rbp, 2nd.. event args, 
         Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
         enqueue(t->Thread.queue,data);
     }
@@ -88,7 +90,6 @@ oop eve_keyget(oop t){
         }
         // 読み取った文字を返す
         oop data = newArray(2);
-        Array_push(data,new_Basepoint(1));//1st rbp, 2nd.. event args, 
         Array_push(data,_newInteger(buf));
         enqueue(t->Thread.queue,data);
         return t;
@@ -98,16 +99,17 @@ oop eve_keyget(oop t){
 
 
 //STDLIB EVENT
-oop Event_stdlib(int eve_num,oop stack){
+//FOR SETTING
+oop Event_stdlib(int eve_num,oop stack,int stk_size){
     switch(eve_num){
         case LOOP_E:{
-            oop t = newThread(Default);
+            oop t = newThread(Default,stk_size);
             t->Thread.vd->Default.count = 0;
             t->Thread.func = &eve_loop;
             return t;
         }
         case TIMERSEC_E:{
-            oop t = newThread(VarTI);
+            oop t = newThread(VarTI,stk_size);
             t->Thread.vd->VarTI.v_t1 = time(NULL);
             t->Thread.vd->VarTI.v_i1  = 0;
             t->Thread.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
@@ -115,7 +117,7 @@ oop Event_stdlib(int eve_num,oop stack){
             return t;
         }
         case KEYGET_E:{
-            oop t = newThread(Default);
+            oop t = newThread(Default,stk_size);
             t->Thread.func = &eve_keyget;
             while(0!=t->Thread.func(t))dequeue(t);
             return t;

@@ -24,10 +24,10 @@ oop Event_userlib(int eve_num,oop stack){
 }
 
 // EVENT...
-oop Event_Func(int lib_num,int eve_num,oop stack){
+oop Event_Func(int lib_num,int eve_num,oop stack,int stk_size){
     switch(lib_num){
         case STDLIB:{
-            return Event_stdlib(eve_num,stack);
+            return Event_stdlib(eve_num,stack,stk_size);
         }
         case USERLIB:{
             return 0;
@@ -40,8 +40,6 @@ oop Event_Func(int lib_num,int eve_num,oop stack){
     printf("Event_Func(): not happen..\n");
     return 0;
 }
-
-
 
 char inst      = 0;
 char char_value    = 0;
@@ -79,19 +77,19 @@ void main_execute(){
     int test_impliment_limit = 0; //REMOVEME: TEST only 
     int pc = 0;
     int rbp = 0;
-    oop stack = newArray(10); //動的にメモリを確保するようにしないとメモリが被ってしまうため、スタックのデータがかぶる。
+    // oop stack = newArray(20); //動的にメモリを確保するようにしないとメモリが被ってしまうため、スタックのデータがかぶる。
+    GC_PUSH(oop,stack,newArray(20));
     // GROBAL MEMORY
-    oop GM    = newThread(Default);
-    GM->Thread.stack = newArray(10);
-    GM->Thread.rbp   = 0;
-    
+    // oop GM    = newThread(Default,10);
+    GC_PUSH(oop,GM,newThread(Default,10));
+    // GM->Thread.stack = newArray(30);
+    // GM->Thread.rbp   = 0;
     for(;;){
         getInst(pc);
         switch(inst){
             case i_load:{
 #if TEST  
 line();printf("%s\n",INSTNAME[inst]);
-line();
 #endif
                 getInt(pc);
                 Array_push(stack,_newInteger(int_value));
@@ -106,7 +104,6 @@ line();printf("%s\n",INSTNAME[inst]);
                 int num_thread = int_value;
                 if(num_thread == 0)continue;
                 int thread_pc = pc;
-                oop t = newArray(num_thread);
                 
 
             //init setting thread スレッドの初期設定
@@ -129,13 +126,11 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                             getInt(pc);int lib_num = int_value;
                             getInt(pc);int eve_num = int_value;
                             getInt(pc);int pin_num = int_value;
-
-                            Array_push(t,Event_Func(lib_num,eve_num,stack));                 // connect function of event / イベントの関数と紐付け
-                            
+                            assert(Array == getType(stack));
+                            Array_push(threads,Event_Func(lib_num,eve_num,stack,120/num_thread));              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
                             int inst_loc = thread_pc + _Integer_value(Array_pop(stack));
-                            t->Array.elements[thread_index]->Thread.pc   = inst_loc;
-                            t->Array.elements[thread_index]->Thread.base = inst_loc;
-                            
+                            threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
+                            threads->Array.elements[thread_index]->Thread.base = inst_loc;
                             thread_index++;
                             continue;
                         }
@@ -145,18 +140,18 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                         }
                     }
                 }
-                printf("\n              implement\n\n");
+
+                DEBUG_LOG("\n              implement\n\n");
     // implement thread/Event concurrelty
                 for(int is_active = 0,count = 5; is_active==0;){
                     count++;
                     for(int i =0;i<num_thread;i++){
-                        t->Array.elements[i]->Thread.func(t->Array.elements[i]);             //implement function of event
-
-                        if(t->Array.elements[i]->Thread.flag == 1){
-                            FLAG flag = sub_execute(t->Array.elements[i],GM);
+                        threads->Array.elements[i]->Thread.func(threads->Array.elements[i]);             //implement function of event
+                        if(threads->Array.elements[i]->Thread.flag == 1){
+                            FLAG flag = sub_execute(threads->Array.elements[i],GM);
                             if(flag == F_TRANS){//TRANS
-                                printf("        TRANS\n");
-                                int pc_i = t->Array.elements[i]->Thread.pc++;//location of thread[i]'s pc
+                                DEBUG_LOG("        TRANS\n");
+                                int pc_i = threads->Array.elements[i]->Thread.pc++;//location of thread[i]'s pc
                                 getInt(pc_i);//thread num<-pc_i
                                 pc = int_value + pc_i;
                                 // printf("pc-> %d\n",pc);
@@ -168,26 +163,27 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                                 break;
                             }
                             else if(flag == F_EOE){//EOE
-                                t->Array.elements[i]->Thread.flag = 0;
-                                t->Array.elements[i]->Thread.pc = t->Array.elements[i]->Thread.base;
+                                threads->Array.elements[i]->Thread.flag = 0;
+                                threads->Array.elements[i]->Thread.pc = threads->Array.elements[i]->Thread.base;
+                                // Array_free(threads->Array.elements[i]->Thread.stack);
                                 if(test_impliment_limit>1000000){
                                     printf("\n\n");
                                     return;
                                 }else test_impliment_limit++;
                             }
+
                         }
-                        else if(t->Array.elements[i]->Thread.queue->Queue.size>0){
-                                t->Array.elements[i]->Thread.flag = 1;
-                                t->Array.elements[i]->Thread.stack = dequeue(t->Array.elements[i]->Thread.queue);
-                                // Array_push(t->Array.elements[i]->Thread.stack,new_Basepoint(1));//1st rbp, 2nd.. event args, 
-                                // Array_push(t->Array.elements[i]->Thread.stack,dequeue(t->Array.elements[i]));//TODO: put args of event into t[i]->stack: timer(int sec)=> sec is arg
+                        else if(threads->Array.elements[i]->Thread.queue->Queue.size>0){
+                                threads->Array.elements[i]->Thread.flag = 1;
+                                oop variables =  dequeue(threads->Array.elements[i]->Thread.queue);
+                                Array_args_copy(variables,threads->Array.elements[i]->Thread.stack);
                         }
                     }
                     // if(count>5){
                     //     count = 0;
                     // }
                 }
-                free(t);
+                Array_free(threads);
                 continue;
             }
             case DEFINE_L:{
@@ -200,14 +196,14 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
 #if TEST  
 line();printf("%s\n",INSTNAME[inst]);
 #endif
-                oop code = newThread(Default);
+                oop code = newThread(Default,10);//FIXME: using new thread here is not good for ...
                 code->Thread.pc = pc;
                 for(;;){
                     FLAG flag = sub_execute(code,GM);
                     if(flag == F_EOE)break;
                 }
                 pc = code->Thread.pc;
-                free(code);//IFERROR
+                // free(code);//IFERROR
                 continue;
             }
             case ENTRY:{
@@ -216,14 +212,14 @@ line();printf("%s\n",INSTNAME[inst]);
 #endif
                 getInt(pc);
                 int s_pc = pc;//store corrent pc
-                oop code = newThread(Default);
+                oop code = newThread(Default,20);//FIXME: this is  not good for memory
                 code->Thread.pc = pc + int_value;
                 Array_push(code->Thread.stack,new_Basepoint(0));
                 for(;;){
                     FLAG flag = sub_execute(code,GM);
                     if(flag == F_EOE)break;
                 }
-                free(code);
+                // free(code);
                 pc = s_pc;
                 continue;                
             }
@@ -254,6 +250,8 @@ line();printf("%s\n",INSTNAME[inst]);
         }
     }
 }
+
+
 
 #define mpc    process->Thread.pc
 #define mrbp   process->Thread.rbp
@@ -295,7 +293,11 @@ void stdlib_appendchar(oop process,oop GM){
     char* str = aps();
     char c = apc();
     size_t length = strlen(str);
+#if MSGC
+    char* newStr = (char*)gc_alloc((length + 2) * sizeof(char)); // 新しい文字列のメモリを確保
+#else
     char* newStr = (char*)malloc((length + 2) * sizeof(char)); // 新しい文字列のメモリを確保
+#endif
     if (newStr != NULL){
         strcpy(newStr, str); // 元の文字列をコピー
         newStr[length] = c;  // 追加する文字をセット
@@ -967,9 +969,10 @@ line();printf("%s\n",INSTNAME[inst]);
             case EOE:{
                 // mpc  = mrbp;
                 mpc -= 1;
-                // exit(1);
+                DEBUG_ERROR_COND(mstack->Array.size == 0,"IMPRIMENT ERROR: stack size is %d\n",mstack->Array.size);
                 if(mstack->Array.size != 0){
-                    fatal("IMPRIMENT ERROR: stack size is %d\n",mstack->Array.size);
+                    printlnObject(Array_pop(mstack),1);
+                    exit(1);
                 }
                 return F_EOE;
             }
