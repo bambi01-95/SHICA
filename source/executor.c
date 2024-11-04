@@ -1,4 +1,6 @@
 #define TEST 0
+#define MSGC 1
+#define MAXTHREADSIZE 10
 #include <stdio.h>
 FILE* SOURCE_FILE;
 #define getchar() fgetc(SOURCE_FILE)
@@ -12,16 +14,32 @@ FILE* SOURCE_FILE;
 #include "./executor/run.c"
 #include "./common/memory.c"
 
+#include "../lib/mingc/msgc.c"
 
 
 
 int main(int argc, char const *argv[])
 {
+
+#if MSGC
+    int memSize = 1024 * 8;//1024 * 2; // default memory size
+    gc_init(memSize);
+    gc_collectFunction = (gc_collectFunction_t)collectObjects;
+    gc_markFunction    = (gc_markFunction_t)markObject;
+#endif
+    // initialization 
     nil   = newObject(Undefined);
     sys_false = _newInteger(0);
     sys_true  = _newInteger(1);
     none  = _newInteger(2);
-
+    threads = newArray(MAXTHREADSIZE);
+#if MSGC
+    gc_pushRoot(nil);
+    gc_pushRoot(sys_false);
+    gc_pushRoot(sys_true);
+    gc_pushRoot(none);
+    gc_pushRoot(entry_sym);
+#endif
     // コマンドライン引数の確認
     if (argc == 1){
 
@@ -45,6 +63,7 @@ int main(int argc, char const *argv[])
         printf("\n \x1b[31m print byte code after memory read ******************\x1b[0m\n\n");
         printByteCode();
         printf("\n \x1b[31m main_execute code ******************\x1b[0m\n\n");
+    //how many event function 
         main_execute();
         printf("\n \x1b[31m**************************\x1b[0m\n"); 
         gettimeofday(&endTime, NULL);       // 開始時刻取得

@@ -6,6 +6,11 @@
     #define DEBUG 1
 #endif 
 
+#ifndef MAXTHREADSIZE
+    #define MAXTHREADSIZE 10
+#endif
+
+
 #ifndef OBJECT_C
 #define OBJECT_C
 #include <stdlib.h>
@@ -103,12 +108,12 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
 typedef union VarData VarData;
 typedef VarData *VD;
 
+// should be mark
 oop nil   = 0;
 oop sys_false = 0;
 oop sys_true  = 0;
 oop none  = 0;
 oop entry_sym = 0;
-
 oop threads = 0;
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
@@ -272,6 +277,7 @@ oop _check(oop node, enum Type type, char *file, int line)
 
 
 void markObject(oop obj){
+    DEBUG_LOG("markObject()");
     switch(getType(obj)){
         case Queue:{
             printf("mark Queue\n");
@@ -299,7 +305,10 @@ void markObject(oop obj){
 
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
-    gc_mark(threads);			// mark the table itself
+#if DEBUG
+    DEBUG_LOG("collectObject()");
+#endif
+    gc_mark(threads);
     return;
 }
 
@@ -420,14 +429,17 @@ oop newEND(void){
 }
 
 
-
 oop newArray(int capacity){
+#if MSGC
+    GC_PUSH(oop, obj, newObject(Array));
+    obj->Array.size = 0;
+    obj->Array.capacity = capacity;
+    obj->Array.elements = gc_alloc(sizeof(oop) * capacity);
+    GC_POP(obj);
+#else
     oop obj = newObject(Array);
     obj->Array.size = 0;
     obj->Array.capacity = capacity;
-#if MSGC
-    obj->Array.elements = gc_alloc(sizeof(oop) * capacity);
-#else
     obj->Array.elements = calloc(capacity, sizeof(oop));
 #endif
     return obj;
@@ -444,6 +456,7 @@ oop _Array_put(char* file, int line,oop obj,unsigned int index,oop element)
 {
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
     if(index >obj->Array.capacity){
+        DEBUG_LOG("Array Put Over current memory capacity %d", obj->Array.capacity);
         obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
         obj->Array.capacity=index + 1;
     }
@@ -574,10 +587,12 @@ oop _Array_args_copy(char* file,int line,oop from,oop to)
 #endif
 
 oop newQueue(int capacity){
-    oop node = newObject(Queue);
 #if MSGC
+    GC_PUSH(oop, node, newObject(Queue));
     node->Queue.elements = gc_alloc(sizeof(oop)*capacity);
+    GC_POP(node);
 #else
+    oop node = newObject(Queue);
     node->Queue.elements = calloc(capacity,sizeof(oop));
 #endif
     node->Queue.head = 0;
@@ -587,7 +602,11 @@ oop newQueue(int capacity){
 
 oop _newThread(size_t vd_size,int stk_size)
 {
+#if MSGC
+    GC_PUSH(oop,node, newObject(Thread));
+#else
     oop node = newObject(Thread);
+#endif
     node->Thread.queue      = newQueue(5);
     node->Thread.flag       =  0;
     node->Thread.pc         =  0;
@@ -596,6 +615,7 @@ oop _newThread(size_t vd_size,int stk_size)
     node->Thread.stack      = newArray(stk_size);
 #if MSGC
     VD vd = gc_alloc(vd_size);
+    GC_POP(node);
 #else
     VD       vd = calloc(1,vd_size);
 #endif

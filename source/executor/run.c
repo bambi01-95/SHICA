@@ -103,9 +103,14 @@ line();printf("%s\n",INSTNAME[inst]);
                 getInt(pc);
                 int num_thread = int_value;
                 if(num_thread == 0)continue;
+#if DEBUG //CHECK ME: 本番環境でここどうするのか？
+                DEBUG_ERROR_COND(MAXTHREADSIZE >= num_thread,"Number of Event definitin is over setting value");
+                DEBUG_ERROR_COND(Array==getType(threads),"TYPE is %d",getType(threads));
+#endif       
+                printf("%s line %d\n",__FILE__,__LINE__);
+                exit(1);
                 int thread_pc = pc;
                 
-
             //init setting thread スレッドの初期設定
                 printf("\n              setting\n\n");
                 for(int thread_index=0; thread_index<num_thread;/*case CALL_E, thread_index++*/){
@@ -127,11 +132,16 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                             getInt(pc);int eve_num = int_value;
                             getInt(pc);int pin_num = int_value;
                             assert(Array == getType(stack));
-                            Array_push(threads,Event_Func(lib_num,eve_num,stack,120/num_thread));              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
+                            threads = Array_push(threads,Event_Func(lib_num,eve_num,stack,120/num_thread));              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
+                            
                             int inst_loc = thread_pc + _Integer_value(Array_pop(stack));
+                            DEBUG_LOG("this isi hrere\n%d",inst_loc);
                             threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
+                            DEBUG_LOG("this isi hrere\n%d",inst_loc);
                             threads->Array.elements[thread_index]->Thread.base = inst_loc;
+                            DEBUG_LOG("this isi hrere\n%d",inst_loc);
                             thread_index++;
+                            
                             continue;
                         }
                         default:{

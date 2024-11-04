@@ -24,7 +24,7 @@
 typedef struct gc_header gc_header;
 
 /*
-int => 4
+int => 4fdasdf fdf
 unsinged name:x => xbit
 */
 struct gc_header
@@ -90,7 +90,6 @@ void gc_popRoot(void *varp, char *name)	// pop a variable, checking it was the t
 
 #define GC_POP(VAR)				\
     gc_popRoot((void *)&VAR, #VAR)
-
 #endif
 
 void gc_popRoots(int n)	// pop several variables at once
@@ -153,6 +152,21 @@ void gc_mark(void *ptr)
     if (here->atom) return;			// stop if atomic (no pointers)
     gc_markFunction(ptr);			// recursively mark object contents
 }
+
+#if UNMARK //unmark function that is usefull
+void gc_unmark(void *ptr)
+{
+    if (!GC_PTR(ptr)) return;			// NULL or outside memory
+    gc_header *here = (gc_header *)ptr - 1;	// object to header
+    assert(gc_memory <= here);
+    assert(here < gc_memend);
+    assert(here->busy);
+    if (here->mark) return;			// stop if already marked
+    here->mark = 0;
+    if (here->atom) return;			// stop if atomic (no pointers)
+    gc_unmarkFunction(ptr);			// recursively mark object contents   
+}
+#endif
 
 int gc_collect(void)	// collect garbage
 {
@@ -248,7 +262,9 @@ void *gc_alloc(int lbs)	// allocate at least lbs bytes of memory
             assert(here < gc_memend);
         } while (here != start);		// until we come back to where we started and
         if (retries) break;			// stop if we are on the second attempt
+        gc_debug printf("BEFORE COLLECT TOTAL %lu\n",gc_total);
         gc_collect();				// otherwise collect garbage and try again
+        gc_debug printf("AFTERE COLLECT TOTAL %lu\n",gc_total);
     }
     fatal("out of memory");	// could not allocate after collecting -- memory is full
     return 0;
