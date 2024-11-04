@@ -3,6 +3,8 @@
         "lex": "tex",
         "*.txt": "plaintext",
         "*.leg": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "library.h": "c",
+        "stdlib.h": "c"
     }
 }

@@ -6,7 +6,7 @@ state s1{
     timer_sec(int c){
         print(int,11)
     }
-    timer_sec(int c){
-        print(int,12)
+    keyget(int c){
+        print(cha,itoc(c))
     }
 }

@@ -109,6 +109,7 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
             return t;
         }
         case TIMERSEC_E:{
+            DEBUG_LOG("EVENT_STDLIB: TIME");
             oop t = newThread(VarTI,stk_size);
             t->Thread.vd->VarTI.v_t1 = time(NULL);
             t->Thread.vd->VarTI.v_i1  = 0;
