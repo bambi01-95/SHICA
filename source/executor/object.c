@@ -213,6 +213,7 @@ struct Array     { enum Type type;  oop *elements; int size; int capacity;};
 struct END       { enum Type type; };
 
 struct Thread{ 
+    enum Type type;
     oop stack; 
     oop queue;
     // oop queue[5];  
@@ -303,19 +304,24 @@ void markObject(oop obj){
     }
 }
 
+void printlnObject(oop node, int indent);
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
 #if DEBUG
-    DEBUG_LOG("collectObject()");
+    DEBUG_LOG("\ncollectObject()");
+    // for(int i = 0;i<threads->Array.size;i++){
+    //     printlnObject(threads->Array.elements[i],0);
+    // }
 #endif
     gc_mark(threads);
+    DEBUG_LOG("\nend of collectObject()\n");
     return;
 }
 
 oop _newObject(size_t size, enum Type type)
 {
 #if MSGC
-    printf("gc total %5lu\n",gc_total);
+    // printf("gc total %5lu\n",gc_total);
     oop node = gc_alloc(size);
     node->type = type;
     return node;
@@ -503,7 +509,11 @@ oop _Array_push(char* file, int line,oop obj,oop element){
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
     if(obj->Array.size >= obj->Array.capacity){
         DEBUG_ERROR_REF("Reallocate array cap %d", obj->Array.capacity);
+#if MSGC
+		obj->Array.elements = gc_realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+#else
 		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+#endif
 		obj->Array.capacity += 1;
     }
     obj->Array.elements[obj->Array.size++] = element;

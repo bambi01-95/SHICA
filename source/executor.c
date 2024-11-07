@@ -22,7 +22,7 @@ int main(int argc, char const *argv[])
 {
 
 #if MSGC
-    int memSize = 1024 * 8;//1024 * 2; // default memory size
+    int memSize = 1024 * 1024;//1024 * 2; // default memory size
     gc_init(memSize);
     gc_collectFunction = (gc_collectFunction_t)collectObjects;
     gc_markFunction    = (gc_markFunction_t)markObject;
@@ -82,9 +82,6 @@ int main(int argc, char const *argv[])
         printf("%f\n",cpusec);
         double percent = 100.0*cpusec/realsec;                          // 使用率を100分率で計算
         printf("CPU使用率%f %%\n", percent);                            // 表示
-        printf("\n\n  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *\n");
-        printf(" *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *\n");
-        printf("*  *  *  *  *  *  *  *  *  *  *  *  *  *  *  * \n\n");
     }else{
 
         fprintf(stderr, "使用方法: %s <ファイル名>\n", argv[0]);

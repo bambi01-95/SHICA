@@ -33,7 +33,6 @@ oop eve_timer(oop t){
     // printf("vd i2 %d\n",t->Thread.vd->VarII.v_i2);
     // printf("vd diff = %ld\n",current_time - t->Thread.vd->VarTI.v_t1);
     if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
-        DEBUG_LOG("trigger eve_timer");
         t->Thread.vd->VarTI.v_t1 = current_time;
         t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
         oop data = newArray(2);
