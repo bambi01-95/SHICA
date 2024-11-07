@@ -107,8 +107,8 @@ line();printf("%s\n",INSTNAME[inst]);
                 DEBUG_ERROR_COND(MAXTHREADSIZE >= num_thread,"Number of Event definitin is over setting value");
                 DEBUG_ERROR_COND(Array==getType(threads),"TYPE is %d",getType(threads));
 #endif       
-                printf("%s line %d\n",__FILE__,__LINE__);
-                exit(1);
+                // printf("%s line %d\n",__FILE__,__LINE__);
+                // exit(1);
                 int thread_pc = pc;
                 
             //init setting thread スレッドの初期設定
@@ -132,14 +132,12 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                             getInt(pc);int eve_num = int_value;
                             getInt(pc);int pin_num = int_value;
                             assert(Array == getType(stack));
-                            threads = Array_push(threads,Event_Func(lib_num,eve_num,stack,120/num_thread));              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
+                            oop thread = Event_Func(lib_num,eve_num,stack,120/num_thread);
+                            Array_push(threads,thread);              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
                             
                             int inst_loc = thread_pc + _Integer_value(Array_pop(stack));
-                            DEBUG_LOG("this isi hrere\n%d",inst_loc);
                             threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
-                            DEBUG_LOG("this isi hrere\n%d",inst_loc);
                             threads->Array.elements[thread_index]->Thread.base = inst_loc;
-                            DEBUG_LOG("this isi hrere\n%d",inst_loc);
                             thread_index++;
                             
                             continue;

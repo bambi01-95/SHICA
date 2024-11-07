@@ -3,19 +3,22 @@
 
 #include "./object.c"
 #include "../common/inst.c"
+void m(int i){
+    while(i--)putchar(' ');
+}
+
 void printlnObject(oop node, int indent)
 {
-    printf("%*s", indent*2, "");
     switch (getType(node)) {
-	case Undefined:	printf("nil\n");				break;
-    case String :   printf("%s\n", get(node, String, value));   break;
+	case Undefined:	m(indent);printf("nil\n");				break;
+    case String :   m(indent);printf("%s\n", get(node, String, value));   break;
     case END:{
         printf("END\n");
         break;
     }
     case Array:{
         int size = node->Array.size;
-        printf("Array\n");
+        m(indent);printf("Array %d\n",size);
         for(int i = 0;i<size;i++){
             printlnObject(node->Array.elements[i],indent+1);
         }
@@ -24,17 +27,23 @@ void printlnObject(oop node, int indent)
     case Queue:{
         int size = node->Queue.size;
         int head = node->Queue.head;
-        printf("QUEUE\n");
+        m(indent);printf("QUEUE %d\n",size);
         for(int i=0;i<size;i++){
             printlnObject(node->Queue.elements[(head + i) % QUEUE_SIZE],indent+1);
         }
         break;
     }
-    case _Integer:printf("%d\n",_Integer_value(node));break;
-    case _Long:   printf("%lld\n",get(node,_Long,value));break;
-    case _Float:  printf("%f\n",_Float_value(node));break;
-    case _Double: printf("%lf\n",get(node,_Double,value));break;
-    case _BasePoint: printf("%d\n",node->_BasePoint.adress);break;
+    case Thread:{
+        m(indent);printf("Thread\n");
+        m(indent);printf("stack:\n");printlnObject(node->Thread.stack,indent+2);
+        m(indent);printf("queue:\n");printlnObject(node->Thread.queue,indent+2);
+        break;
+    }
+    case _Integer:m(indent);printf("%d\n",_Integer_value(node));break;
+    case _Long:   m(indent);printf("%lld\n",get(node,_Long,value));break;
+    case _Float:  m(indent);printf("%f\n",_Float_value(node));break;
+    case _Double: m(indent);printf("%lf\n",get(node,_Double,value));break;
+    case _BasePoint: m(indent);printf("%d\n",node->_BasePoint.adress);break;
 	default:	printf("%s\n",TYPENAME[node->type]);assert(!"this cannot happen print");			break;
     }
 }
