@@ -2,6 +2,7 @@
     #define TEST 0
 #endif
 
+// don't change DUBUG VAR, it is not support UNdebug now
 #ifndef DEBUG
     #define DEBUG 1
 #endif 
@@ -32,6 +33,12 @@
 #define MSGC 1
 #endif
 
+//REMOVEME/ 4lines
+#ifndef ISAFTER
+#define ISAFTER
+int isAfter = 0;
+#endif
+
 union Object;
 typedef union Object Object;
 typedef Object *oop;
@@ -50,18 +57,28 @@ void debug_log(char *file,int line,const char *format, ...) {
     va_list args;
     va_start(args, format);
     printf("[LOG] %s line %d:\t",file,line);
-    vprintf(format, args);  // 可変引数を処理
+    vprintf(format, args);
     printf("\n");
     va_end(args);
 }
 #define DEBUG_LOG(...) debug_log(__FILE__, __LINE__, __VA_ARGS__)
 
+void debug_log_ref(char *file1,int line1,char* file2,int line2,const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    printf("[LOG] %s line %d:\n",file1,line1);
+    printf("        %s line %d:\t",file2,line2);
+    vprintf(format, args);
+    printf("\n");
+    va_end(args);
+}
+#define DEBUG_LOG_REF(...) debug_log_ref(__FILE__, __LINE__,file,line, __VA_ARGS__)
 
 void debug_error_1ref(char* file,int line,const char *format, ...) {
     va_list args;
     va_start(args, format);
     fprintf(stderr, "[ERROR] %s line %d\n",file,line);
-    vfprintf(stderr, format, args);  // エラーメッセージは stderr に出力
+    vfprintf(stderr, format, args); 
     fprintf(stderr, "\n");
     va_end(args);
 }
@@ -79,7 +96,7 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
     va_start(args, format);
     fprintf(stderr, "[ERROR] %s line %d\n",file1,line1);
         fprintf(stderr, "        %s line %d:\t",file2,line2);
-    vfprintf(stderr, format, args);  // エラーメッセージは stderr に出力
+    vfprintf(stderr, format, args); 
     fprintf(stderr, "\n");
     va_end(args);
 }
@@ -90,17 +107,6 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
     }\
 })
 
-// //FIXME: use above
-// void fatal(char *msg, ...)
-// {
-//     va_list ap;
-//     va_start(ap, msg);
-//     fprintf(stderr, "\n");
-//     vfprintf(stderr, msg, ap);
-//     fprintf(stderr, "\n");
-//     va_end(ap);
-//     exit(1);
-// }
 
 #define out(A) printf("line %4d: %s\n",__LINE__,A)
 #define line() printf("         line %4d: ",__LINE__)
@@ -276,9 +282,8 @@ oop _check(oop node, enum Type type, char *file, int line)
     #define get(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
 #endif
 
-
+void printlnObject(oop node, int indent);
 void markObject(oop obj){
-    DEBUG_LOG("markObject()");
     switch(getType(obj)){
         case Queue:{
             printf("mark Queue\n");
@@ -301,20 +306,22 @@ void markObject(oop obj){
             gc_mark(obj->Thread.vd);
             break;
         }
+        default:{
+            DEBUG_ERROR("this is not happen type %d\n",getType(obj));
+        }
     }
 }
 
-void printlnObject(oop node, int indent);
+
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
 #if DEBUG
     DEBUG_LOG("\ncollectObject()");
-    // for(int i = 0;i<threads->Array.size;i++){
-    //     printlnObject(threads->Array.elements[i],0);
-    // }
 #endif
     gc_mark(threads);
+#if DEBUG
     DEBUG_LOG("\nend of collectObject()\n");
+#endif
     return;
 }
 
@@ -336,13 +343,15 @@ oop _newObject(size_t size, enum Type type)
 #define newAtomicObject(TYPE) gc_beAtomic(newObject(TYPE))
 
 oop new_Basepoint(int adress){
+#if MSGC
     oop node = newAtomicObject(_BasePoint);
+#else
+    oop node = newObject(_BasePoint);
+#endif
     node->_BasePoint.adress = adress;
     return node;
 }
 
-//このアドレスは、stack内のアドレスに書き込まれるため、
-//制作時には無視して良い、が、mark時に考慮する必要がある。
 oop _newChar(char value)
 {
     return (oop)(((intptr_t)value << TAGBITS) | TAGCHA);
@@ -382,7 +391,11 @@ int _Integer_value(oop obj)
 #endif
 
 oop _newLong(long long int value){
+#if MSGC
     oop node = newAtomicObject(_Long);
+#else
+    oop node = newObject(_Long);
+#endif
     node->_Long.value = value;
     return node;
 }
@@ -410,7 +423,11 @@ float _Float_value(oop obj)
 #endif
 
 oop _newDouble(double value){
+#if MSGC
     oop node = newAtomicObject(_Double);
+#else
+    oop node = newObject(_Double);
+#endif
     node->_Double.value = value;
     return node;
 }
@@ -424,13 +441,21 @@ oop _newDouble(double value){
 // }
 
 oop newString(char *value){
+#if MSGC
     oop node = newAtomicObject(String);
+#else
+    oop node = newObject(String);
+#endif
     node->String.value = strdup(value);
     return node;
 }
 
 oop newEND(void){
+#if MSGC
     oop node = newAtomicObject(END);
+#else
+    oop node = newObject(END);
+#endif
     return node;
 }
 
@@ -463,7 +488,11 @@ oop _Array_put(char* file, int line,oop obj,unsigned int index,oop element)
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
     if(index >obj->Array.capacity){
         DEBUG_LOG("Array Put Over current memory capacity %d", obj->Array.capacity);
-        obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+#if MSGC
+    obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
+#else
+    obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+#endif
         obj->Array.capacity=index + 1;
     }
     while(obj->Array.size<(index+1)){
@@ -508,7 +537,8 @@ oop Array_get(oop obj, unsigned int index){
 oop _Array_push(char* file, int line,oop obj,oop element){
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
     if(obj->Array.size >= obj->Array.capacity){
-        DEBUG_ERROR_REF("Reallocate array cap %d", obj->Array.capacity);
+
+        // DEBUG_LOG_REF("Reallocate array cap %d", obj->Array.capacity);
 #if MSGC
 		obj->Array.elements = gc_realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
 #else
@@ -535,7 +565,7 @@ oop Array_push(oop obj,oop element){
 oop _Array_pop(char* file,int line,oop obj){
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
 	if(obj->Array.size <= 0){
-		fprintf(stderr,"Array is empty [array_pop]\n");
+		DEBUG_ERROR("Array is empty [array_pop]\n");
 		exit(1);
 	}
     oop element = obj->Array.elements[--obj->Array.size];
@@ -624,7 +654,7 @@ oop _newThread(size_t vd_size,int stk_size)
     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
     node->Thread.stack      = newArray(stk_size);
 #if MSGC
-    VD vd = gc_alloc(vd_size);
+    VD vd = gc_beAtomic(gc_alloc(vd_size));
     GC_POP(node);
 #else
     VD       vd = calloc(1,vd_size);

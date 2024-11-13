@@ -9,6 +9,10 @@ void m(int i){
 
 void printlnObject(oop node, int indent)
 {
+    if(indent==-1){//removeme
+        printlnObject(threads,0);
+        return;
+    }
     switch (getType(node)) {
 	case Undefined:	m(indent);printf("nil\n");				break;
     case String :   m(indent);printf("%s\n", get(node, String, value));   break;

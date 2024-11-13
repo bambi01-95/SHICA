@@ -8,6 +8,12 @@
 #ifndef __gc_c
 #define __gc_c
 
+//REMOVEME/ 4lines
+#ifndef ISAFTER
+#define ISAFTER
+int isAfter = 0;
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +67,7 @@ int   nroots = 0;	// number of variables addresses in the roots stack
 void gc_pushRoot(void *varp)	// push a new variable address onto the root stack
 {
     if (nroots == MAXROOTS) fatal("gc root table full");
+    //REMOVE ME:
     roots[nroots++] = (void **)varp;
 }
 
@@ -116,6 +123,10 @@ typedef void (*gc_markFunction_t)(void *);
 // the application should provide a mark function that accurately marks only valid pointers
 
 gc_markFunction_t gc_markFunction = gc_defaultMarkFunction;
+
+//REMOVEME:
+typedef void (*gc_printFunction_t)(void*,int);
+gc_printFunction_t gc_printFunction = 0;
 
 // the collect function is run once at the start of GC, before the roots are marked,
 // to mark any pointers that are stored outside of the normal root set or in (e.g.)
@@ -177,8 +188,12 @@ int gc_collect(void)	// collect garbage
     gc_debug printf("COLLECT\n");
     int nfree = 0, nbusy = 0;			// count memory in use and free
     gc_collectFunction();			// run pre-collection function to mark static roots
-    for (int i = 0;  i < nroots;  ++i)		// mark the pointers stored in each root variable
-	gc_mark(*roots[i]);
+    printf("gc stack mark\n");//REMOVEME
+    for (int i = 0;  i < nroots;  ++i){		// mark the pointers stored in each root variable
+        printf("mark %d \n\t", i);//REMOVE ME: 2lines
+        gc_printFunction(*roots[i],0);
+        gc_mark(*roots[i]);
+    }
 
     // phase two: sweep the memory looking for objects that are busy but do not have their
     // mark bit set.
@@ -219,9 +234,16 @@ int gc_collect(void)	// collect garbage
     }
     gc_memnext = gc_memory;			// start allocating at the start of memory
 # ifndef NDEBUG
-    printf("\r\t\t\t\t\t\t[GC %d used %d free]\r", nbusy, nfree);
+    printf("\r[GC %d used %d free]\r", nbusy, nfree);
     fflush(stdout);
 # endif
+    printf("\n\n[GC %d used %d free]\n\n", nbusy, nfree);//REMOVEME
+    for (int i = 0;  i < nroots;  ++i){		// mark the pointers stored in each root variable
+        printf("mark %d \n\t", i);//REMOVE ME: 2lines
+        gc_printFunction(*roots[i],0);
+    }
+    gc_printFunction(0,-1);
+    isAfter = 1;//REMOVE ME
     return nbusy;
 }
 
@@ -262,9 +284,9 @@ void *gc_alloc(int lbs)	// allocate at least lbs bytes of memory
             assert(here < gc_memend);
         } while (here != start);		// until we come back to where we started and
         if (retries) break;			// stop if we are on the second attempt
-        gc_debug printf("BEFORE COLLECT TOTAL %lu\n",gc_total);
+        printf("BEFORE COLLECT TOTAL\n");
         gc_collect();				// otherwise collect garbage and try again
-        gc_debug printf("AFTERE COLLECT TOTAL %lu\n",gc_total);
+        printf("AFTERE COLLECT TOTAL\n");
     }
     fatal("out of memory");	// could not allocate after collecting -- memory is full
     return 0;
