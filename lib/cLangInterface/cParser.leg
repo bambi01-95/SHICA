@@ -1,5 +1,8 @@
 %{
 ;
+
+#define FILEOUTPUT 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -47,12 +50,18 @@
     })
 #endif
 
+FILE* _file_ = NULL;
+
 void _stdout(const char *format, ...){
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
+#if FILEOUTPUT
+    vfprintf(_file_, format, args);
+#else
+    vfprintf(stdout, format, args);
+#endif
     va_end(args);
-}
+}  
 #define write(...) _stdout(__VA_ARGS__)
 
 union Token;
@@ -100,7 +109,7 @@ char* CtypeToShicaStr(type_c t){
 
 union Token{
     type_t typeT;
-    struct Contents{type_t typeT; unsigned int size,capacity; tkn *expressions;} Contents;
+    struct Contents{type_t typeT; tkn name; unsigned int size,capacity; tkn *expressions;} Contents;
     struct Include {type_t typeT; tkn header; unsigned custom:1; } Include;
     struct Function{type_t typeT; tkn retType,name,params,body; } Function;
     struct Ctype   {type_t typeT; type_c typeC; } Ctype;
@@ -139,10 +148,11 @@ tkn newCtype(type_c type){
     return token;
 }
 
-tkn newContents(){
+tkn newContents(tkn name){
     tkn token = newToken(Contents);
     token->Contents.expressions = 0;
     token->Contents.size = 0;
+    token->Contents.name = name;
     return token;
 }
 tkn appendContents(tkn b,tkn s){
@@ -254,18 +264,15 @@ int i = 0;
 // https://programming-place.net/ppp/contents/c/appendix/operation.html
 %}
 
-start	= bln e:exp {result = e}
-        | bln !.               { result = nil; }
-        | <(!eol &. .)*>       { printf("syntax error [%s]\n",yytext);exit(1); }  
+start	= bln d:define {result=d}
+        | !.                   { result = nil }
+        | <(!eol &. .)*>       { printf("syntax error [%s]\n",yytext);exit(0); }  
 
-define  = bln PCENT symbol LBRACE 
-          bln e:exps           
+define  = PCENT s:symbol LBRACE 
+          bln { s = newContents(s) }  (bln e:exp {appendContents(s,e)})+ {$$ = s}
           bln RBRACE PCENT     { result = e }
-        | !.                   { exit(0); }
-        | <(!eol &. .)*>       { printf("syntax error [%s]\n",yytext);exit(0); }   
 
-exps = c:mkcont (bln e:exp {appendContents(c,e)})+ {$$ = c}
-mkcont = { $$ = newContents() }
+
 
 exp = function
      | INCL LSQ    s:symbol HEAD RSQ    { $$ = newInclude(s,0)}
@@ -364,6 +371,7 @@ char* to_cap(const char *text) {
     return bold_text;
 }
 
+char* moduleName = 0;
 
 tkn evaluate(tkn token){
     switch (getType(token))
@@ -371,6 +379,9 @@ tkn evaluate(tkn token){
         case Contents:{
             int size = get(token,Contents,size);
             tkn* exps = get(token,Contents,expressions);
+            tkn name = get(token,Contents,name);
+            moduleName = get(name,Symbol,name);
+            write("/* %s module */\n\n",moduleName);
             for(int i = 0; i<size; i++){
                 evaluate(exps[i]);
             }
@@ -442,6 +453,11 @@ tkn evaluate(tkn token){
 
 int main(int argc, char **argv)
 {
+    _file_ = fopen("output.c", "w");
+    if (!_file_) {
+        perror("Failed to open file");
+        return 1;
+    }
     write("\n\n//------< START SHICA WRAP EXE> -------------------\n\n");//REMOVEME
     
     //parse, copy and pasete code
@@ -463,14 +479,14 @@ int main(int argc, char **argv)
             funcList[i] = cap;
             write("     __%s__P,\n",cap);
         }
-        write("}modName;\n");
+        write("}%s;\n",to_cap(moduleName));
 
         //make SHICA interface function
         for(int i=0; i<nfunctions; i++){
             tkn retType = get(functions[i],Function,retType);
             tkn name = get(functions[i],Function,name);
             tkn params = get(functions[i],Function,params);
-            write("\n\nvoid mod_%s(oop process, oop GM){\n",get(name,Symbol,name));
+            write("\n\nvoid %s_%s(oop process, oop GM){\n",moduleName,get(name,Symbol,name));
             tkn dup = params;
             while(dup!=nil){
                 char *typeC = CtypeToStr(get(dup->Params.paramsType,Ctype,typeC));
@@ -490,12 +506,12 @@ int main(int argc, char **argv)
             write("));\n     return;\n}");
         }
         //make module function
-        write("\n\nvoid user_lib_moduleName(oop process,oop GM){\n");
+        write("\n\nvoid user_lib_%s(oop process,oop GM){\n",moduleName);
         write("     getInt(mpc);\n     int func_num = int value;\n");
         write("     switch(func_num){\n");
         for(int i=0; i<nfunctions; i++){
         char* name = get(get(functions[i],Function,name),Symbol,name);
-        write("         case __%s__P: mod_%s(process, GM); break;\n",funcList[i],name);
+        write("         case __%s__P: %s_%s(process, GM); break;\n",funcList[i],moduleName,name);
         }
         write("         defualt:DEBUG_ERROR(\"this is not happen\");\n");
         write("     }\n");
@@ -512,8 +528,8 @@ int main(int argc, char **argv)
         funcList[i] = cap;
         write("     __%s__P,\n",cap);
     }
-    write("}modName;\n");
-    write("\nvoid setting_userlib_modName(){\n");
+    write("}%s;\n",to_cap(moduleName));
+    write("\nvoid setting_userlib_%s(){\n",moduleName);
     //PRIM FUNCTION
     for(int i=0; i<nfunctions; i++){
         tkn retType = get(functions[i],Function,retType);

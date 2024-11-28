@@ -1,13 +1,14 @@
+% math {
 
 #include <stdio.h>
-#include "myFunc.h"
+#include "myMath.h"
 
 int comp(int a,int b){
     if(a>b){
         return a;
     }
     else{
-        return b;
+        return b; 
     }
 }
 
@@ -24,3 +25,5 @@ int pow(int a){
 }
 
 float pi();
+float sqrt(float a,float b);
+}%
