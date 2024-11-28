@@ -21,14 +21,17 @@ FILE* SOURCE_FILE;
 int main(int argc, char const *argv[])
 {
 #if MSGC
-    int memSize = 1024  * 32 * 30;//1024 * 2; // default memory size
+    int memSize = 1024  * 32 * 10;//1024 * 2; // default memory size
     gc_init(memSize);
     gc_collectFunction = (gc_collectFunction_t)collectObjects;
     gc_markFunction    = (gc_markFunction_t)markObject;
     gc_isMarkFuction   = (gc_markFunction_t)isMarkObject;
+
+    nil       = newAtomicObject(Undefined);
+#else
+    nil       = newObject(Undefined);
 #endif
     // initialization 
-    nil       = newAtomicObject(Undefined);
     sys_false = _newInteger(0);
     sys_true  = _newInteger(1);
     none      = _newInteger(2);

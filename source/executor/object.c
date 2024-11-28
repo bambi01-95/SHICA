@@ -7,10 +7,13 @@
     #define DEBUG 1
 #endif 
 
+#ifndef MSGC
+#define MSGC 1
+#endif
+
 #ifndef MAXTHREADSIZE
     #define MAXTHREADSIZE 10
 #endif
-
 
 #ifndef OBJECT_C
 #define OBJECT_C
@@ -29,16 +32,9 @@
 #include <sys/select.h>
 #include <termios.h>
 #include "../../lib/mingc/msgc.c"
-#ifndef MSGC
-#define MSGC 1
-#endif
 
-union Object;
-typedef union Object Object;
-typedef Object *oop;
-typedef oop (*Func)(oop);
 
-/* for what wwww */
+/* REMOVE ME: for what wwww */
 #define user_error(COND,MSG,LINE) ({ \
     if(COND){ \
         if(TEST==1)printf("[line %d]",__LINE__);  \
@@ -47,6 +43,7 @@ typedef oop (*Func)(oop);
     } \
 })
 
+// DEBUG LOG Function
 void debug_log(char *file,int line,const char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -83,13 +80,11 @@ void debug_error_1ref(char* file,int line,const char *format, ...) {
     }\
 })
 
-//file1 & line1: that call function that include debug_error()
-//file2 & line2: that call debug_error()
 void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *format, ...) {
     va_list args;
     va_start(args, format);
-    fprintf(stderr, "[ERROR] %s line %d\n",file1,line1);
-        fprintf(stderr, "        %s line %d:\t",file2,line2);
+    fprintf(stderr, "[ERROR] %s line %d\n",file1,line1);//that call function that include debug_error()
+        fprintf(stderr, "        %s line %d:\t",file2,line2);//that call debug_error()
     vfprintf(stderr, format, args); 
     fprintf(stderr, "\n");
     va_end(args);
@@ -100,6 +95,11 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
         debug_error_2ref(__FILE__,__LINE__,file,line,__VA_ARGS__);\
     }\
 })
+// DEBUG LOG Function
+union Object;
+typedef union Object Object;
+typedef Object *oop;
+typedef oop (*Func)(oop);
 
 typedef union VarData VarData;
 typedef VarData *VD;
@@ -263,7 +263,8 @@ oop _check(oop node, enum Type type, char *file, int line)
     #define get(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
 #endif
 
-void printlnObject(oop node, int indent);
+// GC_MARK
+#if MSGC
 void markObject(oop obj){
     switch(getType(obj)){
         case Queue:{
@@ -327,6 +328,8 @@ void collectObjects(void)	// pre-collection funciton to mark all the symbols
     gc_mark(threads);
     return;
 }
+#endif
+
 
 oop _newObject(size_t size, enum Type type)
 {
@@ -354,10 +357,13 @@ oop new_Basepoint(int adress){
     return node;
 }
 
+
+
 oop _newChar(char value)
 {
     return (oop)(((intptr_t)value << TAGBITS) | TAGCHA);
 }
+
 #if DEBUG
 char Char_value(char* file, int line, oop obj){
     DEBUG_ERROR_COND_REF(_Char == getType(obj),"CHAR but %d",getType(obj));
@@ -373,6 +379,8 @@ char _Char_value(oop obj){
 // if error apper use this instead of above
 #define _Char_value(A) (char)((intptr_t)A >> TAGBITS)
 */
+
+
 
 oop _newInteger(int value)
 {
@@ -393,6 +401,9 @@ int _Integer_value(oop obj)
 }
 #endif
 
+
+
+
 oop _newLong(long long int value){
 #if MSGC
     oop node = newAtomicObject(_Long);
@@ -402,6 +413,8 @@ oop _newLong(long long int value){
     node->_Long.value = value;
     return node;
 }
+
+
 
 oop _newFloat(float value)
 {
@@ -425,6 +438,8 @@ float _Float_value(oop obj)
 }
 #endif
 
+
+
 oop _newDouble(double value){
 #if MSGC
     oop node = newAtomicObject(_Double);
@@ -446,12 +461,12 @@ oop newString(char *value){
     oop node = newObject(String);
     node->String.value = strdup(value);
 #endif
-    
     return node;
 }
 
-//ARRAY
 
+
+//ARRAY
 oop newArray(int capacity){
 #if MSGC
     GC_PUSH(oop, obj, newObject(Array));
@@ -495,8 +510,14 @@ oop newArray(int capacity){
 #else 
     oop Array_put(oop obj,unsigned int index,oop element)
     {
-        if(index >obj->Array.capacity){
+    #if MSGC    //protect obj and element
+            gc_pushRoot((void*)&obj);
+            gc_pushRoot((void*)&element);
+            obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
+            gc_popRoots(2);
+    #else
             obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+    #endif
             obj->Array.capacity=index + 1;
         }
         while(obj->Array.size<(index+1)){
@@ -507,54 +528,60 @@ oop newArray(int capacity){
 #endif
 
 
-
 //ARRAY GET
 #if DEBUG
-oop _Array_get(char *file, int line,oop obj, unsigned int index){
-    DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
-    if(index < obj->Array.size)
-		return obj->Array.elements[index];
-	return nil;
-};
-#define Array_get(OBJ,INDEX) _Array_get(__FILE__,__LINE__,OBJ,INDEX)
+    oop _Array_get(char *file, int line,oop obj, unsigned int index){
+        DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
+        if(index < obj->Array.size)
+            return obj->Array.elements[index];
+        return nil;
+    };
+    #define Array_get(OBJ,INDEX) _Array_get(__FILE__,__LINE__,OBJ,INDEX)
 #else
-oop Array_get(oop obj, unsigned int index){
-    assert(getType(obj)==Array);
-    if(index < obj->Array.size)
-		return obj->Array.elements[index];
-	return nil;
-};
+    oop Array_get(oop obj, unsigned int index){
+        assert(getType(obj)==Array);
+        if(index < obj->Array.size)
+            return obj->Array.elements[index];
+        return nil;
+    };
 #endif
 
 
 //ARRAY PUSH
 #if DEBUG
-oop _Array_push(char* file, int line,oop obj,oop element){
-    DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
-    if(obj->Array.size >= obj->Array.capacity){
-#if MSGC    //protect obj and element
-        gc_pushRoot((void*)&obj);
-        gc_pushRoot((void*)&element);
-		obj->Array.elements = gc_realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
-        gc_popRoots(2);
-#else
-		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
-#endif
-		obj->Array.capacity += 1;
+    oop _Array_push(char* file, int line,oop obj,oop element){
+        DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
+        if(obj->Array.size >= obj->Array.capacity){
+    #if MSGC    //protect obj and element
+            gc_pushRoot((void*)&obj);
+            gc_pushRoot((void*)&element);
+            obj->Array.elements = gc_realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+            gc_popRoots(2);
+    #else
+            obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+    #endif
+            obj->Array.capacity += 1;
+        }
+        obj->Array.elements[obj->Array.size++] = element;
+        return obj;
     }
-    obj->Array.elements[obj->Array.size++] = element;
-    return obj;
-}
-#define Array_push(OBJ,ELEMENT) _Array_push(__FILE__,__LINE__,OBJ,ELEMENT)
+    #define Array_push(OBJ,ELEMENT) _Array_push(__FILE__,__LINE__,OBJ,ELEMENT)
 #else
-oop Array_push(oop obj,oop element){
-    if(obj->Array.size >= obj->Array.capacity){
-		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
-		obj->Array.capacity += 1;
-    }
-    obj->Array.elements[obj->Array.size++] = element;
-    return obj;
-};
+    oop Array_push(oop obj,oop element){
+        if(obj->Array.size >= obj->Array.capacity){
+    #if MSGC    //protect obj and element
+            gc_pushRoot((void*)&obj);
+            gc_pushRoot((void*)&element);
+            obj->Array.elements = gc_realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+            gc_popRoots(2);
+    #else
+            obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+    #endif
+            obj->Array.capacity += 1;
+        }
+        obj->Array.elements[obj->Array.size++] = element;
+        return obj;
+    };
 #endif
 
 
@@ -599,6 +626,7 @@ oop _Array_free(char* file,int line, oop obj){
 
 
 //ARRAY ARGS COPY
+//ADDME: add #IF MSGC and normal var
 #if DEBUG
 oop _Array_args_copy(char* file,int line,oop from,oop to)
 {
@@ -624,7 +652,10 @@ oop _Array_args_copy(char* file,int line,oop from,oop to)
 {
     int toArrCap = to->Array.capacity;
     int fromArrSize = from->Array.size;
+    gc_pushRoot((void*)&from);
+    gc_pushRoot((void*)&to);
     Array_push(to,new_Basepoint(1));//1st rbp, 2nd.. event args,
+    gc_popRoots(2);
     for(int i=0;i<fromArrSize;i++){
         to->Array.elements[to->Array.size++] = from->Array.elements[i];
     }
@@ -708,6 +739,9 @@ oop dequeue(oop t)
 }
 #endif
 
+
+
+//THREAD
 oop _newThread(size_t vd_size,int stk_size)
 {
 #if MSGC
