@@ -235,7 +235,7 @@ int gc_collect(void)	// collect garbage
     }
     gc_memnext = gc_memory;			// start allocating at the start of memory
 # ifndef NDEBUG
-    printf("\r[GC %d used %d free]\r", nbusy, nfree);
+    printf("\r\n[GC %d used %d free]\n\r", nbusy, nfree);
     fflush(stdout);
 # endif
     return nbusy;
