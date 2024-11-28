@@ -10,18 +10,13 @@
     argsCond: それぞれのconditionの内容が入っている
 */
 
-// int getNonBocking();
-// oop eventFunction(oop threads, oop argsCond){
-//     int data = getNonBocking();
-//     for(threads;;){
-//         if
-//     }
-// }
-
 oop eve_loop(oop t){
     if(t->Thread.flag == 0){
+        //protect t:thread
+        gc_pushRoot((void*)&t);
         oop data = newArray(2);
         Array_push(data,_newInteger(1));
+        gc_popRoots(1);
         enqueue(t->Thread.queue,data);
     }
     return t;
@@ -29,14 +24,14 @@ oop eve_loop(oop t){
 
 oop eve_timer(oop t){
     time_t current_time = time(NULL);
-    // printf("vd i1 %d\n",t->Thread.vd->VarII.v_i1);
-    // printf("vd i2 %d\n",t->Thread.vd->VarII.v_i2);
-    // printf("vd diff = %ld\n",current_time - t->Thread.vd->VarTI.v_t1);
     if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
         t->Thread.vd->VarTI.v_t1 = current_time;
         t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
+        //protect t:thread
+        gc_pushRoot((void*)&t);
         oop data = newArray(2);
         Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
+        gc_popRoots(1);
         enqueue(t->Thread.queue,data);
     }
     return t;
@@ -88,8 +83,11 @@ oop eve_keyget(oop t){
             }
         }
         // 読み取った文字を返す
+        //protect t:thread
+        gc_pushRoot((void*)&t);
         oop data = newArray(2);
         Array_push(data,_newInteger(buf));
+        gc_popRoots(1);
         enqueue(t->Thread.queue,data);
         return t;
     }
@@ -100,35 +98,38 @@ oop eve_keyget(oop t){
 //STDLIB EVENT
 //FOR SETTING
 oop Event_stdlib(int eve_num,oop stack,int stk_size){
+    //cheack: protect stack, but it is already protected
+    gc_pushRoot((void*)&stack);
+    //protect t:new thread
+    GC_PUSH(oop,t,0);
     switch(eve_num){
         case LOOP_E:{
-            oop t = newThread(Default,stk_size);
+            t = newThread(Default,stk_size);
             t->Thread.vd->Default.count = 0;
             t->Thread.func = &eve_loop;
-            return t;
+            break;
         }
         case TIMERSEC_E:{
-            DEBUG_LOG("EVENT_STDLIB: TIME");
-            oop t = newThread(VarTI,stk_size);
+            t = newThread(VarTI,stk_size);
             t->Thread.vd->VarTI.v_t1 = time(NULL);
             t->Thread.vd->VarTI.v_i1  = 0;
             t->Thread.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
             t->Thread.func = &eve_timer;
-            return t;
+            break;
         }
         case KEYGET_E:{
-            oop t = newThread(Default,stk_size);
+            t = newThread(Default,stk_size);
             t->Thread.func = &eve_keyget;
             while(0!=t->Thread.func(t))dequeue(t);
-            return t;
+            break;
         }
         default:{
             fprintf(stderr,"this is not happen Event_stdlib eve[%d]\n",eve_num);
             exit(1);
         }
     }
-    printf("Event_stdlib(): not happen..\n");
-    return 0;
+    gc_popRoots(2);
+    return t;
 }
 
 #endif

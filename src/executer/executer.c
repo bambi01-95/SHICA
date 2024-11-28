@@ -749,10 +749,6 @@ line();printf("%s\n",INSTNAME[inst]);
                 continue;
             }
 
-
-
-
-
 /* end calc */
             case CALL:{
 #if TEST  

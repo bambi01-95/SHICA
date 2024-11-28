@@ -15,7 +15,7 @@ void printlnObject(oop node, int indent)
     }
     switch (getType(node)) {
 	case Undefined:	m(indent);printf("nil\n");				break;
-    case String :   m(indent);printf("%s\n", get(node, String, value));   break;
+    case String :   m(indent);printf("s %s\n", get(node, String, value));   break;
     case END:{
         printf("END\n");
         break;
@@ -43,11 +43,11 @@ void printlnObject(oop node, int indent)
         m(indent);printf("queue:\n");printlnObject(node->Thread.queue,indent+2);
         break;
     }
-    case _Integer:m(indent);printf("%d\n",_Integer_value(node));break;
-    case _Long:   m(indent);printf("%lld\n",get(node,_Long,value));break;
-    case _Float:  m(indent);printf("%f\n",_Float_value(node));break;
-    case _Double: m(indent);printf("%lf\n",get(node,_Double,value));break;
-    case _BasePoint: m(indent);printf("%d\n",node->_BasePoint.adress);break;
+    case _Integer:m(indent);printf("i %d\n",_Integer_value(node));break;
+    case _Long:   m(indent);printf("l %lld\n",get(node,_Long,value));break;
+    case _Float:  m(indent);printf("f %f\n",_Float_value(node));break;
+    case _Double: m(indent);printf("d %lf\n",get(node,_Double,value));break;
+    case _BasePoint: m(indent);printf("b %d\n",node->_BasePoint.adress);break;
 	default:	printf("%s\n",TYPENAME[node->type]);assert(!"this cannot happen print");			break;
     }
 }

@@ -9,9 +9,6 @@
 #include "../common/memory.c"
 #include "./library/stdlib-execute.c"
 
-
-// END QUEUE
-
 FLAG sub_execute(oop process,oop GM);
 oop newBoolean(int flag) { return flag ? sys_true : sys_false; }
 
@@ -57,8 +54,6 @@ char   string_value[256];
 #define getFloat(PC)    memcpy(&float_value,&memory[PC],SIZE_FLOAT);PC+=SIZE_FLOAT
 #define getDouble(PC)   memcpy(&double_value,&memory[PC],SIZE_DOUBLE);PC+=SIZE_DOUBLE
 
-
-
 #define getString(PC)   ({ \
     int i = 0; \
     while(memory[PC]!='\0'){ \
@@ -74,37 +69,21 @@ char   string_value[256];
 
 
 void main_execute(){
-    int test_impliment_limit = 0; //REMOVEME: TEST only 
     int pc = 0;
     int rbp = 0;
 #if MSGC
-    // oop stack = newArray(20);
-    // gc_pushRoot(stack);
     GC_PUSH(oop,stack,newArray(20));
-
-    // oop GM = newThread(Default,10);
-    // gc_pushRoot(GM);
     GC_PUSH(oop,GM,newThread(Default,10));
-    DEBUG_LOG("na ze na no");
-    // for(int i = 0; i<nroots; i++){
-    //     printlnObject((oop)roots[i],0);
-    // }
-
 #else
     oop stack = newArray(20);
     oop GM    = newThread(Default,10);
 #endif
-    // oop stack = newArray(20); //動的にメモリを確保するようにしないとメモリが被ってしまうため、スタックのデータがかぶる。
-    // GROBAL MEMORY
-    // oop GM    = newThread(Default,10);
-    // GM->Thread.stack = newArray(30);
-    // GM->Thread.rbp   = 0;
     for(;;){
         getInst(pc);
         switch(inst){
             case i_load:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 Array_push(stack,_newInteger(int_value));
@@ -112,7 +91,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case THREAD:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 int num_thread = int_value;
@@ -121,8 +100,6 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
                 DEBUG_ERROR_COND(MAXTHREADSIZE >= num_thread,"Number of Event definitin is over setting value");
                 DEBUG_ERROR_COND(Array==getType(threads),"TYPE is %d",getType(threads));
 #endif       
-                // printf("%s line %d\n",__FILE__,__LINE__);
-                // exit(1);
                 int thread_pc = pc;
                 
             //init setting thread スレッドの初期設定
@@ -132,7 +109,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
                     switch(inst){
                         case i_load:{// load pin number / load location of event task
 #if TEST  
-line();printf("THREAD => %s\n",INSTNAME[inst]);
+printf("THREAD => %s\n",INSTNAME[inst]);
 #endif
                             getInt(pc);
                             Array_push(stack,_newInteger(int_value));
@@ -140,7 +117,7 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                         }
                         case CALL_E:{//now
 #if TEST  
-line();printf("THREAD => %s\n",INSTNAME[inst]);
+printf("THREAD => %s\n",INSTNAME[inst]);
 #endif
                             getInt(pc);int lib_num = int_value;
                             getInt(pc);int eve_num = int_value;
@@ -153,7 +130,6 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                             threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
                             threads->Array.elements[thread_index]->Thread.base = inst_loc;
                             thread_index++;
-                            
                             continue;
                         }
                         default:{
@@ -162,7 +138,6 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                         }
                     }
                 }
-
                 DEBUG_LOG("\n              implement\n\n");
     // implement thread/Event concurrelty
                 for(int is_active = 0,count = 5; is_active==0;){
@@ -188,10 +163,6 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
                                 threads->Array.elements[i]->Thread.flag = 0;
                                 threads->Array.elements[i]->Thread.pc = threads->Array.elements[i]->Thread.base;
                                 // Array_free(threads->Array.elements[i]->Thread.stack);
-                                if(test_impliment_limit>1000000){
-                                    printf("\n\n");
-                                    return;
-                                }else test_impliment_limit++;
                             }
 
                         }
@@ -216,7 +187,7 @@ line();printf("THREAD => %s\n",INSTNAME[inst]);
             }
             case GLOBAL:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
 #if MSGC
                 GC_PUSH(oop,code,newThread(Default,10));//FIXME: using new thread here is not good for ...
@@ -238,7 +209,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case ENTRY:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 int s_pc = pc;//store corrent pc
@@ -263,7 +234,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case MSET:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);GM->Thread.rbp = int_value;
                 for(int i =0;i<int_value ;i++){
@@ -273,14 +244,14 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case JUMP:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc); pc += int_value;
                 continue;       
             }
             case HALT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 return;
             }
@@ -359,6 +330,7 @@ void stdlib_appendchar(oop process,oop GM){
 // }
 
 void lib_stdlib(oop process,oop GM){
+    //is it need gc_push
     getInt(mpc);int func_num = int_value;
     switch(func_num){
         case OUTPUT_P:{
@@ -408,13 +380,13 @@ FLAG sub_execute(oop process,oop GM){
         switch(inst){
             case TRANS:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 return F_TRANS;
             }
             case i_load:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));
@@ -459,7 +431,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
 /* _Integer */
             case i_EQ:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l == r));
@@ -467,7 +439,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_NE:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l != r));
@@ -475,7 +447,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_LT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l <  r));
@@ -483,7 +455,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_LE:{//inprogress
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l <= r));
@@ -491,7 +463,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_GE:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >= r));
@@ -499,7 +471,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_GT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >  r));
@@ -507,7 +479,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_AND:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l && r));
@@ -515,7 +487,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_OR:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l || r));
@@ -523,7 +495,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_ADD:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l + r));
@@ -531,7 +503,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_SUB:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l - r));
@@ -539,7 +511,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_MUL:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l * r));
@@ -547,7 +519,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_DIV:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l / r));
@@ -555,7 +527,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_MOD:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l % r));
@@ -564,7 +536,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
 /* Long */
             case l_EQ:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 long long int r = apl(),l = apl();
                 if(l==r)Array_push(mstack,sys_true);
@@ -573,7 +545,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case l_NE:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 long long int r = apl(),l = apl();
                 if(l!=r)Array_push(mstack,sys_true);
@@ -796,7 +768,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
 /* end calc */
             case CALL:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));//number of args
@@ -814,7 +786,7 @@ printf("CALL_P\n");
             }
             case GET:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,Array_get(mstack,mrbp + int_value));//index
@@ -822,7 +794,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case GET_L:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 // printf("    %s\n",TYPENAME[getType(mstack)]);
@@ -831,7 +803,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case GET_G:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,Array_get(GM->Thread.stack,int_value));//index
@@ -839,7 +811,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case DEFINE:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -848,7 +820,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case DEFINE_L:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -857,7 +829,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case DEFINE_G:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data = Array_pop(mstack);
@@ -866,7 +838,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case DEFINE_List:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 DEBUG_LOG("this is not support now");
                 // getInt(mpc);
@@ -878,19 +850,19 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case GLOBAL_END:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 return F_EOE;
             }
             case SETQ:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 continue;
             }
             case RET:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 oop value = Array_pop(mstack);//return value
                 oop data = nil;
@@ -905,7 +877,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case JUMPF:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);//get offset inpro
                 oop cond = Array_pop(mstack);
@@ -917,7 +889,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case JUMP:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);     //get offset
                 mpc += int_value;//get offset
@@ -925,7 +897,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case MSUB:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 //now
                 mstack = Array_push(mstack, new_Basepoint(mrbp));//before mrpb
@@ -939,7 +911,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case MPOP:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 for(;;){
                     oop data = Array_pop(mstack);
@@ -952,7 +924,7 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case MPICK:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 int adress = int_value;
@@ -964,42 +936,42 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case i_PRINT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 printf("%d\n",_Integer_value(Array_pop(mstack)));
                 continue;
             }
             case l_PRINT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 printf("%lld\n",Array_pop(mstack)->_Long.value);
                 continue;
             }
             case f_PRINT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 printf("%f\n",_Float_value(Array_pop(mstack)));
                 continue;
             }
             case d_PRINT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 printf("%f\n",Array_pop(mstack)->_Double.value);
                 continue;
             }
             case c_PRINT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 printf("%c\n",_Char_value(Array_pop(mstack)));
                 continue;
             }
             case s_PRINT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 printf("%s\n",Array_pop(mstack)->String.value);
                 continue;
@@ -1016,15 +988,15 @@ if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
             }
             case HALT:{
 #if TEST  
-if(isAfter){line();printf("%s\n",INSTNAME[inst]);}
+if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                if(Array_size(mstack)==1){
+                if(get(mstack,Array,size)==1){
                     printf("HALT-----------------------\n");
                     printlnObject(Array_pop(mstack),1);
                     return F_NONE;
                 }
-                printf("HALT with %d items on mstack\n",Array_size(mstack));
-                int size = Array_size(mstack);
+                printf("HALT with %d items on mstack\n",get(mstack,Array,size));
+                int size = get(mstack,Array,size);
                 for(int i = 0; i<size;i++)
                     printlnObject(Array_pop(mstack),1);
                 return F_NONE;
