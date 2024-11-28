@@ -33,12 +33,6 @@
 #define MSGC 1
 #endif
 
-//REMOVEME/ 4lines
-#ifndef ISAFTER
-#define ISAFTER
-int isAfter = 0;
-#endif
-
 union Object;
 typedef union Object Object;
 typedef Object *oop;
@@ -47,7 +41,7 @@ typedef oop (*Func)(oop);
 /* for what wwww */
 #define user_error(COND,MSG,LINE) ({ \
     if(COND){ \
-        if(TEST==1)printf("[line %d]",__LINE__); \
+        if(TEST==1)printf("[line %d]",__LINE__);  \
         fprintf(stderr,"line %d: %s\n",LINE,MSG); \
         exit(1); \
     } \
@@ -107,20 +101,15 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
     }\
 })
 
-
-#define out(A) printf("line %4d: %s\n",__LINE__,A)
-#define line() printf("         line %4d: ",__LINE__)
-
 typedef union VarData VarData;
 typedef VarData *VD;
 
 // should be mark
-oop nil   = 0;
+oop nil       = 0;
 oop sys_false = 0;
 oop sys_true  = 0;
-oop none  = 0;
-oop entry_sym = 0;
-oop threads = 0;
+oop none      = 0;
+oop threads   = 0;
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
 typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;
@@ -136,7 +125,6 @@ enum Type {
     _Double,
     _Char,
     String,
-    _IntegerArray,
 
     Thread,
     Array,
@@ -155,12 +143,12 @@ char *TYPENAME[END+1] = {
     "_Float",
     "_Double",
     "String",
-    "_IntegerArray",
 
     "Thread",
     "Array",
     "END",   
 };
+
 struct Default{
     unsigned int count;
 };
@@ -205,7 +193,7 @@ union VarData{
 
 
 struct Undefined { enum Type type; };
-struct _BasePoint { enum Type type; int adress; };
+struct _BasePoint{ enum Type type; int adress; };
 struct _Undefined{ enum Type type; };
 struct _Integer  { enum Type type; int _value; };
 struct _Long     { enum Type type; long long int value; };
@@ -214,21 +202,17 @@ struct _Double   { enum Type type; double value; };
 struct _Char     { enum Type type; char _value; };
 struct String    { enum Type type;  char *value; };
 #define QUEUE_SIZE 5          /* 待ち行列に入るデータの最大数 */
-struct Queue     { enum Type type;  oop *elements; unsigned head:4; unsigned size:4; };
-struct Array     { enum Type type;  oop *elements; int size; int capacity;};
-struct END       { enum Type type; };
+struct Queue     { enum Type type;  oop *elements/*gc_mark*/; unsigned head:4; unsigned size:4; };
+struct Array     { enum Type type;  oop *elements/*gc_mark*/; int size; int capacity;};
 
 struct Thread{ 
     enum Type type;
-    oop stack; 
-    oop queue;
-    // oop queue[5];  
+    oop stack; /*gc_mark*/
+    oop queue; /*gc_mark*/
     Func func;
-    union VarData*  vd;
-    unsigned int pc,rbp,base;  
-    // unsigned queue_head:4;
-    // unsigned queue_num:4; 
-    unsigned flag:1; 
+    union VarData*  vd; /*gc_mark*/
+    unsigned int pc,rbp,base;
+    unsigned flag:1;
 };
 
 union Object {
@@ -242,12 +226,9 @@ union Object {
     struct _Long      _Long     ;
     struct _Float     _Float    ;
     struct _Double    _Double   ;
-    struct String     String; 
-    // struct _IntegerArray {enum Type _type;oop* array; int size, capacity;}_IntegerArray;
-
-    struct END      END;
-    struct Queue    Queue;
-    struct Array    Array;
+    struct String     String;
+    struct Queue      Queue;
+    struct Array      Array;
     struct Thread     Thread;
 };
 
@@ -286,24 +267,53 @@ void printlnObject(oop node, int indent);
 void markObject(oop obj){
     switch(getType(obj)){
         case Queue:{
+            gc_markOnly(obj->Queue.elements);//this
+            for(int i=0;i<obj->Queue.size;i++){
+                gc_mark(obj->Queue.elements[(obj->Queue.head + i) % QUEUE_SIZE]);
+            }
+            return ;
+        }
+        case Array:{
+            gc_markOnly(obj->Array.elements);//this
+            for(int i = 0;i<obj->Array.size;i++){
+                gc_mark(obj->Array.elements[i]);
+            }
+            return ;
+        }
+        case Thread:{
+            gc_mark(obj->Thread.stack);
+            gc_mark(obj->Thread.queue);
+            gc_mark(obj->Thread.vd);
+            return ;
+        }
+        default:{
+            DEBUG_ERROR("this is not happen type %d\n",getType(obj));
+            return;
+        }
+    }
+}
+
+void isMarkObject(oop obj){
+    switch(getType(obj)){
+        case Queue:{
             printf("mark Queue\n");
             for(int i=0;i<obj->Queue.size;i++){
-                gc_mark(obj->Queue.elements[obj->Queue.head + i]);
+                gc_isMark(obj->Queue.elements[obj->Queue.head + i]);
             }
             break;
         }
         case Array:{
             printf("mark Array\n");
             for(int i = 0;i<obj->Array.size;i++){
-                gc_mark(obj->Array.elements[i]);
+                gc_isMark(obj->Array.elements[i]);
             }
             break;
         }
         case Thread:{
             printf("mark Thread\n");
-            gc_mark(obj->Thread.stack);
-            gc_mark(obj->Thread.queue);
-            gc_mark(obj->Thread.vd);
+            gc_isMark(obj->Thread.stack);
+            gc_isMark(obj->Thread.queue);
+            gc_isMark(obj->Thread.vd);//atomic
             break;
         }
         default:{
@@ -312,23 +322,15 @@ void markObject(oop obj){
     }
 }
 
-
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
-#if DEBUG
-    DEBUG_LOG("\ncollectObject()");
-#endif
     gc_mark(threads);
-#if DEBUG
-    DEBUG_LOG("\nend of collectObject()\n");
-#endif
     return;
 }
 
 oop _newObject(size_t size, enum Type type)
 {
 #if MSGC
-    // printf("gc total %5lu\n",gc_total);
     oop node = gc_alloc(size);
     node->type = type;
     return node;
@@ -338,9 +340,9 @@ oop _newObject(size_t size, enum Type type)
     return node;
 #endif
 }
-
 #define newObject(TYPE)	_newObject(sizeof(struct TYPE), TYPE)
 #define newAtomicObject(TYPE) gc_beAtomic(newObject(TYPE))
+
 
 oop new_Basepoint(int adress){
 #if MSGC
@@ -367,9 +369,10 @@ char _Char_value(oop obj){
     return (char)((intptr_t)obj >> TAGBITS);
 }
 #endif
-//if error apper use this instead of above
-//#define _Char_value(A) (char)((intptr_t)A >> TAGBITS)
-
+/*
+// if error apper use this instead of above
+#define _Char_value(A) (char)((intptr_t)A >> TAGBITS)
+*/
 
 oop _newInteger(int value)
 {
@@ -432,38 +435,27 @@ oop _newDouble(double value){
     return node;
 }
 
-// oop _newIntegerArray(int size){
-//     oop node = newObject(_IntegerArray);
-//     node->_IntegerArray.capacity = size;/*Free size*/
-//     node->_IntegerArray.size     = size;
-//     node->_IntegerArray.array    = calloc(size, sizeof(oop));
-//     return node;
-// }
-
+//IGNOREME: 
 oop newString(char *value){
+    printf("now, String is not string type\n");
+    exit(1);
 #if MSGC
     oop node = newAtomicObject(String);
+    // node->String.value = strdup(value);
 #else
     oop node = newObject(String);
-#endif
     node->String.value = strdup(value);
-    return node;
-}
-
-oop newEND(void){
-#if MSGC
-    oop node = newAtomicObject(END);
-#else
-    oop node = newObject(END);
 #endif
+    
     return node;
 }
 
+//ARRAY
 
 oop newArray(int capacity){
 #if MSGC
     GC_PUSH(oop, obj, newObject(Array));
-    obj->Array.size = 0;
+    obj->Array.size     = 0;
     obj->Array.capacity = capacity;
     obj->Array.elements = gc_alloc(sizeof(oop) * capacity);
     GC_POP(obj);
@@ -476,46 +468,47 @@ oop newArray(int capacity){
     return obj;
 }
 
-//FIXME: use get() function 
-int Array_size(oop obj){
-    assert(getType(obj)==Array);
-    return obj->Array.size;
-}
 
+//ARRAT PUT
 #if DEBUG
-oop _Array_put(char* file, int line,oop obj,unsigned int index,oop element)
-{
-    DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
-    if(index >obj->Array.capacity){
-        DEBUG_LOG("Array Put Over current memory capacity %d", obj->Array.capacity);
-#if MSGC
-    obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
-#else
-    obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
-#endif
-        obj->Array.capacity=index + 1;
+    oop _Array_put(char* file, int line,oop obj,unsigned int index,oop element)
+    {
+        DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
+        if(index >obj->Array.capacity){
+            DEBUG_LOG("Array Put Over current memory capacity %d", obj->Array.capacity);
+    #if MSGC    //protect obj and element
+            gc_pushRoot((void*)&obj);
+            gc_pushRoot((void*)&element);
+            obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
+            gc_popRoots(2);
+    #else
+            obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+    #endif
+            obj->Array.capacity=index + 1;
+        }
+        while(obj->Array.size<(index+1)){
+            obj->Array.elements[obj->Array.size++]=nil;
+        }
+        return obj->Array.elements[index]=element;
     }
-    while(obj->Array.size<(index+1)){
-        obj->Array.elements[obj->Array.size++]=nil;
+    #define Array_put(OBJ,INDEX,ELEMENT) _Array_put(__FILE__,__LINE__,OBJ,INDEX,ELEMENT)
+#else 
+    oop Array_put(oop obj,unsigned int index,oop element)
+    {
+        if(index >obj->Array.capacity){
+            obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+            obj->Array.capacity=index + 1;
+        }
+        while(obj->Array.size<(index+1)){
+            obj->Array.elements[obj->Array.size++]=nil;
+        }
+        return obj->Array.elements[index]=element;
     }
-    return obj->Array.elements[index]=element;
-}
-#define Array_put(OBJ,INDEX,ELEMENT) _Array_put(__FILE__,__LINE__,OBJ,INDEX,ELEMENT)
-#else
-oop Array_put(oop obj,unsigned int index,oop element)
-{
-    if(index >obj->Array.capacity){
-        obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
-        obj->Array.capacity=index + 1;
-    }
-    while(obj->Array.size<(index+1)){
-        obj->Array.elements[obj->Array.size++]=nil;
-    }
-    return obj->Array.elements[index]=element;
-}
 #endif
 
 
+
+//ARRAY GET
 #if DEBUG
 oop _Array_get(char *file, int line,oop obj, unsigned int index){
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
@@ -533,14 +526,17 @@ oop Array_get(oop obj, unsigned int index){
 };
 #endif
 
+
+//ARRAY PUSH
 #if DEBUG
 oop _Array_push(char* file, int line,oop obj,oop element){
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
     if(obj->Array.size >= obj->Array.capacity){
-
-        // DEBUG_LOG_REF("Reallocate array cap %d", obj->Array.capacity);
-#if MSGC
+#if MSGC    //protect obj and element
+        gc_pushRoot((void*)&obj);
+        gc_pushRoot((void*)&element);
 		obj->Array.elements = gc_realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+        gc_popRoots(2);
 #else
 		obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
 #endif
@@ -561,6 +557,8 @@ oop Array_push(oop obj,oop element){
 };
 #endif
 
+
+//ARRAY POP
 #if DEBUG
 oop _Array_pop(char* file,int line,oop obj){
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
@@ -585,6 +583,8 @@ oop Array_pop(oop obj){
 };
 #endif
 
+
+//ARRAY FREE NEED TO FIX it is not real free. header should be 000
 #if DEBUG
 oop _Array_free(char* file,int line, oop obj){
     DEBUG_ERROR_COND_REF(getType(obj)==Array,"Array but %d",getType(obj));
@@ -597,6 +597,8 @@ oop _Array_free(char* file,int line, oop obj){
 #define Array_free(OBJ) OBJ->Array.size = 0
 #endif
 
+
+//ARRAY ARGS COPY
 #if DEBUG
 oop _Array_args_copy(char* file,int line,oop from,oop to)
 {
@@ -606,7 +608,11 @@ oop _Array_args_copy(char* file,int line,oop from,oop to)
     int fromArrSize = from->Array.size;
     DEBUG_ERROR_COND_REF(toArrCap > fromArrSize,"from Array size over toArray size");
     DEBUG_ERROR_COND_REF(to->Array.size==0,"Array[to] is not empty");
+    //CHECK: protect from and to
+    gc_pushRoot((void*)&from);
+    gc_pushRoot((void*)&to);
     Array_push(to,new_Basepoint(1));//1st rbp, 2nd.. event args,
+    gc_popRoots(2);
     for(int i=0;i<fromArrSize;i++){
         to->Array.elements[to->Array.size++] = from->Array.elements[i];
     }
@@ -626,6 +632,12 @@ oop _Array_args_copy(char* file,int line,oop from,oop to)
 }
 #endif
 
+
+
+// QUEUE
+#define SUCCESS     1       /* 成功 */
+#define FAILURE     0       /* 失敗 */
+
 oop newQueue(int capacity){
 #if MSGC
     GC_PUSH(oop, node, newObject(Queue));
@@ -639,65 +651,6 @@ oop newQueue(int capacity){
     node->Queue.size = 0;
     return node;
 }
-
-oop _newThread(size_t vd_size,int stk_size)
-{
-#if MSGC
-    GC_PUSH(oop,node, newObject(Thread));
-#else
-    oop node = newObject(Thread);
-#endif
-    node->Thread.queue      = newQueue(5);
-    node->Thread.flag       =  0;
-    node->Thread.pc         =  0;
-    node->Thread.base       =  0;
-    node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
-    node->Thread.stack      = newArray(stk_size);
-#if MSGC
-    VD vd = gc_beAtomic(gc_alloc(vd_size));
-    GC_POP(node);
-#else
-    VD       vd = calloc(1,vd_size);
-#endif
-    node->Thread.vd         = vd;
-    return node;
-}
-
-#define newThread(VD_TYPE,STACK_SIZE)	_newThread(sizeof(struct VD_TYPE),STACK_SIZE)
-
-oop _setThread(oop t,size_t size)
-{
-    t->Thread.flag       =  0;
-    t->Thread.pc         =  0;
-    t->Thread.base       =  0;
-    t->Thread.rbp        =  0;
-    t->Thread.stack      = newArray(0);
-#if MSGC
-    VD vd = gc_alloc(size);
-#else
-    VD vd = calloc(1,size);
-#endif
-    t->Thread.vd         = vd;
-    return t;
-}
-#define setThread(T,TYPE)	_setThread(T,sizeof(struct TYPE))
-
-
-
-void printThread(oop t){
-    int i = getType(t->Thread.stack);
-    printf("stack == %s\n",TYPENAME[i]);
-    printf("pc     %d\n",t->Thread.pc);
-    printf("rbp    %d\n",t->Thread.rbp);
-    // printf("q head %d\n",t->Thread.queue.head);
-    // printf("q num  %d\n",t->Thread.queue_num);
-    printf("flag   %d\n",t->Thread.flag);
-}
-
-// QUEUE
-#define SUCCESS     1       /* 成功 */
-#define FAILURE     0       /* 失敗 */
-
 
 #if DEBUG
 int _enqueue(char* file, int line,oop t,oop data)
@@ -755,4 +708,47 @@ oop dequeue(oop t)
 }
 #endif
 
+oop _newThread(size_t vd_size,int stk_size)
+{
+#if MSGC
+    GC_PUSH(oop,node, newObject(Thread));
+#else
+    oop node = newObject(Thread);
 #endif
+    node->Thread.queue      = newQueue(5);
+    node->Thread.flag       =  0;
+    node->Thread.pc         =  0;
+    node->Thread.base       =  0;
+    node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
+    node->Thread.stack      = newArray(stk_size);
+#if MSGC
+    VD vd = gc_beAtomic(gc_alloc(vd_size));
+    GC_POP(node);
+#else
+    VD       vd = calloc(1,vd_size);
+#endif
+    node->Thread.vd         = vd;
+    return node;
+}
+#define newThread(VD_TYPE,STACK_SIZE)	_newThread(sizeof(struct VD_TYPE),STACK_SIZE)
+
+oop _setThread(oop t,size_t size)
+{
+    gc_pushRoot((void*)&t);
+    t->Thread.flag       =  0;
+    t->Thread.pc         =  0;
+    t->Thread.base       =  0;
+    t->Thread.rbp        =  0;
+    t->Thread.stack      = newArray(0);
+#if MSGC
+    VD vd = gc_beAtomic(gc_alloc(size));
+    gc_popRoots(1);
+#else
+    VD vd = calloc(1,size);
+#endif
+    t->Thread.vd         = vd;
+    return t;
+}
+#define setThread(T,TYPE)	_setThread(T,sizeof(struct TYPE))
+
+#endif //OBJECT_C

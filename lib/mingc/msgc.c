@@ -8,11 +8,6 @@
 #ifndef __gc_c
 #define __gc_c
 
-//REMOVEME/ 4lines
-#ifndef ISAFTER
-#define ISAFTER
-int isAfter = 0;
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +21,7 @@ int isAfter = 0;
 #else
 # define gc_debug
 #endif
+
 
 typedef struct gc_header gc_header;
 
@@ -64,12 +60,12 @@ void gc_init(int size)
 void **roots[MAXROOTS];	// pointers to the variables pointing to objects
 int   nroots = 0;	// number of variables addresses in the roots stack
 
-void gc_pushRoot(void *varp)	// push a new variable address onto the root stack
+void _gc_pushRoot(char* file,int line,void *varp)	// push a new variable address onto the root stack
 {
     if (nroots == MAXROOTS) fatal("gc root table full");
-    //REMOVE ME:
     roots[nroots++] = (void **)varp;
 }
+#define gc_pushRoot(P) _gc_pushRoot(__FILE__,__LINE__,P)
 
 // macro to declare, initialise, and push the address of an object pointer variable on the root stack
 
@@ -123,10 +119,7 @@ typedef void (*gc_markFunction_t)(void *);
 // the application should provide a mark function that accurately marks only valid pointers
 
 gc_markFunction_t gc_markFunction = gc_defaultMarkFunction;
-
-//REMOVEME:
-typedef void (*gc_printFunction_t)(void*,int);
-gc_printFunction_t gc_printFunction = 0;
+gc_markFunction_t gc_isMarkFuction = gc_defaultMarkFunction;
 
 // the collect function is run once at the start of GC, before the roots are marked,
 // to mark any pointers that are stored outside of the normal root set or in (e.g.)
@@ -137,6 +130,7 @@ void gc_defaultCollectFunction(void) {}
 typedef void (*gc_collectFunction_t)(void);
 
 gc_collectFunction_t gc_collectFunction = gc_defaultCollectFunction;
+
 
 #define GC_PTR(P)	((void *)gc_memory <= ptr && ptr < (void *)gc_memend)
 
@@ -164,6 +158,16 @@ void gc_mark(void *ptr)
     gc_markFunction(ptr);			// recursively mark object contents
 }
 
+//for debug
+void gc_isMark(void *ptr){
+    if (!GC_PTR(ptr)) return;			// NULL or outside memory
+    gc_header *here = (gc_header *)ptr - 1;	// object to header
+    if (here->atom) return;			// stop if atomic (no pointers)
+    gc_isMarkFuction(ptr);			// recursively mark object contents
+    if (here->mark) return;			// stop if already marked
+    printf("line %d this is not happen, %p is not marked\n",__LINE__, ptr);
+}
+
 #if UNMARK //unmark function that is usefull
 void gc_unmark(void *ptr)
 {
@@ -188,10 +192,7 @@ int gc_collect(void)	// collect garbage
     gc_debug printf("COLLECT\n");
     int nfree = 0, nbusy = 0;			// count memory in use and free
     gc_collectFunction();			// run pre-collection function to mark static roots
-    printf("gc stack mark\n");//REMOVEME
     for (int i = 0;  i < nroots;  ++i){		// mark the pointers stored in each root variable
-        printf("mark %d \n\t", i);//REMOVE ME: 2lines
-        gc_printFunction(*roots[i],0);
         gc_mark(*roots[i]);
     }
 
@@ -237,13 +238,6 @@ int gc_collect(void)	// collect garbage
     printf("\r[GC %d used %d free]\r", nbusy, nfree);
     fflush(stdout);
 # endif
-    printf("\n\n[GC %d used %d free]\n\n", nbusy, nfree);//REMOVEME
-    for (int i = 0;  i < nroots;  ++i){		// mark the pointers stored in each root variable
-        printf("mark %d \n\t", i);//REMOVE ME: 2lines
-        gc_printFunction(*roots[i],0);
-    }
-    gc_printFunction(0,-1);
-    isAfter = 1;//REMOVE ME
     return nbusy;
 }
 
@@ -284,9 +278,7 @@ void *gc_alloc(int lbs)	// allocate at least lbs bytes of memory
             assert(here < gc_memend);
         } while (here != start);		// until we come back to where we started and
         if (retries) break;			// stop if we are on the second attempt
-        printf("BEFORE COLLECT TOTAL\n");
         gc_collect();				// otherwise collect garbage and try again
-        printf("AFTERE COLLECT TOTAL\n");
     }
     fatal("out of memory");	// could not allocate after collecting -- memory is full
     return 0;

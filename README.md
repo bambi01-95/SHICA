@@ -54,3 +54,21 @@ SHICA event programing
     ├── if-ineq-test.txt
     ├── if-number-test.txt
     └── while-test.txt
+
+
+call gc_alloc() 
+=> call and imp. gc_collect() 
+=> after gc_collect(), threads:OK 
+=> continue imp. gc_alloc(), alloc and realloc ...
+=> memory clashshshshshshshsh
+
+
+a
+    t
+        s
+        q
+    t
+        s
+        q
+        
+realloc? ? ? ?  ? ? ? ? ? ?
