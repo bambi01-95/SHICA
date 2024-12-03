@@ -1,0 +1,29 @@
+% math {
+
+#include <stdio.h>
+#include "myMath.h"
+
+int comp(int a,int b){
+    if(a>b){
+        return a;
+    }
+    else{
+        return b; 
+    }
+}
+
+int add(int a){
+    return a;
+}
+
+int pow(int a){
+    int b = 0;
+    while(a--){
+        b += a;
+    }
+    return b;
+}
+
+float pi();
+float sqrt(float a,float b);
+}%
