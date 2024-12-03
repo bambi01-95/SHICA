@@ -71,6 +71,7 @@ enum Type {
     Key,    
     Symbol,  
     Function, 
+    Struct,
     Event,
     State, 
 
@@ -87,6 +88,7 @@ enum Type {
     SetVarL,
     SetArray,
     GetArray,
+    SetType,
     Call,  
     Run,   
 
@@ -124,6 +126,7 @@ char *TYPENAME[END+1] = {
 "Key",    
 "Symbol",  
 "Function", 
+"Struct",
 "Event",
 "State", 
 
@@ -140,6 +143,7 @@ char *TYPENAME[END+1] = {
 "SetVarL",
     "SetArray",
     "GetArray",
+    "SetType",
 "Call",  
 "Run",   
 
@@ -180,6 +184,7 @@ struct String    { enum Type type;  char *value; };
 struct Key       { enum Type type;  char *pass; };
 struct Symbol  	 { enum Type type;  char *name;  oop value; };
 struct Function	 { enum Type type;  oop parameters, body;int position;enum Type kind;};
+struct Struct    { enum Type type;  oop symbol, members;};
 struct Event     { enum Type type; oop id, parameters, body; };
 struct State     { enum Type type; oop *events; int size,index; };
 
@@ -194,6 +199,7 @@ struct GetVar  	 { enum Type type;  oop id;                             int line
 struct SetVar  	 { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
 struct SetVarG   { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
 struct SetVarL   { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
+struct SetType   { enum Type type;  oop id; oop child; int line;};
 struct Call 	 { enum Type type;  oop function, arguments;            int line;};
 struct Run       { enum Type type; oop state; };
 
@@ -308,12 +314,14 @@ union Object {
 
     struct Pair     Pair;
     struct Function Function;
+    struct Struct   Struct;
     struct Binop    Binop;
     struct Unyop    Unyop;
     struct GetVar   GetVar;
     struct SetVar   SetVar;
     struct SetVarG SetVarG;
     struct SetVarL SetVarL;
+    struct SetType  SetType;
 
     struct GetArray	 { enum Type _type;enum Type typeset;  oop array, index; int line;}GetArray;
     struct SetArray	 { enum Type _type;enum Type typeset;  oop array, index, value; int line;}SetArray;
@@ -598,6 +606,14 @@ oop newFunction(oop parameters, oop body)
     return node;
 }
 
+oop newStruct(oop symbol, oop members)
+{
+    oop node = newObject(Struct);
+    node->Struct.symbol  = symbol;
+    node->Struct.members = members;
+    return node;
+}
+
 oop newBinop(enum binop op, oop lhs, oop rhs,int line)
 {
     oop node = newObject(Binop);
@@ -673,6 +689,17 @@ oop newGetArray(oop array, oop index,int line)
     node->GetArray.array = array;
     node->GetArray.index = index;
     node->SetArray.line  = line;
+    return node;
+}
+
+
+
+oop newSetType(oop id,oop child,int line)
+{
+    oop node = newObject(SetType);
+    node->SetType.id    = id;
+    node->SetType.child = child;
+    node->SetType.line  = line;
     return node;
 }
 

@@ -381,6 +381,28 @@ struct Variable* set_id_index(oop id,oop vnt){
     return 0;
 }
 
+oop *struct_symbols = 0;
+int nstruct_symbols = 0;
+
+oop addStructTable(oop id, oop child)
+{
+    char *name = get(id,Symbol,name);
+    // binary search for existing symbol
+    int lo = 0, hi = nstruct_symbols - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        int cmp = strcmp(name, get(get(struct_symbols[mid], Struct,symbol),Symbol,name));
+        if      (cmp < 0) hi = mid - 1;
+        else if (cmp > 0) lo = mid + 1;
+        else    return struct_symbols[mid];
+        // if struct child is nil, define new child
+    }
+    struct_symbols   = realloc(struct_symbols,   sizeof(*struct_symbols)   * (nstruct_symbols + 1));
+    memmove(struct_symbols + lo + 1,
+	    struct_symbols + lo,
+	    sizeof(*struct_symbols) * (nstruct_symbols++ - lo));
+    return struct_symbols[lo] = newStruct(id,child);
+}
 
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 {
@@ -558,7 +580,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
                 break;
             }
-            
             case State:{//†††
                 int size = get(value,State,size);
                 oop *events = get(value,State,events);
@@ -799,11 +820,19 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         }
         break;
     }
+    case SetType:{
+        oop id = get(exp, SetType,id);
+        oop child = get(exp,SetType,child);
+        addStructTable(id,child);
+        break;
+    }
     case GetArray:{
         int t =     get(exp,SetArray,typeset);
         oop id =    get(exp,SetArray,array);
         oop value = get(exp,SetArray,value);
         oop index = get(exp,SetArray,index);
+        printf("%s line %d: GetArray\n",__FILE__,__LINE__);
+        break;
     }
 
 	case Call:{

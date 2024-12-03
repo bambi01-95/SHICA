@@ -2,9 +2,7 @@
 #ifndef PARSER_C
 #define PARSER_C
 
-#ifndef getchar()
-	#define getchar() getchar()
-#endif
+
 
 #define YYSTYPE oop
 
@@ -18,12 +16,18 @@ int newline = 1;
 start	= bln d:define 	{ result = d }
 
 define  = t:STATE i:id s:state                { $$ = newSetVar(t,i,s,newline)  }
+		| STRUCT i:id  p:child { $$ = newSetType(i,p,newline) }
         | d:bracket 	{ result = d }
         | t:TYPE   i:id p:params s:stmtbl     { $$ = newSetVar(t,i,newFunction(p,s),newline) } 
         | t:TYPE   i:id ASSIGN x:exp		  { $$ = newSetVarG(t, i, x,newline);}
         | RUN      i:id                       { $$ = newRun(newGetVar(i,newline)) }
         | !.                                  { $$ = newEND() }
 	    | < (!eol &. .)* >                    { fatal("line %d syntax error: [%s]",newline, yytext); }
+# type -> id and type
+child	= LBRACE p:mkNil
+		( bln !RBRACE t:TYPE i:id SEMI{ p = newPair(newPair(t,i), p) }
+	    )+
+		bln RBRACE				{ $$ = p }
 
 state   = LBRACE s:mkState
 	  (
@@ -249,6 +253,7 @@ RUN      = "run"      !alnum -
 CONTINUE = "continue"
 BREAK    = "break"
 RETURN   = "return"
+STRUCT   = "struct"   !alnum - 
 %%;
 // https://programming-place.net/ppp/contents/c/appendix/operation.html
 #undef getchar
