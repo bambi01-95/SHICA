@@ -31,7 +31,7 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <termios.h>
-#include "../../lib/mingc/msgc.c"
+#include "./lib/mingc/msgc.c"
 
 
 /* REMOVE ME: for what wwww */

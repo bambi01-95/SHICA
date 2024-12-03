@@ -1,0 +1,14 @@
+
+% moduleName {
+// C expression
+#include <stdio.h>
+#include "myFunc.h"
+
+int func1(int a,int b){
+    int c = a + b;
+    return c;
+}
+
+float func2(float d);
+
+} %

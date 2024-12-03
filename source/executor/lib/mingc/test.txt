@@ -1,0 +1,65 @@
+;;; test.txt -- test a little language to verify that its garbage collector is working
+;;;
+;;; usage:
+;;;   make clean all
+;;;   time ./mstest < test.txt
+;;;   time ./rctest < test.txt
+
+;;; Fibonnaci modified to return the number of recursive function calls made to calculate the result
+
+(set 'nfib (lambda (n)
+  (if (< n 2)
+      1
+      (+ 1 (+ (nfib (- n 1)) (nfib (- n 2)))))))
+
+;(nfib 32) ; => 7049155
+(nfib 27) ; => 635621
+
+;;; Sieve of Eratosthenes to calculate the first N primes
+
+;; create a list containing n copies of v
+
+(set 'makelist (lambda (n v)
+  (let ((list ()))
+    (while (< 0 n)
+      (set 'list (cons v list))
+      (set 'n (- n 1)))
+      list)))
+
+;; return the nth element of list
+
+(set 'nth (lambda (n list)
+  (while (< 0 n)
+    (set 'list (cdr list))
+    (set 'n (- n 1)))
+  (car list)))
+
+;; set the nth element of list to val
+
+(set 'set-nth (lambda (n list val)
+  (while (< 0 n)
+    (set 'list (cdr list))
+    (set 'n (- n 1)))
+  (set-car list val)))
+
+;; count how many primes are in the first n numbers, repeated r times
+
+(set 'sieve (lambda (n r)
+  (let ((count 0))
+    (while (< 0 r)
+      (set 'count 0)
+      (let ((primes (makelist n 't))
+  	    (i 2))
+        (while (< i n)
+          (if (nth i primes)
+  	      (let ((j (+ i i)))
+  		(while (< j n)
+  		  (set-nth j primes ())
+		  (set 'j (+ i j)))
+		(set 'count (+ 1 count))))
+	  (set 'i (+ 1 i))))
+      (set 'r (- r 1)))
+    count)))
+
+;(sieve 100 500) ; number of primes < 100 => 25
+(sieve 100 50) ; number of primes < 100 => 25

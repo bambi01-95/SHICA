@@ -1,0 +1,553 @@
+%{
+;
+
+#define FILEOUTPUT 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+#ifndef DEBUG
+    #define DEBUG 1
+    void debug_log(char *file,int line,const char *format, ...) {
+        va_list args;
+        va_start(args, format);
+        printf("[LOG] %s line %d:\t",file,line);
+        vprintf(format, args);  // 可変引数を処理
+        printf("\n");
+        va_end(args);
+    }
+    #define DEBUG_LOG(...) debug_log(__FILE__, __LINE__, __VA_ARGS__)
+
+    void debug_error_1ref(char* file,int line,const char *format, ...) {
+        va_list args;
+        va_start(args, format);
+        fprintf(stderr, "[ERROR] %s line %d\n",file,line);
+        vfprintf(stderr, format, args);  // エラーメッセージは stderr に出力
+        fprintf(stderr, "\n");
+        va_end(args);
+    }
+    #define DEBUG_ERROR(...) debug_error_1ref(__FILE__, __LINE__,__VA_ARGS__)
+    #define DEBUG_ERROR_COND(COND,...) ({ \
+        if(!(COND)){ \
+            debug_error_1ref(__FILE__,__LINE__,__VA_ARGS__);\
+        }\
+    })
+    void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *format, ...) {
+        va_list args;
+        va_start(args, format);
+        fprintf(stderr, "[ERROR] %s line %d\n",file1,line1);
+            fprintf(stderr, "        %s line %d:\t",file2,line2);
+        vfprintf(stderr, format, args);  // エラーメッセージは stderr に出力
+        fprintf(stderr, "\n");
+        va_end(args);
+    }
+    #define DEBUG_ERROR_REF(...) debug_error_2ref(__FILE__, __LINE__,file,line, __VA_ARGS__)
+    #define DEBUG_ERROR_COND_REF(COND,...) ({ \
+        if(!(COND)){ \
+            debug_error_2ref(__FILE__,__LINE__,file,line,__VA_ARGS__);\
+        }\
+    })
+#endif
+
+FILE* _file_ = NULL;
+
+void _stdout(const char *format, ...){
+    va_list args;
+    va_start(args, format);
+#if FILEOUTPUT
+    vfprintf(_file_, format, args);
+#else
+    vfprintf(stdout, format, args);
+#endif
+    va_end(args);
+}  
+#define write(...) _stdout(__VA_ARGS__)
+
+union Token;
+typedef union Token Token;
+typedef Token *tkn;
+
+typedef enum {Undefined, Contents, Include, Function, Ctype, Symbol, Params, Body, Stmt, Return } type_t;
+typedef enum {VOID,CHAR,INT,FLOAT,DOUBLE,} type_c;
+
+char* _void_ = "void";
+char* _char_ = "char";
+char* _int_ = "int";
+char* _float_ = "float";
+char* _double_ = "double";
+
+char* CtypeToStr(type_c t){
+    switch(t){
+        case VOID:return _void_;
+        case CHAR:return _char_;
+        case INT:return _int_;
+        case FLOAT:return _float_;
+        case DOUBLE:return _double_;
+        default:DEBUG_ERROR("this is not happen!");
+    }
+    return 0;
+}
+
+char* _void_shica_ = "Undefined";
+char* _char_shica_ = "Char";
+char* _int_shica_ = "Integer";
+char* _float_shica_ = "Float";
+char* _double_shica_ = "Double";
+
+char* CtypeToShicaStr(type_c t){
+    switch(t){
+        case VOID:return _void_shica_;
+        case CHAR:return _char_shica_;
+        case INT:return _int_shica_;
+        case FLOAT:return _float_shica_;
+        case DOUBLE:return _double_shica_;
+        default:DEBUG_ERROR("this is not happen!");
+    } 
+    return 0;
+}
+
+union Token{
+    type_t typeT;
+    struct Contents{type_t typeT; tkn name; unsigned int size,capacity; tkn *expressions;} Contents;
+    struct Include {type_t typeT; tkn header; unsigned custom:1; } Include;
+    struct Function{type_t typeT; tkn retType,name,params,body; } Function;
+    struct Ctype   {type_t typeT; type_c typeC; } Ctype;
+    struct Symbol  {type_t typeT; char* name;   } Symbol;
+    struct Params  {type_t typeT; tkn paramsType,paramsName,paramNext;} Params;
+    struct Body    {type_t typeT; unsigned int size; tkn *statements;}Body;
+    struct Stmt    {type_t typeT; char *stmt;} Stmt;
+    struct Return  {type_t typeT; tkn variable;} Return;
+};
+tkn nil = 0;
+
+tkn _newToken(size_t size,type_t type)
+{
+    tkn token = calloc(1, size);
+    token->typeT = type;
+    return token;
+}
+#define newToken(TYPE)	_newToken(sizeof(struct TYPE), TYPE)
+
+#define getType(T) T->typeT
+tkn _check(tkn token,type_t type, char *file, int line)
+{
+    DEBUG_ERROR_COND_REF(getType(token) == type,"expected type %d got type %d",type,getType(token));
+    return token;
+}
+#if DEBUG
+    #define get(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
+#else
+    #define get(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
+#endif
+
+
+tkn newCtype(type_c type){
+    tkn token = newToken(Ctype);
+    token->Ctype.typeC = type;
+    return token;
+}
+
+tkn newContents(tkn name){
+    tkn token = newToken(Contents);
+    token->Contents.expressions = 0;
+    token->Contents.size = 0;
+    token->Contents.name = name;
+    return token;
+}
+tkn appendContents(tkn b,tkn s){
+    tkn *ss = get(b, Contents,expressions);
+    int  sz = get(b, Contents,size);
+    ss = realloc(ss, sizeof(tkn) * (sz + 1));
+    ss[sz++] = s;
+    get(b, Contents,expressions) = ss;
+    get(b, Contents,size) = sz;
+    return b;
+}
+
+tkn newInclude(tkn header,int isCustom){
+    tkn token = newToken(Include);
+    token->Include.header = header;
+    token->Include.custom = isCustom;
+    return token;
+}
+
+tkn newSymbol(char* value){
+    tkn token = newToken(Symbol);
+    token->Symbol.name = strdup(value);
+    return token;
+}
+
+tkn newFunction(tkn type,tkn name,tkn params,tkn body){
+    tkn token = newToken(Function);
+    token->Function.retType = type;
+    token->Function.name    = name;
+    token->Function.params  = params;
+    token->Function.body    = body;
+    return token;
+}
+
+tkn newParams(tkn type,tkn name,tkn prev){
+    tkn token = newToken(Params);
+    token->Params.paramsType = type;
+    token->Params.paramsName = name;
+    token->Params.paramNext  = prev;
+    return token;
+}
+
+tkn revPrams(tkn head){
+    tkn tail = nil;
+    while(head != nil){
+        tkn p = tail;
+        tail = head;
+        head = head->Params.paramNext;
+        tail->Params.paramNext = p;
+    }
+    return tail;
+}
+
+tkn newBody(){
+    tkn token = newToken(Body);
+    token->Body.size = 0;
+    token->Body.statements = 0;
+    return token;
+}
+void bodyAppend(tkn b, tkn s)
+{
+    tkn *ss = get(b, Body,statements);
+    int  sz = get(b, Body,size);
+    ss = realloc(ss, sizeof(tkn) * (sz + 1));
+    ss[sz++] = s;
+    get(b, Body,statements) = ss;
+    get(b, Body,size) = sz;
+}
+
+tkn newReturn(tkn variable){
+    tkn token = newToken(Return);
+    token->Return.variable = variable;
+    return token; 
+}
+
+void printToken(tkn t,int indent){
+    switch(getType(t)){
+        case Contents:
+        case Include:
+        case Function:
+        case Ctype:
+        case Symbol:
+        case Params:
+        case Body:  
+        case Stmt: 
+        case Return:
+        default:{
+            DEBUG_ERROR("this is not happen at printToken");
+        }
+    }
+}
+
+// AFTER PARSE +++++++++++++++++++++++++++++++++++++++++++
+
+tkn* functions = 0;
+unsigned int nfunctions = 0;
+
+tkn addFunction(tkn token)
+{
+    functions   = realloc(functions,   sizeof(*functions)   * (nfunctions + 1));
+    return functions[nfunctions++] = token;
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++
+#define YYPARSE cLangParse // C language parser
+#define YYSTYPE tkn
+YYSTYPE result;
+int i = 0;
+// https://programming-place.net/ppp/contents/c/appendix/operation.html
+%}
+
+start	= bln d:define {result=d}
+        | !.                   { result = nil }
+        | <(!eol &. .)*>       { printf("syntax error [%s]\n",yytext);exit(0); }  
+
+define  = PCENT s:symbol LBRACE 
+          bln { s = newContents(s) }  (bln e:exp {appendContents(s,e)})+ {$$ = s}
+          bln RBRACE PCENT     { result = e }
+
+
+
+exp = function
+     | INCL LSQ    s:symbol HEAD RSQ    { $$ = newInclude(s,0)}
+     | INCL DQUOTE s:symbol HEAD DQUOTE { $$ = newInclude(s,1)}
+
+function = t:type s:symbol p:params (b:body  | SEMI b:mkNil) { $$ = newFunction(t,s,p,b) }
+
+params	= LPAR p:mkNil
+	  ( t:type s:symbol { p = newParams(t,s,p) }
+	    ( COMMA t:type s:symbol { p = newParams(t,s,p) }
+	    )*
+	  )?
+ 	  RPAR { $$ = revPrams(p) }
+
+body   =  LBRA b:mkbody 
+	  (
+	    s:stmt                      { bodyAppend(b, s) }
+	  )+
+	  RBRA			{ $$ = b }
+
+mkbody = { $$ = newBody() }
+
+stmt     = body
+         | RET s:symbol SEMI {$$ = newReturn(s)}
+         | text 
+         | empty   
+
+text  = <(alpha|num|sym)+> {$$ = newSymbol(yytext) }
+
+empty = <[ \t\r\n]+> {$$ = newSymbol(yytext) } 
+
+symbol  = <alpha alnum*> - {$$ = newSymbol(yytext)}
+
+
+type    = "int" - {$$ = newCtype(INT)}
+        | "float" - {$$ = newCtype(FLOAT)}
+        | "double" - {$$ = newCtype(DOUBLE)}
+
+
+mkNil   = { $$ = nil; }
+alpha	= [a-zA-Z_]
+alnum	= [a-zA-Z_0-9] | '_'
+num     = [0-9]
+sym     = [-+=();><,*^]
+
+- = space*
+space	= [ \t]
+
+bln	= blank*
+blank	= [ \t\r\n]
+
+INCL    = "#include" - 
+RET     = "return"   -
+HEAD    = ".h"
+
+LSQ     = "<"
+RSQ     = ">"
+LBRA  = "{"
+RBRA  = "}"
+
+LPAR	= "(" 	    -
+RPAR	= ")" 	    -
+
+PCENT	= "%" 	    -
+SEMI    = ";"       -
+COMMA	= ","       -
+LBRACE  = "{" 	    - 
+RBRACE  = "}" 	    - 
+DQUOTE  = "\""  
+
+eol	= [\r\n]
+%%
+;
+char* to_cap(const char *text) {
+    // ワイド文字列のメモリ確保 (最大3倍のサイズを確保)
+    size_t length = strlen(text);
+    char* bold_text = malloc(length + 1);  // ワイド文字を使うため、余裕を持たせます
+    
+    if (bold_text == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return NULL;
+    }
+    
+    char*p = bold_text;  // 書き込み用のポインタ
+
+    while (*text) {
+        if (*text >= 'a' && *text <= 'z') {
+            *p++ = *text - 32;  // a-z の太字フォント
+        } else {
+            *p++ = *text;  // その他の文字はそのまま
+        }
+        text++;
+    }
+    *p = '\0';  // 終端文字
+
+    return bold_text;
+}
+
+char* moduleName = 0;
+
+tkn evaluate(tkn token){
+    switch (getType(token))
+    {
+        case Contents:{
+            int size = get(token,Contents,size);
+            tkn* exps = get(token,Contents,expressions);
+            tkn name = get(token,Contents,name);
+            moduleName = get(name,Symbol,name);
+            write("/* %s module */\n\n",moduleName);
+            for(int i = 0; i<size; i++){
+                evaluate(exps[i]);
+            }
+            break;
+        }
+        case Include:{
+            tkn header = token->Include.header;
+            if(token->Include.custom==0){
+                write("#include <%s.h>\n",get(header,Symbol,name));
+            }else{
+                write("#include \"%s.h\"\n",get(header,Symbol,name));
+            }
+            break;
+        }
+        case Function:{
+            addFunction(token);
+            tkn retType = get(token,Function,retType);
+            tkn name = get(token,Function,name);
+            tkn params = get(token,Function,params);
+            tkn body = get(token,Function,body);
+            write("\n\n%s %s",CtypeToStr(get(retType,Ctype,typeC)),get(name,Symbol,name));
+            if(params!=nil)evaluate(params);
+            else write("()");
+            if(body==nil)write(";");
+            else evaluate(body);
+            break;
+        }
+        case Params:{
+            write("(");
+            if(token!=nil){
+                write("%s %s",CtypeToStr(get(token->Params.paramsType,Ctype,typeC)),get(token->Params.paramsName,Symbol,name));
+                token = token->Params.paramNext;
+                while(token!=nil){
+                    write(",%s %s",CtypeToStr(get(token->Params.paramsType,Ctype,typeC)),get(token->Params.paramsName,Symbol,name));
+                    token = token->Params.paramNext;
+                }
+            }
+            write(")");
+            break;
+        }
+        case Body:{
+            tkn *stmt = get(token, Body, statements);
+            unsigned int size = get(token, Body, size);
+            write("{");
+            for(int i=0; i<size; i++){
+                evaluate(stmt[i]);
+            }
+            write("}");
+            break;
+        }
+        case Return:{
+            tkn variable = get(token,Return,variable);
+            write("return %s;",get(variable,Symbol,name));
+            break;
+        }
+        case Symbol:{
+            char* name = get(token,Symbol,name);
+            write("%s",name);
+            break;
+        }
+        default:{
+            DEBUG_ERROR("this is not happen type[%d]",getType(token));
+            break;
+        }
+    }
+    return nil;
+}
+
+
+int main(int argc, char **argv)
+{
+    _file_ = fopen("output.c", "w");
+    if (!_file_) {
+        perror("Failed to open file");
+        return 1;
+    }
+    write("\n\n//------< START SHICA WRAP EXE> -------------------\n\n");//REMOVEME
+    
+    //parse, copy and pasete code
+    while (cLangParse()){
+        if(result==nil)break;
+        evaluate(result);
+    }
+
+    
+    char **funcList = 0;
+    //make interface enum list
+    if(nfunctions>0){
+        
+        funcList = realloc(funcList,sizeof(char*) * nfunctions);
+        write("\n\nenum{\n");
+        for(int i=0; i<nfunctions; i++){
+            char* name = get(get(functions[i],Function,name),Symbol,name);
+            char* cap  = to_cap(name);
+            funcList[i] = cap;
+            write("     __%s__P,\n",cap);
+        }
+        write("}%s;\n",to_cap(moduleName));
+
+        //make SHICA interface function
+        for(int i=0; i<nfunctions; i++){
+            tkn retType = get(functions[i],Function,retType);
+            tkn name = get(functions[i],Function,name);
+            tkn params = get(functions[i],Function,params);
+            write("\n\nvoid %s_%s(oop process, oop GM){\n",moduleName,get(name,Symbol,name));
+            tkn dup = params;
+            while(dup!=nil){
+                char *typeC = CtypeToStr(get(dup->Params.paramsType,Ctype,typeC));
+                write("     %s %s = get%s();\n",typeC,get(dup->Params.paramsName,Symbol,name),typeC);
+                dup = dup->Params.paramNext;
+            }
+            write("     Array_push(mstack, %s(",get(name,Symbol,name));
+            if(params!=nil){
+                dup = params;
+                write("%s",get(dup->Params.paramsName,Symbol,name));
+                dup = dup->Params.paramNext;
+                while(dup!=nil){
+                    write(",%s",get(dup->Params.paramsName,Symbol,name));
+                    dup = dup->Params.paramNext;
+                }
+            }
+            write("));\n     return;\n}");
+        }
+        //make module function
+        write("\n\nvoid user_lib_%s(oop process,oop GM){\n",moduleName);
+        write("     getInt(mpc);\n     int func_num = int value;\n");
+        write("     switch(func_num){\n");
+        for(int i=0; i<nfunctions; i++){
+        char* name = get(get(functions[i],Function,name),Symbol,name);
+        write("         case __%s__P: %s_%s(process, GM); break;\n",funcList[i],moduleName,name);
+        }
+        write("         defualt:DEBUG_ERROR(\"this is not happen\");\n");
+        write("     }\n");
+        write("}\n");
+    }
+    write("\n\n//------< END  SHICA WRAP EXE> -------------------\n");//REMOVEME
+
+    write("\n\n//------< START SHICA WRAP COMP> -------------------\n");
+
+    write("\n\nenum{\n");
+    for(int i=0; i<nfunctions; i++){
+        char* name = get(get(functions[i],Function,name),Symbol,name);
+        char* cap  = to_cap(name);
+        funcList[i] = cap;
+        write("     __%s__P,\n",cap);
+    }
+    write("}%s;\n",to_cap(moduleName));
+    write("\nvoid setting_userlib_%s(){\n",moduleName);
+    //PRIM FUNCTION
+    for(int i=0; i<nfunctions; i++){
+        tkn retType = get(functions[i],Function,retType);
+        tkn name = get(functions[i],Function,name);
+        tkn params = get(functions[i],Function,params);
+        int sizeOfParams = 0;
+        tkn dup = params;
+        while(dup!=nil){sizeOfParams++;dup = dup->Params.paramNext;}
+        write("     newPrimitive(%s,USERLIB,%s_P,%s",get(name,Symbol,name),funcList[i],CtypeToShicaStr(get(retType,Ctype,typeC)),sizeOfParams);
+        while(params!=nil){
+            write(",%s",CtypeToShicaStr(get(params->Params.paramsType,Ctype,typeC)));
+            params = params->Params.paramNext;
+        }
+        write(");\n");
+    }
+    write("}\n");
+    write("\n\n//------< END SHICA WRAP COMP> -------------------\n");
+    //EVENT FUNCTION
+    
+    return 0;
+}

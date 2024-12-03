@@ -14,7 +14,7 @@ FILE* SOURCE_FILE;
 #include "./executor/run.c"
 #include "./common/memory.c"
 
-#include "../lib/mingc/msgc.c"
+#include "./executor/lib/mingc/msgc.c"
 
 
 
