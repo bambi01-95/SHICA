@@ -4,8 +4,6 @@ leg:
 com:
 	gcc -o shica ./compiler.c
 
-
-
 all:
 	gcc -o vm executor.c
 	./vm

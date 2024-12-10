@@ -1,3 +1,4 @@
+#include "../executor/setting.h"
 #ifndef INST_C
 #define INST_C
 
@@ -113,6 +114,7 @@ c_PRINT,
 s_PRINT,
 };
 
+#if SBC
 //NEED TO SEPARATE
 char* INSTNAME[s_PRINT + 1] = {
 "HALT",
@@ -224,5 +226,6 @@ char* INSTNAME[s_PRINT + 1] = {
 "c_PRINT",
 "s_PRINT",
 };
+#endif
 
 #endif

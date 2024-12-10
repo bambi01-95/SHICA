@@ -1,48 +1,156 @@
-#ifndef TEST
-    #define TEST 0
-#endif
-
-// don't change DUBUG VAR, it is not support UNdebug now
-#ifndef DEBUG
-    #define DEBUG 1
-#endif 
-
-#ifndef MSGC
-#define MSGC 1
-#endif
+#include "./setting.h"
 
 #ifndef MAXTHREADSIZE
     #define MAXTHREADSIZE 10
 #endif
 
+
 #ifndef OBJECT_C
 #define OBJECT_C
+
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <assert.h>
-#include <stdarg.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <sys/select.h>
-#include <termios.h>
-#include "./lib/mingc/msgc.c"
+#if SBC
+    #include <stdio.h>
+    #include <string.h>
+    #include <ctype.h>
+    #include <assert.h>
+    #include <stdarg.h>
+    #include <time.h>
+    #include <sys/time.h>
+    #include <sys/stat.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <errno.h>
+    #include <sys/select.h>
+    // #include <termios.h>
+
+// <stdlib.h>
+/*
+malloc();      // メモリを動的に割り当てる
+calloc();      // メモリを動的に割り当て、ゼロで初期化
+realloc();     // メモリのサイズを変更
+free();        // 動的に割り当てたメモリを解放
+exit();        // プログラムを終了
+atoi();        // 文字列を整数に変換
+atof();        // 文字列を浮動小数点数に変換
+strtol();      // 文字列を長整数に変換
+*/
+
+// <stdio.h>
+/*
+printf();      // 標準出力にフォーマット付き出力
+scanf();       // 標準入力からフォーマット付き入力
+fopen();       // ファイルをオープン
+fclose();      // ファイルをクローズ
+fread();       // ファイルからデータを読み込む
+fwrite();      // ファイルにデータを書き込む
+SHICA_FPRINTF();     // フォーマット付きのファイル出力
+fscanf();      // フォーマット付きのファイル入力
+*/
+
+// <string.h>
+/*
+strlen();      // 文字列の長さを取得
+strcpy();      // 文字列をコピー
+strncpy();     // 指定した長さで文字列をコピー
+strcat();      // 文字列を連結
+strncat();     // 指定した長さで文字列を連結
+strcmp();      // 文字列を比較
+strncmp();     // 指定した長さで文字列を比較
+*/
+
+// <ctype.h>
+/*
+isalnum();     // 文字が英数字か判定
+isalpha();     // 文字がアルファベットか判定
+isdigit();     // 文字が数字か判定
+toupper();     // 文字を大文字に変換
+tolower();     // 文字を小文字に変換
+*/
+
+// <assert.h>
+/*
+assert();      // 条件が真であることを確認
+*/
+
+// <stdarg.h>
+/*
+va_start();    // 可変引数の処理開始
+va_arg();      // 次の引数を取得
+va_end();      // 可変引数の処理終了
+*/
+
+// <time.h>
+/*
+time();        // 現在の時刻を取得
+difftime();    // 2つの時刻の差を計算
+strftime();    // 時刻をフォーマットする
+*/
+
+// <sys/time.h>
+/*
+gettimeofday(); // 現在の時刻を取得
+*/
+
+// <sys/stat.h>
+/*
+stat();        // ファイルの情報を取得
+chmod();       // ファイルのパーミッションを変更
+mkdir();       // ディレクトリを作成
+*/
+
+// <unistd.h>
+/*
+read();        // ファイルを読み込む
+write();       // ファイルに書き込む
+close();       // ファイルディスクリプタをクローズ
+sleep();       // 指定した時間だけ処理を停止
+*/
+
+// <fcntl.h>
+/*
+open();        // ファイルをオープン
+fcntl();       // ファイルディスクリプタの操作
+O_RDONLY;     // 読み取り専用モード
+O_WRONLY;     // 書き込み専用モード
+O_RDWR;       // 読み書きモード
+*/
+
+// <errno.h>
+/*
+errno;        // エラー番号を格納するグローバル変数
+*/
+
+// <sys/select.h>
+/*
+select();      // 複数のファイルディスクリプタを監視
+FD_SET();      // ファイルディスクリプタをセット
+FD_CLR();      // ファイルディスクリプタをクリア
+FD_ISSET();    // ファイルディスクリプタがセットされているか判定
+*/
+
+// <termios.h>
+/*
+tcgetattr();   // 端末属性を取得
+tcsetattr();   // 端末属性を設定
+cfmakeraw();   // 端末を生データモードに設定
+tcflush();     // 入力・出力キューをフラッシュ
+*/
+#endif
 
 
-/* REMOVE ME: for what wwww */
+#include "./lib/msgc.c"
+
+//remove me in the feature
 #define user_error(COND,MSG,LINE) ({ \
     if(COND){ \
-        if(TEST==1)printf("[line %d]",__LINE__);  \
-        fprintf(stderr,"line %d: %s\n",LINE,MSG); \
+        if(TEST==1)SHICA_PRINTF("[line %d]",__LINE__);  \
+        SHICA_FPRINTF(stderr,"line %d: %s\n",LINE,MSG); \
         exit(1); \
     } \
 })
 
+#if DEBUG
 // DEBUG LOG Function
 void debug_log(char *file,int line,const char *format, ...) {
     va_list args;
@@ -68,9 +176,9 @@ void debug_log_ref(char *file1,int line1,char* file2,int line2,const char *forma
 void debug_error_1ref(char* file,int line,const char *format, ...) {
     va_list args;
     va_start(args, format);
-    fprintf(stderr, "[ERROR] %s line %d\n",file,line);
-    vfprintf(stderr, format, args); 
-    fprintf(stderr, "\n");
+    SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file,line);
+    vSHICA_FPRINTF(stderr, format, args); 
+    SHICA_FPRINTF(stderr, "\n");
     va_end(args);
 }
 #define DEBUG_ERROR(...) debug_error_1ref(__FILE__, __LINE__,__VA_ARGS__)
@@ -83,10 +191,10 @@ void debug_error_1ref(char* file,int line,const char *format, ...) {
 void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *format, ...) {
     va_list args;
     va_start(args, format);
-    fprintf(stderr, "[ERROR] %s line %d\n",file1,line1);//that call function that include debug_error()
-        fprintf(stderr, "        %s line %d:\t",file2,line2);//that call debug_error()
-    vfprintf(stderr, format, args); 
-    fprintf(stderr, "\n");
+    SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file1,line1);//that call function that include debug_error()
+        SHICA_FPRINTF(stderr, "        %s line %d:\t",file2,line2);//that call debug_error()
+    vSHICA_FPRINTF(stderr, format, args); 
+    SHICA_FPRINTF(stderr, "\n");
     va_end(args);
 }
 #define DEBUG_ERROR_REF(...) debug_error_2ref(__FILE__, __LINE__,file,line, __VA_ARGS__)
@@ -95,6 +203,8 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
         debug_error_2ref(__FILE__,__LINE__,file,line,__VA_ARGS__);\
     }\
 })
+#endif
+
 // DEBUG LOG Function
 union Object;
 typedef union Object Object;
@@ -124,7 +234,7 @@ enum Type {
     _Float,
     _Double,
     _Char,
-    String,
+    _String,
 
     Thread,
     Array,
@@ -132,22 +242,24 @@ enum Type {
     END,   
 };
 
-char *TYPENAME[END+1] = {
-    "Undefined",
-    "_BasePoint",
+#if DEBUG
+    char *TYPENAME[END+1] = {
+        "Undefined",
+        "_BasePoint",
 
-    "_Undefined",
-    "_Char",
-    "_Integer",
-    "_Long",
-    "_Float",
-    "_Double",
-    "String",
+        "_Undefined",
+        "_Char",
+        "_Integer",
+        "_Long",
+        "_Float",
+        "_Double",
+        "String",
 
-    "Thread",
-    "Array",
-    "END",   
-};
+        "Thread",
+        "Array",
+        "END",   
+    };
+#endif
 
 struct Default{
     unsigned int count;
@@ -171,6 +283,7 @@ struct VarFF{
     float v_f2;
 };
 
+#if SBC
 struct VarT{
     time_t v_t1;
 };
@@ -180,15 +293,18 @@ struct VarTI{
     int    v_i1;
     int    v_i2;
 };
+#endif
 
 union VarData{
     struct Default Default;
     struct VarI  VarI;
     struct VarII VarII;
     struct VarF  VarF; 
-    struct VarFF VarFF;    
+    struct VarFF VarFF;   
+#if SBC 
     struct VarT  VarT; 
     struct VarTI VarTI;
+#endif
 };
 
 
@@ -200,7 +316,7 @@ struct _Long     { enum Type type; long long int value; };
 struct _Float    { enum Type type; float _value; };
 struct _Double   { enum Type type; double value; };
 struct _Char     { enum Type type; char _value; };
-struct String    { enum Type type;  char *value; };
+struct _String    { enum Type type;  char *value; };
 #define QUEUE_SIZE 5          /* 待ち行列に入るデータの最大数 */
 struct Queue     { enum Type type;  oop *elements/*gc_mark*/; unsigned head:4; unsigned size:4; };
 struct Array     { enum Type type;  oop *elements/*gc_mark*/; int size; int capacity;};
@@ -226,7 +342,7 @@ union Object {
     struct _Long      _Long     ;
     struct _Float     _Float    ;
     struct _Double    _Double   ;
-    struct String     String;
+    struct _String    _String;
     struct Queue      Queue;
     struct Array      Array;
     struct Thread     Thread;
@@ -247,20 +363,19 @@ int getType(oop o)
     return o->type;
 }
 
-oop _check(oop node, enum Type type, char *file, int line)
-{
-    if (getType(node) != type) {
-	fprintf(stderr, "\n%s:%d: expected type %d got type %d\n", file, line, type, getType(node));
-		printf("%s but %s\n",TYPENAME[type],TYPENAME[getType(node)]);
-    exit(1);
+#if Debug
+    oop _check(oop node, enum Type type, char *file, int line)
+    {
+        if (getType(node) != type) {
+        SHICA_FPRINTF(stderr, "\n%s:%d: expected type %d got type %d\n", file, line, type, getType(node));
+            printf("%s but %s\n",TYPENAME[type],TYPENAME[getType(node)]);
+        exit(1);
+        }
+        return node;
     }
-    return node;
-}
-
-#if DEBUG
-    #define get(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
+    #define getChild(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
 #else
-    #define get(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
+    #define getChild(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
 #endif
 
 // GC_MARK
@@ -288,7 +403,11 @@ void markObject(oop obj){
             return ;
         }
         default:{
+#if DEBUG
             DEBUG_ERROR("this is not happen type %d\n",getType(obj));
+#else
+            SHICA_PRINTF("this is not happen markObject()\n");
+#endif
             return;
         }
     }
@@ -297,28 +416,32 @@ void markObject(oop obj){
 void isMarkObject(oop obj){
     switch(getType(obj)){
         case Queue:{
-            printf("mark Queue\n");
+            SHICA_PRINTF("mark Queue\n");
             for(int i=0;i<obj->Queue.size;i++){
                 gc_isMark(obj->Queue.elements[obj->Queue.head + i]);
             }
             break;
         }
         case Array:{
-            printf("mark Array\n");
+            SHICA_PRINTF("mark Array\n");
             for(int i = 0;i<obj->Array.size;i++){
                 gc_isMark(obj->Array.elements[i]);
             }
             break;
         }
         case Thread:{
-            printf("mark Thread\n");
+            SHICA_PRINTF("mark Thread\n");
             gc_isMark(obj->Thread.stack);
             gc_isMark(obj->Thread.queue);
             gc_isMark(obj->Thread.vd);//atomic
             break;
         }
         default:{
+#if DEBUG
             DEBUG_ERROR("this is not happen type %d\n",getType(obj));
+#else
+            SHICA_PRINTF("this is not happen isMarkObject()\n");
+#endif
         }
     }
 }
@@ -334,7 +457,11 @@ void collectObjects(void)	// pre-collection funciton to mark all the symbols
 oop _newObject(size_t size, enum Type type)
 {
 #if MSGC
+#if SBC
     oop node = gc_alloc(size);
+#else //C++
+    oop node = static_cast<oop>(gc_alloc(size));
+#endif
     node->type = type;
     return node;
 #else
@@ -344,8 +471,12 @@ oop _newObject(size_t size, enum Type type)
 #endif
 }
 #define newObject(TYPE)	_newObject(sizeof(struct TYPE), TYPE)
-#define newAtomicObject(TYPE) gc_beAtomic(newObject(TYPE))
 
+#if SBC
+#define newAtomicObject(TYPE) gc_beAtomic(newObject(TYPE))
+#else //C++
+#define newAtomicObject(TYPE) static_cast<oop>(gc_beAtomic(newObject(TYPE)))
+#endif
 
 oop new_Basepoint(int adress){
 #if MSGC
@@ -452,14 +583,14 @@ oop _newDouble(double value){
 
 //IGNOREME: 
 oop newString(char *value){
-    printf("now, String is not string type\n");
+    SHICA_PRINTF("now, String is not string type\n");
     exit(1);
 #if MSGC
-    oop node = newAtomicObject(String);
+    oop node = newAtomicObject(_String);
     // node->String.value = strdup(value);
 #else
-    oop node = newObject(String);
-    node->String.value = strdup(value);
+    oop node = newObject(_String);
+    node->_String.value = strdup(value);
 #endif
     return node;
 }
@@ -472,7 +603,11 @@ oop newArray(int capacity){
     GC_PUSH(oop, obj, newObject(Array));
     obj->Array.size     = 0;
     obj->Array.capacity = capacity;
+#if SBC 
     obj->Array.elements = gc_alloc(sizeof(oop) * capacity);
+#else //C++
+    obj->Array.elements = static_cast<oop*>(gc_alloc(sizeof(oop) * capacity));
+#endif
     GC_POP(obj);
 #else
     oop obj = newObject(Array);
@@ -511,15 +646,19 @@ oop newArray(int capacity){
     oop Array_put(oop obj,unsigned int index,oop element)
     {
     #if MSGC    //protect obj and element
-            gc_pushRoot((void*)&obj);
-            gc_pushRoot((void*)&element);
-            obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
-            gc_popRoots(2);
+        gc_pushRoot((void*)&obj);
+        gc_pushRoot((void*)&element);
+        #if SBC
+        obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
+        #else //C++
+        obj->Array.elements = (Object**)gc_realloc(obj->Array.elements, (index + 1) * sizeof(oop));
+        #endif
+        gc_popRoots(2);
     #else
-            obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+        obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
     #endif
-            obj->Array.capacity=index + 1;
-        }
+        obj->Array.capacity=index + 1;
+        
         while(obj->Array.size<(index+1)){
             obj->Array.elements[obj->Array.size++]=nil;
         }
@@ -572,7 +711,11 @@ oop newArray(int capacity){
     #if MSGC    //protect obj and element
             gc_pushRoot((void*)&obj);
             gc_pushRoot((void*)&element);
+            #if SBC
             obj->Array.elements = gc_realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
+            #else //C++
+            obj->Array.elements = (Object**)gc_realloc(obj->Array.elements, (obj->Array.size + 1) * sizeof(oop));
+            #endif
             gc_popRoots(2);
     #else
             obj->Array.elements = realloc(obj->Array.elements,(obj->Array.size + 1) * sizeof(oop));
@@ -601,7 +744,7 @@ oop _Array_pop(char* file,int line,oop obj){
 #else
 oop Array_pop(oop obj){
 	if(obj->Array.size <= 0){
-		fprintf(stderr,"Array is empty [array_pop]\n");
+		SHICA_FPRINTF(stderr,"Array is empty [array_pop]\n");
 		exit(1);
 	}
     oop element = obj->Array.elements[--obj->Array.size];
@@ -648,7 +791,7 @@ oop _Array_args_copy(char* file,int line,oop from,oop to)
 }
 #define Array_args_copy(FROM,TO) _Array_args_copy(__FILE__,__LINE__,FROM,TO)
 #else
-oop _Array_args_copy(char* file,int line,oop from,oop to)
+oop Array_args_copy(oop from,oop to)
 {
     int toArrCap = to->Array.capacity;
     int fromArrSize = from->Array.size;
@@ -672,7 +815,11 @@ oop _Array_args_copy(char* file,int line,oop from,oop to)
 oop newQueue(int capacity){
 #if MSGC
     GC_PUSH(oop, node, newObject(Queue));
+    #if SBC
     node->Queue.elements = gc_alloc(sizeof(oop)*capacity);
+    #else //C++
+    node->Queue.elements = (Object**)gc_alloc(sizeof(oop) * capacity);
+    #endif
     GC_POP(node);
 #else
     oop node = newObject(Queue);
@@ -756,7 +903,11 @@ oop _newThread(size_t vd_size,int stk_size)
     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
     node->Thread.stack      = newArray(stk_size);
 #if MSGC
-    VD vd = gc_beAtomic(gc_alloc(vd_size));
+    #if SBC
+        VD vd = gc_beAtomic(gc_alloc(vd_size));
+    #else //C++
+        VD vd = (VarData*)gc_alloc(vd_size);
+    #endif
     GC_POP(node);
 #else
     VD       vd = calloc(1,vd_size);
@@ -775,7 +926,11 @@ oop _setThread(oop t,size_t size)
     t->Thread.rbp        =  0;
     t->Thread.stack      = newArray(0);
 #if MSGC
-    VD vd = gc_beAtomic(gc_alloc(size));
+    #if SBC
+        VD vd = gc_beAtomic(gc_alloc(size));
+    #else //C++
+        VD vd = (VarData*)gc_alloc(size);
+    #endif
     gc_popRoots(1);
 #else
     VD vd = calloc(1,size);

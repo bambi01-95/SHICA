@@ -1,7 +1,11 @@
+#include "../setting.h"
+
+
 #ifndef STDLIB_EXECUTE_C
 #define STDLIB_EXECUTE_C
 #include "../object.c"
 #include "../../common/liblist/stdlib.h"
+
 
 // #include "../../executer/executer.c" //<<<<<<<bobobo
 
@@ -9,7 +13,6 @@
     threads: multi function thread space
     argsCond: それぞれのconditionの内容が入っている
 */
-
 oop eve_loop(oop t){
     if(t->Thread.flag == 0){
         //protect t:thread
@@ -22,6 +25,7 @@ oop eve_loop(oop t){
     return t;
 }
 
+#if SBC
 oop eve_timer(oop t){
     time_t current_time = time(NULL);
     if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
@@ -36,7 +40,15 @@ oop eve_timer(oop t){
     }
     return t;
 }
+#else
+oop eve_timer(oop t){
+    SHICA_PRINTF("eve_timer\n");
+    return t;
+}
+#endif
 
+#if SBC
+#include <termios.h> //keyboard input
 oop eve_keyget(oop t){
     char buf;
     struct termios old_flags, new_flags;
@@ -92,6 +104,13 @@ oop eve_keyget(oop t){
         return t;
     }
 }
+#else
+#include <termios.h> //keyboard input
+oop eve_keyget(oop t){
+    SHICA_PRINTF("eve_keyget\n");
+    return t;
+}
+#endif
 
 
 
@@ -110,11 +129,17 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
             break;
         }
         case TIMERSEC_E:{
+#if SBC
             t = newThread(VarTI,stk_size);
             t->Thread.vd->VarTI.v_t1 = time(NULL);
             t->Thread.vd->VarTI.v_i1  = 0;
             t->Thread.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
             t->Thread.func = &eve_timer;
+#else
+            t = newThread(Default,stk_size);
+            t->Thread.vd->Default.count = 0;
+            t->Thread.func = &eve_timer;
+#endif
             break;
         }
         case KEYGET_E:{
@@ -124,7 +149,7 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
             break;
         }
         default:{
-            fprintf(stderr,"this is not happen Event_stdlib eve[%d]\n",eve_num);
+            SHICA_FPRINTF(stderr,"this is not happen Event_stdlib eve[%d]\n",eve_num);
             exit(1);
         }
     }

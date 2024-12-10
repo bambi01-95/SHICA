@@ -1,11 +1,11 @@
 #ifndef __fatal_c
 #define __fatal_c
-
+#if SBC
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
-void fatal(char *fmt, ...)
+void fatal(const char *fmt, ...)
 {
     fflush(stdout);
     va_list ap;
@@ -18,5 +18,5 @@ void fatal(char *fmt, ...)
     va_end(ap);
     exit(1);
 }
-
+#endif
 #endif // __fatal_c

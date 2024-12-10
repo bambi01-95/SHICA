@@ -1,3 +1,5 @@
+#include "./setting.h"
+
 #ifndef EXECUTER_C
 #define EXECUTER_C
 
@@ -15,7 +17,7 @@ oop newBoolean(int flag) { return flag ? sys_true : sys_false; }
 oop Event_userlib(int eve_num,oop stack){
     switch(eve_num){
         default:
-            fprintf(stderr,"this is not happen Event_userlib\n");
+            SHICA_FPRINTF(stderr,"this is not happen Event_userlib\n");
     }
     exit(1);
 }
@@ -30,11 +32,11 @@ oop Event_Func(int lib_num,int eve_num,oop stack,int stk_size){
             return 0;
         }
         default:{
-            printf("ERROR: Event lib[%d] eve[%d]\n",lib_num, eve_num);
+            SHICA_PRINTF("ERROR: Event lib[%d] eve[%d]\n",lib_num, eve_num);
             exit(1);
         }
     }
-    printf("Event_Func(): not happen..\n");
+    SHICA_PRINTF("Event_Func(): not happen..\n");
     return 0;
 }
 
@@ -83,7 +85,7 @@ void main_execute(){
         switch(inst){
             case i_load:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 Array_push(stack,_newInteger(int_value));
@@ -91,7 +93,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case THREAD:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 int num_thread = int_value;
@@ -103,13 +105,13 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 int thread_pc = pc;
                 
             //init setting thread スレッドの初期設定
-                printf("\n              setting\n\n");
+                SHICA_PRINTF("\n              setting\n\n");
                 for(int thread_index=0; thread_index<num_thread;/*case CALL_E, thread_index++*/){
                     getInst(pc);
                     switch(inst){
                         case i_load:{// load pin number / load location of event task
 #if TEST  
-printf("THREAD => %s\n",INSTNAME[inst]);
+SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
 #endif
                             getInt(pc);
                             Array_push(stack,_newInteger(int_value));
@@ -117,7 +119,7 @@ printf("THREAD => %s\n",INSTNAME[inst]);
                         }
                         case CALL_E:{//now
 #if TEST  
-printf("THREAD => %s\n",INSTNAME[inst]);
+SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
 #endif
                             getInt(pc);int lib_num = int_value;
                             getInt(pc);int eve_num = int_value;
@@ -133,12 +135,14 @@ printf("THREAD => %s\n",INSTNAME[inst]);
                             continue;
                         }
                         default:{
-                            printf("this is not happen, main main_execute case THREAD\n");
+                            SHICA_PRINTF("this is not happen, main main_execute case THREAD\n");
                             exit(1);
                         }
                     }
                 }
+        #if DEBUG
                 DEBUG_LOG("\n              implement\n\n");
+        #endif
     // implement thread/Event concurrelty
                 for(int is_active = 0,count = 5; is_active==0;){
                     count++;
@@ -147,11 +151,13 @@ printf("THREAD => %s\n",INSTNAME[inst]);
                         if(threads->Array.elements[i]->Thread.flag == 1){
                             FLAG flag = sub_execute(threads->Array.elements[i],GM);
                             if(flag == F_TRANS){//TRANS
+                        #if DEBUG
                                 DEBUG_LOG("        TRANS\n");
+                        #endif
                                 int pc_i = threads->Array.elements[i]->Thread.pc++;//location of thread[i]'s pc
                                 getInt(pc_i);//thread num<-pc_i
                                 pc = int_value + pc_i;
-                                // printf("pc-> %d\n",pc);
+                                // SHICA_PRINTF("pc-> %d\n",pc);
                                 is_active = 1;
                                 int gm_size = GM->Thread.stack->Array.size;
                                 for(int i = gm_size;i>GM->Thread.rbp;i--){
@@ -187,7 +193,7 @@ printf("THREAD => %s\n",INSTNAME[inst]);
             }
             case GLOBAL:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
 #if MSGC
                 GC_PUSH(oop,code,newThread(Default,10));//FIXME: using new thread here is not good for ...
@@ -209,7 +215,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case ENTRY:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 int s_pc = pc;//store corrent pc
@@ -234,7 +240,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MSET:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc);GM->Thread.rbp = int_value;
                 for(int i =0;i<int_value ;i++){
@@ -244,18 +250,25 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case JUMP:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(pc); pc += int_value;
                 continue;       
             }
             case HALT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 return;
             }
-            default:fprintf(stderr,"main_execute error %s\n",INSTNAME[inst]);
+            default:
+            {
+#if DEBUG
+            SHICA_FPRINTF(stderr,"main_execute error %s\n",INSTNAME[inst]);
+#else
+            SHICA_FPRINTF(stderr,"main_execute error %d\n",inst);
+#endif
+            }
         }
     }
 }
@@ -270,7 +283,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #define apl()     Array_pop(mstack)->_Long.value
 #define apf()     _Float_value(Array_pop(mstack))
 #define apd()     Array_pop(mstack)->_Double.value
-#define aps()     Array_pop(mstack)->String.value
+#define aps()     Array_pop(mstack)->_String.value
 #define apc()    _Char_value(Array_pop(mstack))
 
 
@@ -278,7 +291,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 void stdlib_print(oop process,oop GM){
     getInt(mpc);int size_args = int_value;
     int value = api();
-    printf("%d\n",value);
+    SHICA_PRINTF("%d\n",value);
     return;
 }
 
@@ -363,7 +376,7 @@ oop Call_Primitive(oop process,oop GM){
             break;
         }
         default:{
-            printf("Call_Primitive %d\n",lib_num);
+            SHICA_PRINTF("Call_Primitive %d\n",lib_num);
             exit(1);
         }
     }
@@ -380,13 +393,13 @@ FLAG sub_execute(oop process,oop GM){
         switch(inst){
             case TRANS:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 return F_TRANS;
             }
             case i_load:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));
@@ -431,7 +444,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 /* _Integer */
             case i_EQ:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l == r));
@@ -439,7 +452,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_NE:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l != r));
@@ -447,7 +460,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_LT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l <  r));
@@ -455,7 +468,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_LE:{//inprogress
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l <= r));
@@ -463,7 +476,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_GE:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >= r));
@@ -471,7 +484,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_GT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >  r));
@@ -479,7 +492,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_AND:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l && r));
@@ -487,7 +500,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_OR:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l || r));
@@ -495,7 +508,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_ADD:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l + r));
@@ -503,7 +516,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_SUB:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l - r));
@@ -511,7 +524,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_MUL:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l * r));
@@ -519,7 +532,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_DIV:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l / r));
@@ -527,7 +540,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_MOD:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l % r));
@@ -536,7 +549,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 /* Long */
             case l_EQ:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 long long int r = apl(),l = apl();
                 if(l==r)Array_push(mstack,sys_true);
@@ -545,7 +558,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case l_NE:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 long long int r = apl(),l = apl();
                 if(l!=r)Array_push(mstack,sys_true);
@@ -756,8 +769,8 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             case s_ADD:{
                 oop r = Array_pop(mstack);
                 oop l = Array_pop(mstack);
-                oop new = newString(strcat(strdup(l->String.value),r->String.value));
-                Array_push(mstack,new);
+                oop newStr = newString(strcat(strdup(l->_String.value),r->_String.value));
+                Array_push(mstack,newStr);
                 continue;
             }
 
@@ -768,7 +781,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 /* end calc */
             case CALL:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));//number of args
@@ -779,14 +792,14 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case CALL_P:{
 #if TEST
-printf("CALL_P\n");
+SHICA_PRINTF("CALL_P\n");
 #endif
                 Call_Primitive(process,GM);
                 return F_NONE;
             }
             case GET:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,Array_get(mstack,mrbp + int_value));//index
@@ -794,16 +807,16 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case GET_L:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
-                // printf("    %s\n",TYPENAME[getType(mstack)]);
+                // SHICA_PRINTF("    %s\n",TYPENAME[getType(mstack)]);
                 Array_push(mstack,Array_get(GM->Thread.stack,GM->Thread.rbp + int_value));//index
                 continue;
             }
             case GET_G:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,Array_get(GM->Thread.stack,int_value));//index
@@ -811,7 +824,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -820,7 +833,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE_L:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -829,7 +842,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE_G:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data = Array_pop(mstack);
@@ -838,9 +851,13 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE_List:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
+#if DEBUG
                 DEBUG_LOG("this is not support now");
+#else
+                SHICA_PRINTF("this is not support now sub_execute DEFINE_List\n");
+#endif
                 // getInt(mpc);
                 // int index = _Integer_value(Array_pop(mstack));
                 // oop data  = Array_pop(mstack);
@@ -850,24 +867,24 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case GLOBAL_END:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 return F_EOE;
             }
             case SETQ:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 continue;
             }
             case RET:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 oop value = Array_pop(mstack);//return value
                 oop data = nil;
                 while(getType(data = Array_pop(mstack)) != _BasePoint);
-                mrbp = get(data,_BasePoint,adress);
+                mrbp = getChild(data,_BasePoint,adress);
                 mpc = api();//next mpc 
                 int num_arg = api();
                 for(int i = 0;i<num_arg;i++)
@@ -877,7 +894,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case JUMPF:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);//get offset inpro
                 oop cond = Array_pop(mstack);
@@ -889,7 +906,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case JUMP:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);     //get offset
                 mpc += int_value;//get offset
@@ -897,7 +914,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MSUB:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 //now
                 mstack = Array_push(mstack, new_Basepoint(mrbp));//before mrpb
@@ -911,7 +928,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MPOP:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 for(;;){
                     oop data = Array_pop(mstack);
@@ -924,7 +941,7 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MPICK:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 int adress = int_value;
@@ -936,50 +953,52 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_PRINT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                printf("%d\n",_Integer_value(Array_pop(mstack)));
+                SHICA_PRINTF("%d\n",_Integer_value(Array_pop(mstack)));
                 continue;
             }
             case l_PRINT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                printf("%lld\n",Array_pop(mstack)->_Long.value);
+                SHICA_PRINTF("%lld\n",Array_pop(mstack)->_Long.value);
                 continue;
             }
             case f_PRINT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                printf("%f\n",_Float_value(Array_pop(mstack)));
+                SHICA_PRINTF("%f\n",_Float_value(Array_pop(mstack)));
                 continue;
             }
             case d_PRINT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                printf("%f\n",Array_pop(mstack)->_Double.value);
+                SHICA_PRINTF("%f\n",Array_pop(mstack)->_Double.value);
                 continue;
             }
             case c_PRINT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                printf("%c\n",_Char_value(Array_pop(mstack)));
+                SHICA_PRINTF("%c\n",_Char_value(Array_pop(mstack)));
                 continue;
             }
             case s_PRINT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                printf("%s\n",Array_pop(mstack)->String.value);
+                SHICA_PRINTF("%s\n",Array_pop(mstack)->_String.value);
                 continue;
             }
             case EOE:{
                 // mpc  = mrbp;
                 mpc -= 1;
+#if DEBUG
                 DEBUG_ERROR_COND(mstack->Array.size == 0,"IMPRIMENT ERROR: stack size is %d\n",mstack->Array.size);
+#endif
                 if(mstack->Array.size != 0){
                     printlnObject(Array_pop(mstack),1);
                     exit(1);
@@ -988,15 +1007,15 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case HALT:{
 #if TEST  
-if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
-                if(get(mstack,Array,size)==1){
-                    printf("HALT-----------------------\n");
+                if(getChild(mstack,Array,size)==1){
+                    SHICA_PRINTF("HALT-----------------------\n");
                     printlnObject(Array_pop(mstack),1);
                     return F_NONE;
                 }
-                printf("HALT with %d items on mstack\n",get(mstack,Array,size));
-                int size = get(mstack,Array,size);
+                SHICA_PRINTF("HALT with %d items on mstack\n",getChild(mstack,Array,size));
+                int size = getChild(mstack,Array,size);
                 for(int i = 0; i<size;i++)
                     printlnObject(Array_pop(mstack),1);
                 return F_NONE;
@@ -1012,215 +1031,215 @@ if(isAfter){printf("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 oop printByteCode(){
     int pc = 0;
     for(;;){
-        printf("%3d ",pc);
+        SHICA_PRINTF("%3d ",pc);
         getInst(pc);
         switch(inst){
-            case TRANS:  getInt(pc);printf("TRANS     %3d\n",int_value);continue;
-            case i_load: getInt(pc);printf("i_load    %3d\n",int_value);continue;
-            case l_load: getLong(pc);printf("l_load    %3lld\n",long_value);continue;
-            case f_load: getFloat(pc);printf("f_load    %3f\n",float_value);continue;
-            case d_load: getDouble(pc);printf("d_load    %3f\n",double_value);continue;
-            case c_load: printf("c_load    %3c\n",getChar(pc));continue;
-            case s_load: getString(pc);printf("s_load    %s\n",string_value);continue;
-            case il_load: getInt(pc);printf("il_load    %d\n",int_value);continue;
-            case i_EQ:   printf("i_EQ\n"); continue; 
-            case i_NE:   printf("i_NE\n"); continue; 
-            case i_LT:   printf("i_LT\n"); continue; 
-            case i_LE:   printf("i_LE\n"); continue; 
-            case i_GE:   printf("i_GE\n"); continue; 
-            case i_GT:   printf("i_GT\n"); continue; 
-            case i_ADD:  printf("i_ADD\n");continue;
-            case i_SUB:  printf("i_SUB\n");continue;
-            case i_MUL:  printf("i_MUL\n");continue;
-            case i_DIV:  printf("i_DIV\n");continue;
-            case i_MOD:  printf("i_MOD\n");continue;
-            case l_EQ:   printf("l_EQ\n");continue; 
-            case l_NE:   printf("l_NE\n");continue; 
-            case l_LT:   printf("l_LT\n");continue; 
-            case l_LE:   printf("l_LE\n");continue; 
-            case l_GE:   printf("l_GE\n");continue; 
-            case l_GT:   printf("l_GT\n");continue; 
-            case l_ADD:  printf("l_ADD\n");continue;
-            case l_SUB:  printf("l_SUB\n");continue;
-            case l_MUL:  printf("l_MUL\n");continue;
-            case l_DIV:  printf("l_DIV\n");continue;
-            case l_MOD:  printf("l_MOD\n");continue;
-            case f_EQ:   printf("f_EQ\n");continue; 
-            case f_NE:   printf("f_NE\n");continue; 
-            case f_LT:   printf("f_LT\n");continue; 
-            case f_LE:   printf("f_LE\n");continue; 
-            case f_GE:   printf("f_GE\n");continue; 
-            case f_GT:   printf("f_GT\n");continue; 
-            case f_ADD:  printf("f_ADD\n");continue;
-            case f_SUB:  printf("f_SUB\n");continue;
-            case f_MUL:  printf("f_MUL\n");continue;
-            case f_DIV:  printf("f_DIV\n");continue;
-            case d_EQ:   printf("d_EQ\n");continue; 
-            case d_NE:   printf("d_NE\n");continue; 
-            case d_LT:   printf("d_LT\n");continue; 
-            case d_LE:   printf("d_LE\n");continue; 
-            case d_GE:   printf("d_GE\n");continue; 
-            case d_GT:   printf("d_GT\n");continue; 
-            case d_ADD:  printf("d_ADD\n");continue;
-            case d_SUB:  printf("d_SUB\n");continue;
-            case d_MUL:  printf("d_MUL\n");continue;
-            case d_DIV:  printf("d_DIV\n");continue;
+            case TRANS:  getInt(pc);SHICA_PRINTF("TRANS     %3d\n",int_value);continue;
+            case i_load: getInt(pc);SHICA_PRINTF("i_load    %3d\n",int_value);continue;
+            case l_load: getLong(pc);SHICA_PRINTF("l_load    %3lld\n",long_value);continue;
+            case f_load: getFloat(pc);SHICA_PRINTF("f_load    %3f\n",float_value);continue;
+            case d_load: getDouble(pc);SHICA_PRINTF("d_load    %3f\n",double_value);continue;
+            case c_load: SHICA_PRINTF("c_load    %3c\n",getChar(pc));continue;
+            case s_load: getString(pc);SHICA_PRINTF("s_load    %s\n",string_value);continue;
+            case il_load: getInt(pc);SHICA_PRINTF("il_load    %d\n",int_value);continue;
+            case i_EQ:   SHICA_PRINTF("i_EQ\n"); continue; 
+            case i_NE:   SHICA_PRINTF("i_NE\n"); continue; 
+            case i_LT:   SHICA_PRINTF("i_LT\n"); continue; 
+            case i_LE:   SHICA_PRINTF("i_LE\n"); continue; 
+            case i_GE:   SHICA_PRINTF("i_GE\n"); continue; 
+            case i_GT:   SHICA_PRINTF("i_GT\n"); continue; 
+            case i_ADD:  SHICA_PRINTF("i_ADD\n");continue;
+            case i_SUB:  SHICA_PRINTF("i_SUB\n");continue;
+            case i_MUL:  SHICA_PRINTF("i_MUL\n");continue;
+            case i_DIV:  SHICA_PRINTF("i_DIV\n");continue;
+            case i_MOD:  SHICA_PRINTF("i_MOD\n");continue;
+            case l_EQ:   SHICA_PRINTF("l_EQ\n");continue; 
+            case l_NE:   SHICA_PRINTF("l_NE\n");continue; 
+            case l_LT:   SHICA_PRINTF("l_LT\n");continue; 
+            case l_LE:   SHICA_PRINTF("l_LE\n");continue; 
+            case l_GE:   SHICA_PRINTF("l_GE\n");continue; 
+            case l_GT:   SHICA_PRINTF("l_GT\n");continue; 
+            case l_ADD:  SHICA_PRINTF("l_ADD\n");continue;
+            case l_SUB:  SHICA_PRINTF("l_SUB\n");continue;
+            case l_MUL:  SHICA_PRINTF("l_MUL\n");continue;
+            case l_DIV:  SHICA_PRINTF("l_DIV\n");continue;
+            case l_MOD:  SHICA_PRINTF("l_MOD\n");continue;
+            case f_EQ:   SHICA_PRINTF("f_EQ\n");continue; 
+            case f_NE:   SHICA_PRINTF("f_NE\n");continue; 
+            case f_LT:   SHICA_PRINTF("f_LT\n");continue; 
+            case f_LE:   SHICA_PRINTF("f_LE\n");continue; 
+            case f_GE:   SHICA_PRINTF("f_GE\n");continue; 
+            case f_GT:   SHICA_PRINTF("f_GT\n");continue; 
+            case f_ADD:  SHICA_PRINTF("f_ADD\n");continue;
+            case f_SUB:  SHICA_PRINTF("f_SUB\n");continue;
+            case f_MUL:  SHICA_PRINTF("f_MUL\n");continue;
+            case f_DIV:  SHICA_PRINTF("f_DIV\n");continue;
+            case d_EQ:   SHICA_PRINTF("d_EQ\n");continue; 
+            case d_NE:   SHICA_PRINTF("d_NE\n");continue; 
+            case d_LT:   SHICA_PRINTF("d_LT\n");continue; 
+            case d_LE:   SHICA_PRINTF("d_LE\n");continue; 
+            case d_GE:   SHICA_PRINTF("d_GE\n");continue; 
+            case d_GT:   SHICA_PRINTF("d_GT\n");continue; 
+            case d_ADD:  SHICA_PRINTF("d_ADD\n");continue;
+            case d_SUB:  SHICA_PRINTF("d_SUB\n");continue;
+            case d_MUL:  SHICA_PRINTF("d_MUL\n");continue;
+            case d_DIV:  SHICA_PRINTF("d_DIV\n");continue;
 
-            case s_EQ:   printf("d_EQ\n");continue; 
-            case s_NE:   printf("d_NE\n");continue; 
-            case s_LT:   printf("d_LT\n");continue; 
-            case s_LE:   printf("d_LE\n");continue; 
-            case s_GE:   printf("d_GE\n");continue; 
-            case s_GT:   printf("d_GT\n");continue; 
-            case s_ADD:  printf("d_ADD\n");continue;
+            case s_EQ:   SHICA_PRINTF("d_EQ\n");continue; 
+            case s_NE:   SHICA_PRINTF("d_NE\n");continue; 
+            case s_LT:   SHICA_PRINTF("d_LT\n");continue; 
+            case s_LE:   SHICA_PRINTF("d_LE\n");continue; 
+            case s_GE:   SHICA_PRINTF("d_GE\n");continue; 
+            case s_GT:   SHICA_PRINTF("d_GT\n");continue; 
+            case s_ADD:  SHICA_PRINTF("d_ADD\n");continue;
 
-            case THREAD: getInt(pc);printf("thread    %3d\n",int_value);continue;
-            case EOE:    printf("EOE\n");continue;
+            case THREAD: getInt(pc);SHICA_PRINTF("thread    %3d\n",int_value);continue;
+            case EOE:    SHICA_PRINTF("EOE\n");continue;
 
             case CALL:{
-                printf("CALL      ");
+                SHICA_PRINTF("CALL      ");
                 getInt(pc);int num_arg = int_value;
                 getInt(pc);int index = int_value;
-                printf("%3d  %3d\n",num_arg,index);
+                SHICA_PRINTF("%3d  %3d\n",num_arg,index);
                 continue;
             }
             case CALL_P:{
-                printf("CALL_P      ");
+                SHICA_PRINTF("CALL_P      ");
                 getInt(pc);int lib_num = int_value;
                 getInt(pc);int func_num = int_value;
                 getInt(pc);int args_s = int_value;
-                printf("%3d  %3d  %3d\n",lib_num,func_num,args_s);
+                SHICA_PRINTF("%3d  %3d  %3d\n",lib_num,func_num,args_s);
                 continue;
             }
             case CALL_E:{
-                printf("CALL_E      ");
+                SHICA_PRINTF("CALL_E      ");
                 getInt(pc);int lib_num = int_value;
                 getInt(pc);int func_num = int_value;
                 getInt(pc);int args_s = int_value;
-                printf("%3d  %3d  %3d\n",lib_num,func_num,args_s);
+                SHICA_PRINTF("%3d  %3d  %3d\n",lib_num,func_num,args_s);
                 continue;
             }
             case GET:{
-                printf("Get       ");//T
+                SHICA_PRINTF("Get       ");//T
                 getInt(pc);int symbol = int_value;
-                printf("%3d\n",symbol);
+                SHICA_PRINTF("%3d\n",symbol);
                 continue;
             }
             case GET_L:{
-                printf("Get_L     ");//T
+                SHICA_PRINTF("Get_L     ");//T
                 getInt(pc);int symbol = int_value;
-                printf("%3d\n",symbol);
+                SHICA_PRINTF("%3d\n",symbol);
                 continue;
             }
             case GET_G:{
-                printf("GET_G     ");
+                SHICA_PRINTF("GET_G     ");
                 getInt(pc);int symbol = int_value;
-                printf("%3d\n",symbol);
+                SHICA_PRINTF("%3d\n",symbol);
                 continue;
             }
             case DEFINE:{
-                printf("DEFINE    ");//T
+                SHICA_PRINTF("DEFINE    ");//T
                 getInt(pc);int symbol = int_value;
-                printf("%3d\n",symbol);//T
+                SHICA_PRINTF("%3d\n",symbol);//T
                 continue;
             }
             case DEFINE_L:{
-                printf("DEFINE_L  ");//T
+                SHICA_PRINTF("DEFINE_L  ");//T
                 getInt(pc);int symbol = int_value;
-                printf("%3d\n",symbol);//T
+                SHICA_PRINTF("%3d\n",symbol);//T
                 continue;
             }
             case DEFINE_G:{
-                printf("DEFINE_List  ");//T
+                SHICA_PRINTF("DEFINE_List  ");//T
                 getInt(pc);int symbol = int_value;
-                printf("%3d\n",symbol);//T
+                SHICA_PRINTF("%3d\n",symbol);//T
                 continue;
             }  
             case GLOBAL:{
-                printf("GLOBAL\n");
+                SHICA_PRINTF("GLOBAL\n");
                 continue;
             }
             case GLOBAL_END:{
-                printf("GLOBAL_END\n");
+                SHICA_PRINTF("GLOBAL_END\n");
                 continue;
             }
             case ENTRY:{
-                printf("ENTRY     ");
+                SHICA_PRINTF("ENTRY     ");
                 getInt(pc);int index = int_value;
-                printf("%3d\n",index);//T
+                SHICA_PRINTF("%3d\n",index);//T
                 continue;
             }
             case SETQ:{
-                printf("SETQ\n");
+                SHICA_PRINTF("SETQ\n");
                 continue;
             }
             case RET:{
-                printf("RET       ");
-                printf("  X\n");
+                SHICA_PRINTF("RET       ");
+                SHICA_PRINTF("  X\n");
                 continue;
             }
             case MSUB:{
-                printf("MSUB      ");
-                getInt(pc);printf("%3d\n",int_value);
+                SHICA_PRINTF("MSUB      ");
+                getInt(pc);SHICA_PRINTF("%3d\n",int_value);
                 continue;
             }
             case MPOP:{
-                printf("MPOP\n");
+                SHICA_PRINTF("MPOP\n");
                 continue;
             }
             case MPICK:{
-                printf("MPICK     ");
+                SHICA_PRINTF("MPICK     ");
                 getInt(pc);int i = int_value;
                 getInt(pc);int j = int_value;
-                printf("%3d %3d\n",i,j);
+                SHICA_PRINTF("%3d %3d\n",i,j);
                 continue;
             }
             case MSET:{
-                printf("MSET      ");
+                SHICA_PRINTF("MSET      ");
                 getInt(pc);
-                printf("%3d\n",int_value);
+                SHICA_PRINTF("%3d\n",int_value);
                 continue;
             }
             case JUMPF:{
-                printf("jumpF     ");//T
+                SHICA_PRINTF("jumpF     ");//T
                 getInt(pc);
                 int offset = int_value; 
-                printf("%3d\n",offset);//T
+                SHICA_PRINTF("%3d\n",offset);//T
                 continue;
             }
             case JUMP:{
-                printf("jump      ");
+                SHICA_PRINTF("jump      ");
                 getInt(pc);
                 int offset = int_value; 
-                printf("%3d\n",offset);
+                SHICA_PRINTF("%3d\n",offset);
                 continue;       
             }
             case i_PRINT:{
-                printf("i PRINT\n");
+                SHICA_PRINTF("i PRINT\n");
                 continue;
             }
             case l_PRINT:{
-                printf("l PRINT\n");
+                SHICA_PRINTF("l PRINT\n");
                 continue;
             }
             case f_PRINT:{
-                printf("f PRINT\n");
+                SHICA_PRINTF("f PRINT\n");
                 continue;
             }
             case d_PRINT:{
-                printf("d PRINT\n");
+                SHICA_PRINTF("d PRINT\n");
                 continue;
             }
             case c_PRINT:{
-                printf("c PRINT\n");
+                SHICA_PRINTF("c PRINT\n");
                 continue;
             }
             case s_PRINT:{
-                printf("s PRINT\n");
+                SHICA_PRINTF("s PRINT\n");
                 continue;
             }
             case HALT:{
-                printf("HALT\n");
+                SHICA_PRINTF("HALT\n");
                 return nil;
             }
         }

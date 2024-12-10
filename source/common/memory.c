@@ -1,5 +1,9 @@
+#include "../executor/setting.h" //need to consider the compile time
+
 #ifndef MEMORY_C
 #define MEMORY_C
+
+#if SBC
 #include <stdio.h>
 #include <sys/stat.h>
 
@@ -77,5 +81,65 @@ void memoryClear(void) // clear the contents of memory
     memsize = 0;
     memcap  = 0;
 }
+#else
+#include <stdio.h>
+#include <sys/stat.h>
+
+int has_extension(const char *filename,char *end) {
+    printf("has_extension is not support\n");
+    return 0;
+}
+
+typedef unsigned char byte;
+byte   *memory  = 0;  // memory is a huge array of bytes
+size_t  memsize = 0;  // this is the current size of data stored in memory
+size_t  memcap  = 0;  // this is the maximum dize of data that memory can hold
+
+const unsigned int SIZE_INST   = sizeof(unsigned char);
+const unsigned int SIZE_INT    = sizeof(int);            //size of int
+const unsigned int SIZE_LONG   = sizeof(long long int);  //size of long long int
+const unsigned int SIZE_FLOAT  = sizeof(float);          //size of float
+const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
+
+void _error(char *msg)
+{
+    printf("\n%s(%d) ");
+    exit(1);
+}
+
+#define error(X) _error(X, __FILE__, __LINE__)
+
+void memoryWrite(char *path) // write memory to a file
+{
+    printf("memoryWrite is not support\n");
+    exit(1);
+}
+
+/* READ */
+
+void memoryRead(char *path) // read memory from an external file
+{
+    printf("memoryRead is not support\n");
+}
+
+
+void _genByte(byte b)  // append one byte the the memory
+{
+    if  (memsize >= memcap) { // memory is full, extend it
+        memcap = memcap ? memcap * 2 : 1024;   // 1k, 2k, 4k, 8k, 16k, ...
+        memory = static_cast<byte*>(realloc(memory, memcap));
+    }
+    assert(memsize < memcap);
+    memory[memsize++] = b;
+}
+
+void memoryClear(void) // clear the contents of memory
+{
+    free(memory);
+    memory  = 0;
+    memsize = 0;
+    memcap  = 0;
+}
+#endif
 
 #endif
