@@ -2,123 +2,123 @@
 SHICA event programing
 
 
-.
+    .
 
-├── README.md  
+    ├── README.md  
 
-├── source  
+    ├── source  
 
-│   ├── code.stt  
+    │   ├── code.stt  
 
-│   ├── common  
+    │   ├── common  
 
-│   │   ├── inst.c  
+    │   │   ├── inst.c  
 
-│   │   ├── liblist  
+    │   │   ├── liblist  
 
-│   │   │   ├── library.h  
+    │   │   │   ├── library.h  
 
-│   │   │   └── stdlib.h  
+    │   │   │   └── stdlib.h  
 
-│   │   └── memory.c  
+    │   │   └── memory.c  
 
-│   ├── compiler  
+    │   ├── compiler  
 
-│   │   ├── generate.c  
+    │   │   ├── generate.c  
 
-│   │   ├── lib  
+    │   │   ├── lib  
 
-│   │   │   └── cLangInterface  
+    │   │   │   └── cLangInterface  
 
-│   │   │       ├── cParser.leg  
+    │   │   │       ├── cParser.leg  
 
-│   │   │       ├── input.txt  
+    │   │   │       ├── input.txt  
 
-│   │   │       ├── leg  
+    │   │   │       ├── leg  
 
-│   │   │       ├── makefile  
+    │   │   │       ├── makefile  
 
-│   │   │       ├── memo.txt  
+    │   │   │       ├── memo.txt  
 
-│   │   │       ├── output.c  
+    │   │   │       ├── output.c  
 
-│   │   │       ├── test  
+    │   │   │       ├── test  
 
-│   │   │       └── test.c  
+    │   │   │       └── test.c  
 
-│   │   ├── library  
+    │   │   ├── library  
 
-│   │   │   ├── lib.c  
+    │   │   │   ├── lib.c  
 
-│   │   │   └── stdlib-compile.c  
+    │   │   │   └── stdlib-compile.c  
 
-│   │   ├── object.c  
+    │   │   ├── object.c  
 
-│   │   ├── optimaize.c  
+    │   │   ├── optimaize.c  
 
-│   │   ├── parser  
+    │   │   ├── parser  
 
-│   │   │   ├── MEMO.txt  
+    │   │   │   ├── MEMO.txt  
 
-│   │   │   ├── leg  
+    │   │   │   ├── leg  
 
-│   │   │   ├── parser.c  
+    │   │   │   ├── parser.c  
 
-│   │   │   ├── parser.h  
+    │   │   │   ├── parser.h  
 
-│   │   │   └── parser.leg  
+    │   │   │   └── parser.leg  
 
-│   │   └── tool.c  
+    │   │   └── tool.c  
 
-│   ├── compiler.c  
+    │   ├── compiler.c  
 
-│   ├── executor  
+    │   ├── executor  
 
-│   │   ├── lib  
+    │   │   ├── lib  
 
-│   │   │   ├── fatal.c  
+    │   │   │   ├── fatal.c  
 
-│   │   │   └── msgc.c  
+    │   │   │   └── msgc.c  
 
-│   │   ├── library  
+    │   │   ├── library  
 
-│   │   │   ├── lib.c  
+    │   │   │   ├── lib.c  
 
-│   │   │   └── stdlib-execute.c  
+    │   │   │   └── stdlib-execute.c  
 
-│   │   ├── object.c  
+    │   │   ├── object.c  
 
-│   │   ├── run.c  
+    │   │   ├── run.c  
 
-│   │   ├── setting.h  
+    │   │   ├── setting.h  
 
-│   │   └── tool.c  
+    │   │   └── tool.c  
 
-│   ├── executor.c  
+    │   ├── executor.c  
 
-│   ├── expanded.c  
+    │   ├── expanded.c  
 
-│   ├── input.txt  
+    │   ├── input.txt  
 
-│   ├── makefile  
+    │   ├── makefile  
 
-│   ├── shica  
+    │   ├── shica  
 
-│   └── vm  
+    │   └── vm  
 
-└── test  
+    └── test  
 
-    ├── Makefile  
+        ├── Makefile  
 
-    ├── code.stt  
+        ├── code.stt  
 
-    ├── for-test.txt  
+        ├── for-test.txt  
 
-    ├── if-ineq-test.txt  
+        ├── if-ineq-test.txt  
 
-    ├── if-number-test.txt  
+        ├── if-number-test.txt  
 
-    └── while-test.txt  
+        └── while-test.txt  
 
 
 
