@@ -1,0 +1,51 @@
+state init{
+	entry(){
+		int v = gpioInitialise()
+        if(v<0){
+            print("Error")
+            gpioDelay(20000)
+            state init
+        }
+        gpioSetMode(17,1) //LED, output
+		gpioSetMode(27,0) //Button, input
+        gpioSetPullUpDown(27,2) //Button, pull down
+		gpioDelay(1000000)
+		gpioSetMode(22,0) //Communication, input
+        gpioSetPullUpDown(22,1) //Communication, pull down
+		state led_off
+	}
+}
+
+state led_off{
+	entry(){
+		gpioDelay(100000)
+		print("ledOFF")
+        gpioWrite(17,0)
+	}
+	//Button
+	triReadGPIO(int p:(p&(1<<27))==0){
+		print("Button")
+		gpioSetMode(22,1)
+		gpioWrite(22,1)
+		state led_on
+	}
+}
+
+state led_on{
+	entry(){
+        gpioDelay(100000)
+        print("ledON")
+        gpioWrite(17,1)
+        gpioSetMode(22,0)
+	}
+	//Button
+	triReadGPIO(int p:(p&(1<<27))==0){
+		print("Button")
+		state led_off
+	}
+	//Communication
+	triReadGPIO(int p:((p>>22)&1)==1){
+		print("Communication")
+		state led_off
+	}
+}

@@ -35,4 +35,4 @@ daygit:
 gitKillUpdata:
 	git reset --hard
 	git fetch origin
-	git reset --hard origin/maingi
+	git reset --hard origin/main
