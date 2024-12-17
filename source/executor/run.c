@@ -47,6 +47,11 @@ long long int long_value = 0;
 float float_value   = 0;
 double double_value = 0;
 char   string_value[256];
+const unsigned int SIZE_INST   = sizeof(unsigned char);
+const unsigned int SIZE_INT    = sizeof(int);            //size of int
+const unsigned int SIZE_LONG   = sizeof(long long int);  //size of long long int
+const unsigned int SIZE_FLOAT  = sizeof(float);          //size of float
+const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 
 #define getData(D,PC,S) memcpy(&D,&memory[PC],S); PC+=S
 #define getInst(PC)     memcpy(&inst,&memory[PC],SIZE_INST); PC+=SIZE_INST

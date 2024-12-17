@@ -460,7 +460,7 @@ oop _newObject(size_t size, enum Type type)
 #if SBC
     oop node = gc_alloc(size);
 #else //C++
-    oop node = static_cast<oop>(gc_alloc(size));
+    oop node = (oop)(gc_alloc(size));
 #endif
     node->type = type;
     return node;
@@ -475,7 +475,7 @@ oop _newObject(size_t size, enum Type type)
 #if SBC
 #define newAtomicObject(TYPE) gc_beAtomic(newObject(TYPE))
 #else //C++
-#define newAtomicObject(TYPE) static_cast<oop>(gc_beAtomic(newObject(TYPE)))
+#define newAtomicObject(TYPE) (oop)(gc_beAtomic(newObject(TYPE)))
 #endif
 
 oop new_Basepoint(int adress){
@@ -606,7 +606,7 @@ oop newArray(int capacity){
 #if SBC 
     obj->Array.elements = gc_alloc(sizeof(oop) * capacity);
 #else //C++
-    obj->Array.elements = static_cast<oop*>(gc_alloc(sizeof(oop) * capacity));
+    obj->Array.elements = (oop*)(gc_alloc(sizeof(oop) * capacity));
 #endif
     GC_POP(obj);
 #else
@@ -906,7 +906,7 @@ oop _newThread(size_t vd_size,int stk_size)
     #if SBC
         VD vd = gc_beAtomic(gc_alloc(vd_size));
     #else //C++
-        VD vd = (VarData*)gc_alloc(vd_size);
+        VD vd = (VarData*)gc_beAtomic(gc_alloc(vd_size));
     #endif
     GC_POP(node);
 #else

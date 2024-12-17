@@ -20,12 +20,6 @@ byte   *memory  = 0;  // memory is a huge array of bytes
 size_t  memsize = 0;  // this is the current size of data stored in memory
 size_t  memcap  = 0;  // this is the maximum dize of data that memory can hold
 
-const unsigned int SIZE_INST   = sizeof(unsigned char);
-const unsigned int SIZE_INT    = sizeof(int);            //size of int
-const unsigned int SIZE_LONG   = sizeof(long long int);  //size of long long int
-const unsigned int SIZE_FLOAT  = sizeof(float);          //size of float
-const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
-
 void _error(char *msg, char *file, int line)
 {
     fprintf(stderr, "\n%s(%d) ", file, line);
@@ -44,6 +38,47 @@ void memoryWrite(char *path) // write memory to a file
     fclose(fp);
 }
 
+
+// メモリをファイルに書き込む関数
+void memoryWriteC(const char *path) {
+    // デバッグ表示
+    printf("Path: %s\n", path);
+
+    // ファイルを開く
+    FILE *fp = fopen(path, "w");
+    if (!fp) {
+        perror("Error opening file");
+        return;
+    }
+
+    // メモリデータの検証
+    if (!memory || memsize == 0) {
+        fprintf(stderr, "Error: Invalid memory or memsize\n");
+        fclose(fp);
+        return;
+    }
+
+    // ファイルの先頭にヘッダーを書き込む
+    fputs("#ifndef MEMORY_C\n", fp);
+    fputs("#define MEMORY_C\n", fp);
+    fputs("#include <stdint.h>\n", fp);
+    fputs("const uint8_t memory[] = {\n", fp);
+
+    // メモリデータを16進数表記で書き込む
+    // if (memsize != fwrite(memory, 1, memsize, fp))
+    for (size_t i = 0; i < memsize; i++) {
+        fprintf(fp, "0x%02X%s", memory[i], (i < memsize - 1) ? ", " : "");
+        if ((i + 1) % 8 == 0) fputs("\n", fp);
+    }
+    // フッターを書き込む
+    fputs("", fp);
+    fputs("};\n#endif\n", fp);
+
+    // ファイルを閉じる
+    if (fclose(fp) != 0) {
+        perror("Error closing file");
+    }
+}
 /* READ */
 
 void memoryRead(char *path) // read memory from an external file
@@ -91,15 +126,11 @@ int has_extension(const char *filename,char *end) {
 }
 
 typedef unsigned char byte;
-byte   *memory  = 0;  // memory is a huge array of bytes
-size_t  memsize = 0;  // this is the current size of data stored in memory
-size_t  memcap  = 0;  // this is the maximum dize of data that memory can hold
+// byte   *memory  = 0;  // memory is a huge array of bytes
+// size_t  memsize = 0;  // this is the current size of data stored in memory
+// size_t  memcap  = 0;  // this is the maximum dize of data that memory can hold
 
-const unsigned int SIZE_INST   = sizeof(unsigned char);
-const unsigned int SIZE_INT    = sizeof(int);            //size of int
-const unsigned int SIZE_LONG   = sizeof(long long int);  //size of long long int
-const unsigned int SIZE_FLOAT  = sizeof(float);          //size of float
-const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
+
 
 void _error(char *msg)
 {
@@ -125,20 +156,12 @@ void memoryRead(char *path) // read memory from an external file
 
 void _genByte(byte b)  // append one byte the the memory
 {
-    if  (memsize >= memcap) { // memory is full, extend it
-        memcap = memcap ? memcap * 2 : 1024;   // 1k, 2k, 4k, 8k, 16k, ...
-        memory = static_cast<byte*>(realloc(memory, memcap));
-    }
-    assert(memsize < memcap);
-    memory[memsize++] = b;
+    printf("_genByte is not support\n");
 }
 
 void memoryClear(void) // clear the contents of memory
 {
-    free(memory);
-    memory  = 0;
-    memsize = 0;
-    memcap  = 0;
+    printf("memoryClear is not support\n");
 }
 #endif
 

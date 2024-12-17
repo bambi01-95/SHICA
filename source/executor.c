@@ -9,9 +9,9 @@ FILE* SOURCE_FILE;
 
 #include "./executor/object.c"
 #include "./executor/library/lib.c"
+#include "./common/memory.c"
 #include "./common/inst.c"
 #include "./executor/run.c"
-#include "./common/memory.c"
 #include "./executor/lib/msgc.c"
 
 
@@ -26,7 +26,7 @@ int SHICA_MAIN()
         exit(1);
     }
 #if MSGC
-    int memSize = 1024  * 32 * 10;//1024 * 2; // default memory size
+    int memSize = 1024  * 8 * 10;//1024 * 2; // default memory size
     gc_init(memSize);
     gc_collectFunction = (gc_collectFunction_t)collectObjects;
     gc_markFunction    = (gc_markFunction_t)markObject;

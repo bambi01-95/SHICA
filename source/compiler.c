@@ -27,7 +27,7 @@ int main(int argc, char const *argv[])
     none  = _newInteger(2);
 
     // コマンドライン引数の確認
-    if (argc == 2){
+    if (argc != 1){
 
         // ファイル名の拡張子をチェック
         if (!has_extension(argv[1],".txt")) {
@@ -61,7 +61,11 @@ int main(int argc, char const *argv[])
 
         printf("\n \x1b[31m write code *********************\x1b[0m\n\n");
         CodeWrite(program);
-        memoryWrite("code.stt");
+
+        if(argc==3  && strcmp(argv[2],"-e")==0){
+            memoryWriteC("code.c");
+        }
+        else memoryWrite("code.stt");
 
         
         free(program);

@@ -36,6 +36,7 @@ struct gc_header
     unsigned 	 busy : 1;	// this block is busy (reachable)
     unsigned 	 mark : 1;	// this block is marked (reachable) during GC
     unsigned 	 atom : 1;	// the data stored in this block contains no pointers
+    // unsigned padding : 29; // アライメント調整
 };
 
 gc_header *gc_memory  = 0;	// address of start of memory
@@ -49,7 +50,7 @@ void gc_init(int size)
     gc_memend  = (void *)gc_memory + size;
 #else //C++
     gc_memory  = (gc_header*)malloc(size);
-    gc_memend = reinterpret_cast<gc_header*>(reinterpret_cast<char*>(gc_memory) + size);
+    gc_memend = (gc_header*)((char*)gc_memory + size);
 #endif
     gc_memnext = gc_memory;
     // memory begins as a single free block the size of the entire memory
@@ -101,9 +102,9 @@ void gc_popRoot(void *varp,const char *name)	// pop a variable, checking it was 
     --nroots;
     if (varp != roots[nroots]) {
     #if SBC
-        fatal("GC root '%s' popped out of order");
+        fatal("GC root '%s' popped out of order",name);
     #else //C++
-        SHICA_PRINTF("GC root '%s' popped out of order");
+        SHICA_PRINTF("GC root '%s' popped out of order",name);
     #endif
     };
 }
@@ -131,10 +132,10 @@ void gc_defaultMarkFunction(void *ptr)	// recursively mark all pointers stored i
     void *end = (void *)hdr + hdr->size;	// first address past end of object
     while (ptr < end) gc_mark(*(void **)ptr++);	// recursively mark the object's pointers
     #else //C++
-    void *end = reinterpret_cast<void*>(reinterpret_cast<char*>(hdr) + hdr->size);
+    void *end = (void*)((char*)(hdr) + hdr->size);
     while (ptr < end) {
-        gc_mark(*(reinterpret_cast<void**>(ptr))); // dereference and pass to gc_mark
-        ptr = reinterpret_cast<void*>(reinterpret_cast<char*>(ptr) + sizeof(void*)); // increment pointer
+        gc_mark(*(void**)ptr); // dereference and pass to gc_mark
+        ptr = (void*)((char*)ptr + sizeof(void*)); // increment pointer
     }
     #endif
 }
@@ -157,7 +158,11 @@ typedef void (*gc_collectFunction_t)(void);
 gc_collectFunction_t gc_collectFunction = gc_defaultCollectFunction;
 
 
-#define GC_PTR(P)	((void *)gc_memory <= ptr && ptr < (void *)gc_memend)
+#if SBC
+#define GC_PTR(P) ((void *)gc_memory <= (P) && (P) < (void *)gc_memend)
+#else
+#define GC_PTR(P) ((void *)gc_memory <= (void *)(P) && (void *)(P) < (void *)gc_memend)
+#endif
 
 void gc_markOnly(void *ptr)	// mark an object reachable without recursively marking its content
 {
@@ -233,8 +238,7 @@ int gc_collect(void)	// collect garbage
 #else //C++
     for ( gc_header *here = gc_memory;		// iterate over all objects in memory
         here < gc_memend;
-        here = reinterpret_cast<gc_header*>(reinterpret_cast<char*>(here) + here->size)
-        )
+        here = (gc_header *)((char *)here + here->size))
 #endif
     {
     #if SBC
@@ -242,7 +246,7 @@ int gc_collect(void)	// collect garbage
                 here->busy ? 'B' : '-', here->atom ? 'A' : '-', here->mark ? 'M' : '-',
                 here->size);
     #else //C++
-    gc_debug SHICA_PRINTF("%p %c%c%c %d\n", reinterpret_cast<void*>(reinterpret_cast<char*>(here) + sizeof(*here)),
+    gc_debug SHICA_PRINTF("%p %c%c%c %d\n", (void*)((char*)here + sizeof(*here)),
             here->busy ? 'B' : '-', here->atom ? 'A' : '-', here->mark ? 'M' : '-',
             here->size);
     #endif
@@ -257,7 +261,7 @@ int gc_collect(void)	// collect garbage
     #if SBC
         gc_debug SHICA_PRINTF("%p RECLAIM\n", (void *)here + sizeof(*here));
     #else //C++
-        gc_debug SHICA_PRINTF("%p RECLAIM\n", reinterpret_cast<void*>(reinterpret_cast<char*>(here) + sizeof(*here)));
+        gc_debug SHICA_PRINTF("%p RECLAIM\n", (void*)((char*)here + sizeof(*here)));
     #endif
         here->busy = 0;				// reclaim the block
         here->mark = 0;
@@ -266,7 +270,7 @@ int gc_collect(void)	// collect garbage
             #if SBC
             gc_header *next = (void *)here + here->size;
             #else
-                gc_header *next = reinterpret_cast<gc_header*>(reinterpret_cast<char*>(here) + here->size);
+            gc_header *next = (gc_header*)((char*)here + here->size);
             #endif
             if (next == gc_memend) break;	// current block is the last
             if (next->mark) break;		// next block is reachable
@@ -279,8 +283,8 @@ int gc_collect(void)	// collect garbage
                     next->size);
             #else //C++
             gc_debug SHICA_PRINTF("%p EXTEND %p %d\n",
-                    reinterpret_cast<void*>(reinterpret_cast<char*>(here) + sizeof(*here)),
-                    reinterpret_cast<void*>(reinterpret_cast<char*>(next) + sizeof(*next)),
+                    (void*)((char*)here + sizeof(*here)),
+                    (void*)((char*)next + sizeof(*next)),
                     next->size);
             #endif
             here->size += next->size;		// absorb following block into this one
@@ -310,7 +314,7 @@ void *gc_alloc(int lbs)	// allocate at least lbs bytes of memory
             #if SBC
             gc_debug SHICA_PRINTF("%p ? %i %d\n", (void *)here + sizeof(*here), here->size, here->busy);
             #else
-            gc_debug SHICA_PRINTF("%p ? %i %d\n", reinterpret_cast<void*>(reinterpret_cast<char*>(here) + sizeof(*here)), here->size, here->busy);
+            gc_debug SHICA_PRINTF("%p ? %i %d\n", (void*)((char*)here + sizeof(*here)), here->size, here->busy);
             #endif
             if (!here->busy && here->size >= size) {	// this block is free and large enough
                 // split this block into two if the second block is large enough to hold a pointer
@@ -318,7 +322,7 @@ void *gc_alloc(int lbs)	// allocate at least lbs bytes of memory
                 #if SBC
                     gc_header *next = (void *)here + size;
                 #else
-                    gc_header *next = reinterpret_cast<gc_header*>(reinterpret_cast<char*>(here) + here->size);
+                    gc_header *next = (gc_header*)((char*)here + size);
                 #endif
                     next->size = here->size - size;
                     here->size = size;			// shrink this block
@@ -329,7 +333,7 @@ void *gc_alloc(int lbs)	// allocate at least lbs bytes of memory
                 #if SBC
                 gc_memnext = (void *)here + here->size;			// next block to allocate,
                 #else //C++
-                gc_memnext = reinterpret_cast<gc_header*>(reinterpret_cast<char*>(here) + here->size);
+                gc_memnext = (gc_header*)((char*)here + here->size);
                 #endif
                 if (gc_memnext == gc_memend) gc_memnext = gc_memory;	// wraps back to start at the end
                 assert(gc_memory  <= gc_memnext);
@@ -338,14 +342,14 @@ void *gc_alloc(int lbs)	// allocate at least lbs bytes of memory
                 #if SBC
                 gc_debug SHICA_PRINTF("%p ALLOC %d %d\n", (void *)here + sizeof(*here), lbs, here->size);
                 #else //C++
-                gc_debug SHICA_PRINTF("%p ALLOC %d %d\n", reinterpret_cast<void*>(reinterpret_cast<char*>(here) + sizeof(*here)), lbs, here->size);
+                gc_debug SHICA_PRINTF("%p ALLOC %d %d\n", (void*)((char*)here + sizeof(*here)), lbs, here->size);
                 #endif
                 return (void *)(here + 1);		// header address to object address
             }
             #if SBC
             here = (void *)here + here->size;		// block not free: advance to next block and
             #else //C++
-            here = reinterpret_cast<gc_header*>(reinterpret_cast<char*>(here) + here->size);
+            here = (gc_header*)((char*)here + here->size);
             #endif
             if (here == gc_memend) here = gc_memory;	// wrap back to start at the end of memory
             assert(gc_memory <= here);
@@ -379,7 +383,7 @@ char *gc_strdup(char *s)	// allocate memory for and copy a string
 #if SBC
     char *mem = gc_alloc_atomic(len + 1);
 #else
-    char *mem = static_cast<char*>(gc_alloc_atomic(len + 1));
+    char *mem = (char*)(gc_alloc_atomic(len + 1));
 #endif
     gc_debug SHICA_PRINTF("%p:%s [%d]\n", mem, s, len);
     memcpy(mem, s, len);
