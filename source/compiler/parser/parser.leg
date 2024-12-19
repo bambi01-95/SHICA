@@ -23,6 +23,7 @@ define  = t:STATE i:id s:state                { $$ = newSetVar(t,i,s,newline)  }
         | RUN      i:id                       { $$ = newRun(newGetVar(i,newline)) }
         | !.                                  { $$ = newEND() }
 	    | < (!eol &. .)* >                    { fatal("line %d syntax error: [%s]",newline, yytext); }
+
 # type -> id and type
 child	= LBRACE p:mkNil
 		( bln !RBRACE t:TYPE i:id SEMI{ p = newPair(newPair(t,i), p) }
@@ -38,7 +39,7 @@ state   = LBRACE s:mkState
 
 mkState =                                   { $$ = newState() }
 
-event   = i:id p:params b:block             { $$ = newEvent(i,p,b) }
+event   = i:id p:eventparams b:block             { $$ = newEvent(i,p,b) }
         | t:TYPE  i:id  ASSIGN  x:exp       { $$ = newSetVar(t, i, x,newline);}
         | t:TYPE  i:id b:bracket ASSIGN x:list NLINE { $$ = newSetArray(t,i,b,x,newline); }
 
@@ -59,7 +60,7 @@ stmt	= PRINT LPAR t:TYPE COMMA x:exp RPAR NLINE      { $$ =  newPrint(x,t); }
 stmtbl = block 
        | stmt
 
-blocks  = b:mkBlock (bx:block  {Block_append(b, bx)} )+ {$$ = b} #here
+#blocks  = b:mkBlock (bx:block  {Block_append(b, bx)} )+ {$$ = b} #here
 
 block   =  LBRACE b:mkBlock 
 	  (
@@ -104,6 +105,13 @@ exp     = logadd
 params	= LPAR p:mkNil
 	  ( t:TYPE i:id			    { p = newPair(newPair(t,i), p) }
 	    ( COMMA t:TYPE i:id		{ p = newPair(newPair(t,i), p) }
+	    )*
+	  )?
+ 	  RPAR				{ $$ = p }
+
+eventparams	= LPAR p:mkNil
+	  ( t:TYPE i:id	c:mkNil (COLON c:exp)?		    { p = newPair(newEventParam(t,i,c), p) }
+	    ( COMMA t:TYPE i:id	c:mkNil (COLON c:exp)?	{ p = newPair(newEventParam(t,i,c), p) }
 	    )*
 	  )?
  	  RPAR				{ $$ = p }
@@ -236,6 +244,7 @@ LSQP    = "["       -
 RSQP    = "]"       -
 COMMA	= ","       -
 SEMI    = ";"       -
+COLON   = ":"       - 
 LBRACE  = "{" 	    - 
 RBRACE  = "}" 	    - 
 QUOTE   = "\'"      

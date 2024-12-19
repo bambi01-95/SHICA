@@ -8,7 +8,7 @@
 //QUEUE_SIZE:10 キューサイズ event関数の最大Stock数
 #define MAXTHREADSIZE 10
 //SBC:1 PC or single board computerの時
-#define SBC 0
+#define SBC 1
 //DEBUG:1 デバッグモード
 #define DEBUG 0
 

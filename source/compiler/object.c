@@ -57,7 +57,6 @@ oop none  = 0;
 oop entry_sym = 0;
 
 
-
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
 typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;
 
@@ -76,6 +75,7 @@ enum Type {
     State, 
 
     Pair, 
+    EventParam,
     Assoc,
     Array,
 
@@ -176,46 +176,49 @@ char *TYPENAME[END+1] = {
 enum binop { AND, OR, ADD, SUB, MUL, DIV, MOD, LT, LE, GE, GT, EQ, NE };
 enum unyop { NEG, AINC, BINC, ADEC, BDEC};
 
-struct Undefined { enum Type type; };
-struct Operator  { enum Type type; char value;};    // for operator
-struct Integer 	 { enum Type type;  char* number; int line; };
-struct Float     { enum Type type;  char* number; int line;};
-struct String    { enum Type type;  char *value; };
-struct Key       { enum Type type;  char *pass; };
-struct Symbol  	 { enum Type type;  char *name;  oop value; };
-struct Function	 { enum Type type;  oop parameters, body;int position;enum Type kind;};
-struct Struct    { enum Type type;  oop symbol, members;};
-struct Event     { enum Type type; oop id, parameters, body; };
-struct State     { enum Type type; oop *events; int size,index; };
+struct Undefined { enum Type _type_; };
+struct Operator  { enum Type _type_; char value;};    // for operator
+struct Integer 	 { enum Type _type_;  char* number; int line; };
+struct Float     { enum Type _type_;  char* number; int line;};
+struct String    { enum Type _type_;  char *value; };
+struct Key       { enum Type _type_;  char *pass; };
+struct Symbol  	 { enum Type _type_;  char *name;  oop value; };
+struct Function	 { enum Type _type_;  oop parameters, body;int position;enum Type kind;};
+struct Struct    { enum Type _type_;  oop symbol, members;};
+struct Event     { enum Type _type_; oop id, parameters, body; };
+struct State     { enum Type _type_; oop *events; int size,index; };
 
-struct Pair  	 { enum Type type;  oop a, b; };
-struct Assoc     { enum Type type;  oop symbol; enum Type kind; int index; };
-struct Array     { enum Type type;  oop *elements; int size,number; int capacity;};
+//struct Pair    { enum Type _type_;  oop data;oop next; };
+struct Pair  	 { enum Type _type_;  oop a, b; };
+struct EventParam   { enum  Type _type_; oop type,symbol,cond;};
+//struct Param   { enum Type _type_; oop type, symbol;};
+struct Assoc     { enum Type _type_;  oop symbol; enum Type kind; int index; };
+struct Array     { enum Type _type_;  oop *elements; int size/* for what */,number/* for what */; int capacity;};
 
-struct Binop   	 { enum Type type;  enum binop op;  oop lhs, rhs;       int line;};
-struct Unyop   	 { enum Type type;  enum unyop op;  oop rhs;            int line;};
+struct Binop   	 { enum Type _type_;  enum binop op;  oop lhs, rhs;       int line;};
+struct Unyop   	 { enum Type _type_;  enum unyop op;  oop rhs;            int line;};
 
-struct GetVar  	 { enum Type type;  oop id;                             int line;};
-struct SetVar  	 { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
-struct SetVarG   { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
-struct SetVarL   { enum Type type;  enum Type typeset; oop id; oop rhs; int line;};
-struct SetType   { enum Type type;  oop id; oop child; int line;};
-struct Call 	 { enum Type type;  oop function, arguments;            int line;};
-struct Run       { enum Type type; oop state; };
+struct GetVar  	 { enum Type _type_;  oop id;                             int line;};
+struct SetVar  	 { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
+struct SetVarG   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
+struct SetVarL   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
+struct SetType   { enum Type _type_;  oop id; oop child; int line;};
+struct Call 	 { enum Type _type_;  oop function, arguments;            int line;};
+struct Run       { enum Type _type_; oop state; };
 
-struct Print   	 { enum Type type;  oop argument; enum Type kind;};
-struct If      	 { enum Type type;  oop condition, statement1, statement2; };
-struct While   	 { enum Type type;  oop condition, statement; };
-struct For       { enum Type type;  oop initstate, condition,  update, statement; };
-struct Block   	 { enum Type type;  oop *statements;  int size; };
-struct Continue  { enum Type type; };
-struct Break     { enum Type type; };
-struct Return    { enum Type type; oop value;};
+struct Print   	 { enum Type _type_;  oop argument; enum Type kind;};
+struct If      	 { enum Type _type_;  oop condition, statement1, statement2; };
+struct While   	 { enum Type _type_;  oop condition, statement; };
+struct For       { enum Type _type_;  oop initstate, condition,  update, statement; };
+struct Block   	 { enum Type _type_;  oop *statements;  int size; };
+struct Continue  { enum Type _type_; };
+struct Break     { enum Type _type_; };
+struct Return    { enum Type _type_; oop value;};
 
-struct END       { enum Type type; };
+struct END       { enum Type _type_; };
 
 struct Primitive{    
-    enum Type type;
+    enum Type _type_;
     char  lib_num;
     char func_num;
     char* args_type_array;
@@ -224,7 +227,7 @@ struct Primitive{
 };
 
 struct EventFunc{
-    enum Type type;
+    enum Type _type_;
     char  lib_num;
     char  eve_num;
     char* args_type_array;
@@ -239,13 +242,13 @@ struct EventFunc{
 #define TAGBITS 2			// how many bits to use for tag bits
 #define TAGMASK ((1 << TAGBITS) - 1)	//.mask to extract just the tag bits
 
-struct _BasePoint { enum Type type; int adress; };
-struct _Undefined{ enum Type type; };
-struct _Integer  { enum Type type; int _value; };
-struct _Long     { enum Type type; long long int value; };
-struct _Float    { enum Type type; float _value; };
-struct _Double   { enum Type type; double value; };
-struct _Char     { enum Type type; char _value; };
+struct _BasePoint { enum Type _type_; int adress; };
+struct _Undefined{ enum Type _type_; };
+struct _Integer  { enum Type _type_; int _value; };
+struct _Long     { enum Type _type_; long long int value; };
+struct _Float    { enum Type _type_; float _value; };
+struct _Double   { enum Type _type_; double value; };
+struct _Char     { enum Type _type_; char _value; };
 
 struct Default{
     unsigned int count;
@@ -303,16 +306,17 @@ struct Thread{
 };
 
 union Object {
-    enum   Type     type;
+    enum   Type     _type_;
     struct Operator Operator;
     struct Integer  Integer;
     struct Symbol   Symbol;
     struct String   String; 
     struct Key      Key;
     struct Float    Float;
-    struct List_d1  { enum Type _type;enum Type Typeset; }List_d1;
+    struct List_d1  { enum Type __type_;enum Type Typeset; }List_d1;
 
     struct Pair     Pair;
+    struct EventParam EventParam;
     struct Function Function;
     struct Struct   Struct;
     struct Binop    Binop;
@@ -323,8 +327,8 @@ union Object {
     struct SetVarL SetVarL;
     struct SetType  SetType;
 
-    struct GetArray	 { enum Type _type;enum Type typeset;  oop array, index; int line;}GetArray;
-    struct SetArray	 { enum Type _type;enum Type typeset;  oop array, index, value; int line;}SetArray;
+    struct GetArray	 { enum Type __type_;enum Type typeset;  oop array, index; int line;}GetArray;
+    struct SetArray	 { enum Type __type_;enum Type typeset;  oop array, index, value; int line;}SetArray;
 
     struct Call     Call;
     struct Print    Print;
@@ -354,18 +358,18 @@ union Object {
     struct _Double    _Double   ;
     struct _Char      _Char     ;
 
-    struct _IntegerArray {enum Type _type;oop* array; int size, capacity;}_IntegerArray;
+    struct _IntegerArray {enum Type __type_;oop* array; int size, capacity;}_IntegerArray;
     struct Thread     Thread;
 };
 
 // union OBJECT{
-//     struct BasePoint { enum Type type; int adress; }BasePoint;
-//     struct Undefined{ enum Type type; }Undefined;
-//     struct Integer  { enum Type type; int _value; }Integer;
-//     struct Long     { enum Type type; long long int value; }Long;
-//     struct Float    { enum Type type; float _value; };
-//     struct Double   { enum Type type; double value; };
-//     struct Char     { enum Type type; char _value; };
+//     struct BasePoint { enum Type _type_; int adress; }BasePoint;
+//     struct Undefined{ enum Type _type_; }Undefined;
+//     struct Integer  { enum Type _type_; int _value; }Integer;
+//     struct Long     { enum Type _type_; long long int value; }Long;
+//     struct Float    { enum Type _type_; float _value; };
+//     struct Double   { enum Type _type_; double value; };
+//     struct Char     { enum Type _type_; char _value; };
 // };
 
 
@@ -374,7 +378,7 @@ int getType(oop o)
     if ((((intptr_t)o) & TAGMASK) == TAGINT) return _Integer;
     if ((((intptr_t)o) & TAGMASK) == TAGFLT) return _Float;
     if ((((intptr_t)o) & TAGMASK) == TAGFLT) return _Float;
-    return o->type;
+    return o->_type_;
 }
 
 
@@ -394,7 +398,7 @@ oop _check(oop node, enum Type type, char *file, int line)
 oop _newObject(size_t size, enum Type type)
 {
     oop node = calloc(1, size);
-    node->type = type;
+    node->_type_ = type;
     return node;
 }
 
@@ -595,6 +599,14 @@ oop newPair(oop a, oop b)
     return obj;
 }
 
+oop newEventParam(oop type,oop symbol,oop cond){
+    oop obj = newObject(EventParam);
+    obj->EventParam.type = type;
+    obj->EventParam.symbol = symbol;
+    obj->EventParam.cond = cond;
+    return obj;
+}
+
 oop newFunction(oop parameters, oop body)
 {
     oop node = newObject(Function);
@@ -716,7 +728,7 @@ oop newPrint(oop argument,oop kind)
 {
     oop node = newObject(Print);
     node->Print.argument = argument;
-    node->Print.kind     = kind->type;
+    node->Print.kind     = kind->_type_;
     return node;
 }
 

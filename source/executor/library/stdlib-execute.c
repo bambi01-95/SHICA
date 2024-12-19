@@ -105,7 +105,6 @@ oop eve_keyget(oop t){
     }
 }
 #else
-#include <termios.h> //keyboard input
 oop eve_keyget(oop t){
     SHICA_PRINTF("eve_keyget\n");
     return t;

@@ -271,14 +271,14 @@ void compileParams(oop program,oop params,oop vnt,int line){
 
 
 int compArgs(oop program,oop params,oop args,oop vnt){
-    if(params->type == Pair && args->type == Pair){
+    if(params->_type_ == Pair && args->_type_ == Pair){
         int size = compArgs(program,params->Pair.b,args->Pair.b,vnt);
         oop para = params->Pair.a; 
-        compOT(args->Pair.a,para->Pair.a->type);
+        compOT(args->Pair.a,para->Pair.a->_type_);
         return size + 1;
     }
-    if(params->type == Pair)fatal("argument error: too few argument");
-    if(args->type == Pair)fatal("argument error: too many argument");
+    if(params->_type_ == Pair)fatal("argument error: too few argument");
+    if(args->_type_ == Pair)fatal("argument error: too many argument");
     return 0;
 }
 
@@ -406,7 +406,6 @@ oop addStructTable(oop id, oop child)
 
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 {
-
     switch (getType(exp)) {
 	case Undefined:
 	case Integer:{
@@ -587,30 +586,31 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 int Entry_bool = 0;
 
                 // compile event
-                int stt_val_c = 0;//for entry()
+                int stt_val_c = 0;//for state variable 
                 for(int i=0;i<size; i++){
                     switch(getType(events[i])){
                         case SetArray:
                         case SetVar:{
-                        //FIXME: 
-                    /*
-                        state s1{
-                            e1{
-                                ...
-                            }
-                            int a = 10;
-                        }
-                    */
-                        isEntry = 1;
-                        stt_val_c++;
-                        compO(events[i]);
-                        isEntry = 0;
-                        break;
+                            //FIXME: 
+                                /*
+                                    state s1{
+                                        e1{
+                                            ...
+                                        }
+                                        int a = 10;
+                                    }
+                                */
+                            isEntry = 1;
+                            stt_val_c++;
+                            compO(events[i]);
+                            isEntry = 0;
+                            break;
                         }
                         case Event:{
-                            event_index[i] = program->Array.number;//where
+                            
                             if(get(events[i],Event,id)==entry_sym){
                                 if(i-stt_val_c==0){
+                                    //IF entry() is defined at first element of state
                                     Entry_bool = 1;
                                     isEntry = 1;
                                     compO(events[i]);
@@ -621,7 +621,28 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                                     exit(1);
                                 }
                             }
-                            else {compO(events[i]);}
+                            else {
+                                //Definition of Event Arguments
+                                program->Array.number;
+                                oop params = get(events[i],Event,parameters);
+                                while(params==nil){
+                                    oop cond = get(get(params,Pair,a),EventParam,cond);
+                                    if(cond!=nil){//if condition is defined
+                                        //CHECK ME: is there need some initialization?
+                                        //emitII(JUMP,0);
+                                        // int jump_i = program->Array.size; //for what 
+                                        // int jump = program->Array.number; //for what
+                                        compO(cond);
+                                        //some instraction of end
+                                        // emitI(EOE);
+                                        // Array_put(program,jump_i -1,_newInteger(program->Array.number - jump));// jump event 
+                                    }
+                                }
+
+                                //Definition of Event Action
+                                event_index[i] = program->Array.number;//where
+                                compO(events[i]);//go to case Event
+                            }
                             break;
                         }
                         default:fatal("line %d not apper\n",__LINE__);
@@ -1075,27 +1096,37 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop block = get(exp, Event, body);
         vnt = newArray(0);
         int m_loc = program->Array.size;
-
+         
         if(id!=entry_sym){//isEntry: assign should be define STT local
             oop eve   = get(id,Symbol, value);
             int args_s =  eve->EventFunc.size_of_args_type_array;
             char *args =  eve->EventFunc.args_type_array;
     //now: check parameter: e,g,. timer(int n) <= int n
+            if(args_s==0 && para!=nil){
+                printf("%s line %dthis is error\n",__FILE__,__LINE__);
+            }
             for(int i=0;i<args_s;i++){
                 if(para==nil){fprintf(stderr,"event fuction args tatinai error\n");exit(1);}
                 oop a = get(para,Pair,a);
-                if(args[i]!=getType(a->Pair.a)){fprintf(stderr,"event fuction args[%s]!=para[%s] error\n",TYPENAME[args[i]],TYPENAME[getType(a->Pair.a)]);exit(1);}
-                if(assoc(a->Pair.b,vnt)!=nil)
+                getType(a->EventParam.type);
+                if(args[i]!=getType(a->EventParam.type)){
+                    fprintf(stderr,"event fuction args[%s]!=para[%s] error\n",TYPENAME[args[i]],TYPENAME[getType(a->EventParam.type)]);
+                    exit(1);
+                }
+                if(assoc(a->EventParam.symbol,vnt)!=nil)
                     fatal("type error: cannot apply same symbol in parameter\n");
-                if(assoc(a->Pair.b,Global_VNT)!=nil)
+                if(assoc(a->EventParam.symbol,Global_VNT)!=nil)
                     fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
                 /* LOCAL VNT */           
-                oop ass  = newAssoc(a->Pair.b,args[i],vnt->Array.size);
+                
+                oop ass  = newAssoc(a->EventParam.symbol,args[i],vnt->Array.size);
                 Array_push(vnt,ass);
                 para = para->Pair.b;
             }
         }
+        //define Event Action
         compO(block);
+    //2 line: make a space for varialbe
     int m_size = vnt->Array.size;
     Array_put(program,m_loc -1, _newInteger(m_size));
         vnt = nil;
@@ -1120,7 +1151,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         break;
     }
     case END:{
-        while(state_Pair->type == Pair){
+        while(state_Pair->_type_ == Pair){
             oop node = state_Pair->Pair.a;
             oop id = node->Pair.a;//state that is called
             int to_index = id->Symbol.value->State.index;//†††
@@ -1134,7 +1165,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         return sys_false;
     }
 	default:{
-        printf("%s\n",TYPENAME[exp->type]);
+        printf("%s\n",TYPENAME[exp->_type_]);
         assert(!"this cannot happen compile");
     }
     

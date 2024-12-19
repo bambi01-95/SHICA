@@ -14,7 +14,7 @@ void setting_stdlib(){
     //Event Function
                 /*funcname,  libnum, funcnum, num_args, args_type, num_of_pin,　pin_value */
     newEventFunc(loop,     STDLIB, LOOP_E    ,1,list(Undefined),1,list(Undefined));
-    newEventFunc(timer_sec,STDLIB, TIMERSEC_E,1,list(_Integer),1,list(Operator)); /*FIXME: Operater should be 1*/
+    newEventFunc(timerSec,STDLIB, TIMERSEC_E,1,list(_Integer),1,list(Operator)); /*FIXME: Operater should be 1*/
     newEventFunc(keyget,   STDLIB, KEYGET_E  ,1,list(_Integer),1,list(Undefined));
     return;
 }

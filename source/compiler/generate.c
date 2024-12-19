@@ -13,7 +13,6 @@
 })
 
 
-
 #define genData(S,D) ({ \
     unsigned char buffer[S]; \
     memcpy(buffer, &D, S); \
@@ -24,6 +23,11 @@ void genOp(int data){
     _genByte((byte)data);
 }
 
+const unsigned int SIZE_INST   = sizeof(unsigned char);
+const unsigned int SIZE_INT    = sizeof(int);            //size of int
+const unsigned int SIZE_LONG   = sizeof(long long int);  //size of long long int
+const unsigned int SIZE_FLOAT  = sizeof(float);          //size of float
+const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 #define genChar(A) _genByte((byte)A)
 
 void genInt(int data){

@@ -134,7 +134,7 @@ void printlnObject(oop node, int indent)
     case _Long:   printf("%lld\n",get(node,_Long,value));break;
     case _Float:  printf("%f\n",_Float_value(node));break;
     case _Double: printf("%lf\n",get(node,_Double,value));break;
-	default:	printf("%s\n",TYPENAME[node->type]);assert(!"this cannot happen print");			break;
+	default:	printf("%s\n",TYPENAME[node->_type_]);assert(!"this cannot happen print");			break;
     }
 }
 
