@@ -326,6 +326,7 @@ struct Thread{
     oop stack; /*gc_mark*/
     oop queue; /*gc_mark*/
     Func func;
+    unsigned int *loc_cond;/*stock location of condtion instraction*/
     union VarData*  vd; /*gc_mark*/
     unsigned int pc,rbp,base;
     unsigned flag:1;
@@ -889,7 +890,7 @@ oop dequeue(oop t)
 
 
 //THREAD
-oop _newThread(size_t vd_size,int stk_size)
+oop _newThread(size_t vd_size,int stk_size,int num_args)
 {
 #if MSGC
     GC_PUSH(oop,node, newObject(Thread));
@@ -904,8 +905,11 @@ oop _newThread(size_t vd_size,int stk_size)
     node->Thread.stack      = newArray(stk_size);
 #if MSGC
     #if SBC
+        int* loc_cond = gc_beAtomic(gc_alloc(num_args*sizeof(int)));
+        node->Thread.loc_cond = loc_cond;
         VD vd = gc_beAtomic(gc_alloc(vd_size));
     #else //C++
+        int* loc_cond = (int*)gc_beAtomic(gc_alloc(num_args*sizeof(int)));
         VD vd = (VarData*)gc_beAtomic(gc_alloc(vd_size));
     #endif
     GC_POP(node);
@@ -915,7 +919,7 @@ oop _newThread(size_t vd_size,int stk_size)
     node->Thread.vd         = vd;
     return node;
 }
-#define newThread(VD_TYPE,STACK_SIZE)	_newThread(sizeof(struct VD_TYPE),STACK_SIZE)
+#define newThread(VD_TYPE,STACK_SIZE,NUM_ARGS)	_newThread(sizeof(struct VD_TYPE),STACK_SIZE,NUM_ARGS)
 
 oop _setThread(oop t,size_t size)
 {

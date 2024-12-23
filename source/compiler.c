@@ -61,7 +61,7 @@ int main(int argc, char const *argv[])
 
         printf("\n \x1b[31m write code *********************\x1b[0m\n\n");
         CodeWrite(program);
-
+        printCode(program);
         if(argc==3  && strcmp(argv[2],"-e")==0){
             memoryWriteC("code.c");
         }

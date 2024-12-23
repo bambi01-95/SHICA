@@ -193,7 +193,7 @@ struct Pair  	 { enum Type _type_;  oop a, b; };
 struct EventParam   { enum  Type _type_; oop type,symbol,cond;};
 //struct Param   { enum Type _type_; oop type, symbol;};
 struct Assoc     { enum Type _type_;  oop symbol; enum Type kind; int index; };
-struct Array     { enum Type _type_;  oop *elements; int size/* for what */,number/* for what */; int capacity;};
+struct Array     { enum Type _type_;  oop *elements; int size/* related capacity */,number/* run time memory location */; int capacity;};
 
 struct Binop   	 { enum Type _type_;  enum binop op;  oop lhs, rhs;       int line;};
 struct Unyop   	 { enum Type _type_;  enum unyop op;  oop rhs;            int line;};
@@ -295,6 +295,7 @@ union VarData{
 
 
 struct Thread{
+    //rbp: current base point
     unsigned int pc,rbp,base;   
     char queue_head; 
     char queue_num; 

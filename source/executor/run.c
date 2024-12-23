@@ -11,7 +11,10 @@
 #include "../common/memory.c"
 #include "./library/stdlib-execute.c"
 
+
 FLAG sub_execute(oop process,oop GM);
+
+
 oop newBoolean(int flag) { return flag ? sys_true : sys_false; }
 
 oop Event_userlib(int eve_num,oop stack){
@@ -80,10 +83,10 @@ void main_execute(){
     int rbp = 0;
 #if MSGC
     GC_PUSH(oop,stack,newArray(20));
-    GC_PUSH(oop,GM,newThread(Default,10));
+    GC_PUSH(oop,GM,newThread(Default,10,0));
 #else
     oop stack = newArray(20);
-    oop GM    = newThread(Default,10);
+    oop GM    = newThread(Default,10,0);
 #endif
     for(;;){
         getInst(pc);
@@ -201,9 +204,9 @@ SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
 if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
 #if MSGC
-                GC_PUSH(oop,code,newThread(Default,10));//FIXME: using new thread here is not good for ...
+                GC_PUSH(oop,code,newThread(Default,10,0));//FIXME: using new thread here is not good for ...
 #else
-                oop code = newThread(Default,10);
+                oop code = newThread(Default,10,0);
 #endif
                 code->Thread.pc = pc;
                 for(;;){
@@ -225,9 +228,9 @@ if(isAfter){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 getInt(pc);
                 int s_pc = pc;//store corrent pc
 #if MSGC
-                GC_PUSH(oop, code,newThread(Default,20));//FIXME: this is  not good for memory
+                GC_PUSH(oop, code,newThread(Default,20,0));//FIXME: this is  not good for memory
 #else   
-                oop code = newThread(Default,20);
+                oop code = newThread(Default,20,0);
 #endif
                 code->Thread.pc = pc + int_value;
                 Array_push(code->Thread.stack,new_Basepoint(0));

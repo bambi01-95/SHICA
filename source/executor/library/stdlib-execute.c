@@ -31,6 +31,24 @@ oop eve_timer(oop t){
     if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
         t->Thread.vd->VarTI.v_t1 = current_time;
         t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
+        //eval cond
+#if MSGC
+                GC_PUSH(oop, code,newThread(Default,10,0));//FIXME: this is  not good for memory
+#else   
+                oop code = newThread(Default,20,0);
+#endif//Add instruction of JUDGE, if it is ture, FLAG some, else some....
+                // code->Thread.pc = t->Thread.loc_cond[0];
+                // Array_push(code->Thread.stack,new_Basepoint(0));
+                // for(;;){
+                //     FLAG flag = sub_execute(code,nil);
+                //     if(flag == F_EOE)break;
+                // }
+                //FIXME: Array-free or somthing need
+#if MSGC
+                GC_POP(code);
+#else
+                // free(code);
+#endif
         //protect t:thread
         gc_pushRoot((void*)&t);
         oop data = newArray(2);
@@ -122,18 +140,19 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
     GC_PUSH(oop,t,0);
     switch(eve_num){
         case LOOP_E:{
-            t = newThread(Default,stk_size);
+            t = newThread(Default,stk_size,1);
             t->Thread.vd->Default.count = 0;
             t->Thread.func = &eve_loop;
             break;
         }
         case TIMERSEC_E:{
-#if SBC
-            t = newThread(VarTI,stk_size);
+#if SBC     
+            t = newThread(VarTI,stk_size,1);
             t->Thread.vd->VarTI.v_t1 = time(NULL);
             t->Thread.vd->VarTI.v_i1  = 0;
             t->Thread.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
             t->Thread.func = &eve_timer;
+            t->Thread.loc_cond[0] = _Integer_value(Array_pop(stack)); //first argument condition
 #else
             t = newThread(Default,stk_size);
             t->Thread.vd->Default.count = 0;
@@ -142,7 +161,7 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
             break;
         }
         case KEYGET_E:{
-            t = newThread(Default,stk_size);
+            t = newThread(Default,stk_size,1);
             t->Thread.func = &eve_keyget;
             while(0!=t->Thread.func(t))dequeue(t);
             break;
