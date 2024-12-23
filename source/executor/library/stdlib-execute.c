@@ -6,9 +6,6 @@
 #include "../object.c"
 #include "../../common/liblist/stdlib.h"
 
-
-// #include "../../executer/executer.c" //<<<<<<<bobobo
-
 /*
     threads: multi function thread space
     argsCond: それぞれのconditionの内容が入っている
@@ -37,13 +34,17 @@ oop eve_timer(oop t){
 #else   
                 oop code = newThread(Default,20,0);
 #endif//Add instruction of JUDGE, if it is ture, FLAG some, else some....
-                // code->Thread.pc = t->Thread.loc_cond[0];
-                // Array_push(code->Thread.stack,new_Basepoint(0));
-                // for(;;){
-                //     FLAG flag = sub_execute(code,nil);
-                //     if(flag == F_EOE)break;
-                // }
-                //FIXME: Array-free or somthing need
+                code->Thread.pc = 10;
+                printf("pc = %d\n",code->Thread.pc);
+                Array_push(code->Thread.stack,new_Basepoint(0));
+                Array_push(code->Thread.stack,_newInteger(t->Thread.vd->VarTI.v_i1));
+                for(;;){
+                    FLAG flag = sub_execute(code,nil);
+                    printf("\n------------------\n");
+                    if(flag == F_EOE)break;
+                }
+                exit(1);
+                // FIXME: Array-free or somthing need
 #if MSGC
                 GC_POP(code);
 #else

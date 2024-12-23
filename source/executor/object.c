@@ -214,6 +214,7 @@ typedef oop (*Func)(oop);
 typedef union VarData VarData;
 typedef VarData *VD;
 
+
 // should be mark
 oop nil       = 0;
 oop sys_false = 0;
@@ -349,6 +350,7 @@ union Object {
     struct Thread     Thread;
 };
 
+FLAG sub_execute(oop process,oop GM);
 
 
 #define TAGINT	1			// tag bits value for Integer  ........1
@@ -511,7 +513,6 @@ char _Char_value(oop obj){
 // if error apper use this instead of above
 #define _Char_value(A) (char)((intptr_t)A >> TAGBITS)
 */
-
 
 
 oop _newInteger(int value)

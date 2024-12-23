@@ -2,7 +2,7 @@
 #define SETTING_H
 //TEST:1 instを表示する
 
-#define TEST 0
+#define TEST 1
 //MSGC:1 独自GCを使用する
 #define MSGC 1
 //QUEUE_SIZE:10 キューサイズ event関数の最大Stock数
