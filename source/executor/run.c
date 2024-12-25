@@ -99,6 +99,8 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 Array_push(stack,_newInteger(int_value));
                 continue;
             }
+
+
             case THREAD:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
@@ -135,11 +137,12 @@ SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
                             assert(Array == getType(stack));
                             oop thread = Event_Func(lib_num,eve_num,stack,120/num_thread);
                             Array_push(threads,thread);              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
-                            
+                            // inside Event_Func, use Array_pop for Evaluating Event argument condition
                             int inst_loc = thread_pc + _Integer_value(Array_pop(stack));
                             threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
                             threads->Array.elements[thread_index]->Thread.base = inst_loc;
                             thread_index++;
+
                             continue;
                         }
                         default:{
@@ -193,6 +196,9 @@ SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
                 // Array_free(threads);
                 continue;
             }
+
+
+
             case DEFINE_L:{
                 getInt(pc);
                 oop data  = Array_pop(stack);
@@ -1007,16 +1013,27 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 continue;
             }
             case EOE:{
+#if TEST  
+if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+#endif
                 // mpc  = mrbp;
                 mpc -= 1;
 #if DEBUG
                 DEBUG_ERROR_COND(mstack->Array.size == 0,"IMPRIMENT ERROR: stack size is %d\n",mstack->Array.size);
 #endif
-                if(mstack->Array.size != 0){
-                    printlnObject(Array_pop(mstack),1);
-                    exit(1);
-                }
+
                 return F_EOE;
+            }
+            case COND:{
+#if TEST  
+if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+#endif
+                oop cond = Array_pop(mstack);
+                //FIXME: usign sys_false and sys_true
+                if(cond == sys_false)return F_FALSE;//offset
+                else if(cond == sys_true)return F_TRUE;
+                else if(_Integer_value(cond)==0)return F_FALSE;//offset
+                return F_TRUE;
             }
             case HALT:{
 #if TEST  
@@ -1108,6 +1125,7 @@ oop printByteCode(){
 
             case THREAD: getInt(pc);SHICA_PRINTF("thread    %3d\n",int_value);continue;
             case EOE:    SHICA_PRINTF("EOE\n");continue;
+            case COND:   SHICA_PRINTF("COND\n");continue;
 
             case CALL:{
                 SHICA_PRINTF("CALL      ");
@@ -1224,7 +1242,7 @@ oop printByteCode(){
                 SHICA_PRINTF("jump      ");
                 getInt(pc);
                 int offset = int_value; 
-                SHICA_PRINTF("%3d\n",offset);
+                SHICA_PRINTF("%3d (to %3d)\n",offset,pc + offset);
                 continue;       
             }
             case i_PRINT:{
@@ -1254,6 +1272,9 @@ oop printByteCode(){
             case HALT:{
                 SHICA_PRINTF("HALT\n");
                 return nil;
+            }
+            default:{
+                SHICA_PRINTF("%s line %d this is not happen\n",__FILE__,__LINE__);
             }
         }
     }

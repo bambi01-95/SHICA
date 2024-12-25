@@ -209,6 +209,7 @@ oop printCode(oop program){
             case s_ADD:  printf("d_ADD\n");continue;
             case THREAD: printf("thread    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
             case EOE:    printf("EOE\n");continue;
+            case COND:   printf("COND\n");continue;
 
             case CALL:{
                 printf("CALL      ");//T
@@ -356,6 +357,9 @@ oop printCode(oop program){
             case HALT:{
                 printf("HALT\n");
                 return nil;
+            }
+default:{
+                printf("%s line %d this is not happen \n",__FILE__,__LINE__);
             }
         }
     }

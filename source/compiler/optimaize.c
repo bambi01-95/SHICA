@@ -663,13 +663,16 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                                             Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[i],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
                                             event_cond[i] = program->Array.number;
                                             compile(program,cond,cond_vnt,_Integer);
-                                            emitI(EOE);
+                                            emitI(COND);
                                         }else{
                                             event_cond[i] = 0;
                                         }
                                         para = para->Pair.b;//move to next param
                                     }
                                 }
+                            
+                            event_cond[0] -= program->Array.number;
+                            printf("%d \n",event_cond[0]);
                             //define Event Action
                             event_index[i] = program->Array.number;//where
                             compO(block);
@@ -711,7 +714,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         exit(1);
                     }                                         //for jump?
                     emitII(i_load,event_index[i-1] - stt_loc +(1 + INTSIZE));//d => stt_loc
-                    emitII(i_load,event_cond[i-1] - stt_loc +(1 + INTSIZE));
+                    emitII(i_load,event_cond[i-1]-(1 + INTSIZE));//Event Action -> Event Condition
                     for(int i=0;i<eve2->EventFunc.size_of_pin_num;i++){//gress, pin load
                         emitII(i_load,eve2->EventFunc.pin_num[i]);
                     }

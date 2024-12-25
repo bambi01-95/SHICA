@@ -136,6 +136,7 @@ oop printCode(oop program){
             case s_ADD:  SHICA_PRINTF("d_ADD\n");continue;
             case THREAD: SHICA_PRINTF("thread    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
             case EOE:    SHICA_PRINTF("EOE\n");continue;
+            case COND:   SHICA_PRINTF("COND\n");continue;
 
             case CALL:{
                 SHICA_PRINTF("CALL      ");//T
@@ -283,6 +284,9 @@ oop printCode(oop program){
             case HALT:{
                 SHICA_PRINTF("HALT\n");
                 return nil;
+            }
+            default:{
+                printf("%s line %d this is not happen \n",__FILE__,__LINE__);
             }
         }
     }

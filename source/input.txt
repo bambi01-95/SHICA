@@ -1,5 +1,5 @@
 state s{
-    timerSec(int a: a<10){
+    timerSec(int a: a%2==0){
         print(int,a)
     }
 }

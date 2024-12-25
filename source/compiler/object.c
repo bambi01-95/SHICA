@@ -1,6 +1,4 @@
-#ifndef TEST
-    #define TEST 0
-#endif
+
 
 #ifndef OBJECT_C
 #define OBJECT_C

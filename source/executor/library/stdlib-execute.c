@@ -34,28 +34,32 @@ oop eve_timer(oop t){
 #else   
                 oop code = newThread(Default,20,0);
 #endif//Add instruction of JUDGE, if it is ture, FLAG some, else some....
-                code->Thread.pc = 10;
-                printf("pc = %d\n",code->Thread.pc);
+                int isFalse = 0;
+                code->Thread.pc = t->Thread.base + t->Thread.loc_cond[0];
                 Array_push(code->Thread.stack,new_Basepoint(0));
                 Array_push(code->Thread.stack,_newInteger(t->Thread.vd->VarTI.v_i1));
                 for(;;){
                     FLAG flag = sub_execute(code,nil);
-                    printf("\n------------------\n");
-                    if(flag == F_EOE)break;
+                    if(flag == F_TRUE)break;
+                    else if(flag == F_FALSE){
+                        isFalse = 1;
+                        break;
+                    }
                 }
-                exit(1);
                 // FIXME: Array-free or somthing need
 #if MSGC
                 GC_POP(code);
 #else
                 // free(code);
-#endif
-        //protect t:thread
-        gc_pushRoot((void*)&t);
-        oop data = newArray(2);
-        Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
-        gc_popRoots(1);
-        enqueue(t->Thread.queue,data);
+#endif  
+        if(!isFalse){
+            //protect t:thread
+            gc_pushRoot((void*)&t);
+            oop data = newArray(2);
+            Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
+            gc_popRoots(1);
+            enqueue(t->Thread.queue,data);
+        }
     }
     return t;
 }
@@ -153,7 +157,7 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
             t->Thread.vd->VarTI.v_i1  = 0;
             t->Thread.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
             t->Thread.func = &eve_timer;
-            t->Thread.loc_cond[0] = _Integer_value(Array_pop(stack)); //first argument condition
+            t->Thread.loc_cond[0] =  _Integer_value(Array_pop(stack)); //first argument condition
 #else
             t = newThread(Default,stk_size);
             t->Thread.vd->Default.count = 0;

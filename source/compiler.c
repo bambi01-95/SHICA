@@ -1,4 +1,4 @@
-#define TEST 0
+
 #include <stdio.h>
 FILE* SOURCE_FILE;
 #define getchar() fgetc(SOURCE_FILE)

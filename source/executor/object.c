@@ -223,7 +223,7 @@ oop none      = 0;
 oop threads   = 0;
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
-typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;
+typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR,F_TRUE,F_FALSE} FLAG;
 
 enum Type {
     Undefined,

@@ -134,6 +134,7 @@ oop CodeWrite(oop program){
 
             case THREAD: genInt(_Integer_value(Array_get(program,pc++)));continue;
             case EOE:    continue;
+            case COND:   continue;
             case CALL:{
                 genInt(_Integer_value(Array_get(program,pc++)));
                 genInt(_Integer_value(Array_get(program,pc++)));
@@ -239,6 +240,9 @@ oop CodeWrite(oop program){
             }
             case HALT:{
                 return nil;
+            }
+            default:{
+                printf("%s line %d this is not happen \n",__FILE__,__LINE__);
             }
         }
     }

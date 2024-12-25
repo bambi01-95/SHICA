@@ -78,6 +78,7 @@ s_MOD,
 
 
 EOE,   /* end of event function*/
+COND,  /* event's condtion arugment */
 TRANS, /*transition: state change*/
 THREAD,/* make thread for event */
 SET_EVENT,
@@ -191,6 +192,7 @@ char* INSTNAME[s_PRINT + 1] = {
 "s_MOD",
 
 "EOE",   /* end of event function*/
+"COND",
 "TRANS", /*transition: state change*/
 "THREAD",/* make thread for event */
 "SET_EVENT",
