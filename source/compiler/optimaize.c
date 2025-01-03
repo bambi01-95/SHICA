@@ -579,152 +579,12 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
                 break;
             }
-            case State:{//†††
-                int size = get(value,State,size);
-                oop *events = get(value,State,events);
-                int event_index[size];
-                int event_cond[size]; //FIXME: for testing 
-                int Entry_bool = 0;
-
-                // compile event
-                int stt_val_c = 0;//for state variable 
-                for(int i=0;i<size; i++){
-                    switch(getType(events[i])){
-                        case SetArray:
-                        case SetVar:{
-                            //FIXME: 
-                                /*
-                                    state s1{
-                                        e1{
-                                            ...
-                                        }
-                                        int a = 10;
-                                    }
-                                */
-                            isEntry = 1;
-                            stt_val_c++;
-                            compO(events[i]);
-                            isEntry = 0;
-                            break;
-                        }
-                        case Event:{
-                            
-                            if(get(events[i],Event,id)==entry_sym){
-                                if(i-stt_val_c==0){
-                                    //IF entry() is defined at first element of state
-                                    Entry_bool = 1;
-                                    isEntry = 1;
-                                }
-                                else{
-                                    fprintf(stderr,"entry event should be defined first...\n");
-                                    exit(1);
-                                }
-                            }
-                            //Definition of Event 
-                            
-                                emitII(JUMP,0);
-                            int jump_i = program->Array.size;
-                            int jump = program->Array.number;
-
-                                oop id    = get(events[i], Event, id);
-                                oop para  = get(events[i], Event, parameters);
-                                oop block = get(events[i], Event, body);
-                                vnt = newArray(0);
-                                int m_loc = program->Array.size;
-                                
-                                if(id!=entry_sym){//isEntry: assign should be define STT local
-                                    oop eve   = get(id,Symbol, value);
-                                    int args_s =  eve->EventFunc.size_of_args_type_array;
-                                    char *args =  eve->EventFunc.args_type_array;
-                            //now: check parameter: e,g,. timer(int n) <= int n
-                                    if(args_s==0 && para!=nil){
-                                        printf("%s line %dthis is error\n",__FILE__,__LINE__);
-                                    }
-                                    for(int i=0;i<args_s;i++){
-                                        if(para==nil){fprintf(stderr,"event fuction args tatinai error\n");exit(1);}
-                                        oop a = get(para,Pair,a);
-                                        getType(a->EventParam.type);
-                                        if(args[i]!=getType(a->EventParam.type)){
-                                            fprintf(stderr,"event fuction args[%s]!=para[%s] error\n",TYPENAME[args[i]],TYPENAME[getType(a->EventParam.type)]);
-                                            exit(1);
-                                        }
-                                        if(assoc(a->EventParam.symbol,vnt)!=nil)
-                                            fatal("type error: cannot apply same symbol in parameter\n");
-                                        if(assoc(a->EventParam.symbol,Global_VNT)!=nil)
-                                            fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
-                                        /* LOCAL VNT */           
-                                        oop ass  = newAssoc(a->EventParam.symbol,args[i],vnt->Array.size);
-                                        Array_push(vnt,ass);
-
-                                    //Event Condition
-                                        oop cond = get(a,EventParam,cond);
-                                        if(cond!=nil){
-                                            oop cond_vnt = newArray(1);
-                                            Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[i],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
-                                            event_cond[i] = program->Array.number;
-                                            compile(program,cond,cond_vnt,_Integer);
-                                            emitI(COND);
-                                        }else{
-                                            event_cond[i] = 0;
-                                        }
-                                        para = para->Pair.b;//move to next param
-                                    }
-                                }
-                            
-                            event_cond[0] -= program->Array.number;
-                            printf("%d \n",event_cond[0]);
-                            //define Event Action
-                            event_index[i] = program->Array.number;//where
-                            compO(block);
-                            //2 line: make a space for varialbe
-                            int m_size = vnt->Array.size;
-                            Array_put(program,m_loc -1, _newInteger(m_size));
-                                vnt = nil;
-                                isEntry = 0;//entry() 
-                                emitI(MPOP);
-                                emitI(EOE);
-                            Array_put(program,jump_i -1,_newInteger(program->Array.number - jump));// jump event 
-                            isEntry = 0;
-                            break;
-                        }
-                        default:fatal("line %d not apper\n",__LINE__);
-                    }
-                }
-                
-                // 状態遷移の位置
-                int stt_loc = program->Array.number;
-                value->State.index = stt_loc;
-
-
-                if(Entry_bool==1){
-                    emitII(ENTRY,event_index[stt_val_c] - (stt_loc));
-                }
-                emitII(THREAD,size - Entry_bool - stt_val_c);
-                stt_loc = program->Array.number;
-
-                                /*SIZE OP + SIZE INT */ //now
-                // int d = stt_loc + (1 + INTSIZE)*size;
-                for(int i=size;i>Entry_bool+stt_val_c;i--){
-                                            // +5 => JUMP(1) num(4) => (size 5)
-                    
-                    oop eve1 = get(events[i-1],Event,id);
-                    oop eve2 = get(eve1,Symbol,value);
-                    if(getType(eve2)!=EventFunc){
-                        fprintf(stderr,"this event is not define\n");
-                        exit(1);
-                    }                                         //for jump?
-                    emitII(i_load,event_index[i-1] - stt_loc +(1 + INTSIZE));//d => stt_loc
-                    emitII(i_load,event_cond[i-1]-(1 + INTSIZE));//Event Action -> Event Condition
-                    for(int i=0;i<eve2->EventFunc.size_of_pin_num;i++){//gress, pin load
-                        emitII(i_load,eve2->EventFunc.pin_num[i]);
-                    }
-                    emitOIII(CALL_E, eve2->EventFunc.lib_num, eve2->EventFunc.eve_num, eve2->EventFunc.size_of_pin_num)//now
-                }
+        //STATE
+            case State:{
+                compile(program,value,vnt,t);
                 get(id,Symbol,value) = value;
-                Local_VNT = newArray(0);
                 break;
             }
-
             default:{
                 if(isEntry==0){
                     oop ass = assoc(id,Global_VNT);
@@ -889,6 +749,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         addStructTable(id,child);
         break;
     }
+
     case GetArray:{
         int t =     get(exp,SetArray,typeset);
         oop id =    get(exp,SetArray,array);
@@ -1103,6 +964,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         break;
         break;
     }
+
     case Break:{
         emitII(JUMP,0);
         b_push(program->Array.size);
@@ -1120,6 +982,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         emitI(RET);
         break;
     }
+
 	case Block:{
         oop *statements = get(exp, Block,statements);
 	    int  size       = get(exp, Block,size);
@@ -1128,15 +991,159 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         }    
 	    break;
     }
+
     case Event:{
         printf("%s line %d: this is not happen, check case state:\n",__FILE__,__LINE__);
         break;
     }
 
-    case State:{
-        printf("state\n");
-        exit(0);
+    case State:{//from setVar
+        int size = get(exp,State,size);
+        oop *events = get(exp,State,events);
+
+        int event_index[size];
+        int event_cond[size]; //FIXME: for testing//Remoce this line
+        struct cond{
+            int size;
+            int *indexs;
+        }EventEachArgsCond[size];
+        int Entry_bool = 0;
+
+        // compile event
+        int stt_val_c = 0;//for state variable 
+
+        for(int i=0;i<size; i++){//definition of state variable and event 
+            switch(getType(events[i])){
+                case SetArray:
+                case SetVar:{
+                    isEntry = 1;
+                    stt_val_c++;
+                    compO(events[i]);
+                    isEntry = 0;
+                    break;
+                }
+                case Event:{
+                    
+                    if(get(events[i],Event,id)==entry_sym){
+                        if(i-stt_val_c==0){//IF entry() is defined at first element of state
+                            Entry_bool = 1;
+                            isEntry = 1;
+                        }
+                        else{
+                            fprintf(stderr,"entry event should be defined first...\n");
+                            exit(1);
+                        }
+                    }
+
+                    //Definition of Event 
+                        emitII(JUMP,0);
+                    int jump_i = program->Array.size;
+                    int jump = program->Array.number;
+
+                    oop id    = get(events[i], Event, id);
+                    oop para  = get(events[i], Event, parameters);
+                    oop block = get(events[i], Event, body);
+
+                    vnt = newArray(0);
+                    int m_loc = program->Array.size;
+                    
+                    if(id!=entry_sym){//isEntry: assign should be define STT local
+                        oop eve   = get(id,Symbol, value);
+                        int args_s =  eve->EventFunc.size_of_args_type_array;
+                        char *args =  eve->EventFunc.args_type_array;
+
+                        EventEachArgsCond[i].indexs = (int *)malloc(sizeof(int)*args_s);
+                        EventEachArgsCond[i].size = args_s;
+
+                //now: check parameter: e,g,. timer(int n) <= int n
+                        if(args_s==0 && para!=nil){
+                            printf("%s line %dthis is error\n",__FILE__,__LINE__);
+                        }
+                        for(int j=0;j<args_s;j++){
+                            if(para==nil){fprintf(stderr,"event fuction args tatinai error\n");exit(1);}
+                            oop a = get(para,Pair,a);
+                            getType(a->EventParam.type);
+                            if(args[j]!=getType(a->EventParam.type)){
+                                fprintf(stderr,"event fuction args[%s]!=para[%s] error\n",TYPENAME[args[j]],TYPENAME[getType(a->EventParam.type)]);
+                                exit(1);
+                            }
+                            if(assoc(a->EventParam.symbol,vnt)!=nil)
+                                fatal("type error: cannot apply same symbol in parameter\n");
+                            if(assoc(a->EventParam.symbol,Global_VNT)!=nil)
+                                fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
+                            /* LOCAL VNT */           
+                            oop ass  = newAssoc(a->EventParam.symbol,args[j],vnt->Array.size);
+                            Array_push(vnt,ass);
+
+                        //Event Condition
+                            oop cond = get(a,EventParam,cond);
+                            if(cond!=nil){
+                                oop cond_vnt = newArray(1);
+                                Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
+                                EventEachArgsCond[i].indexs[j] = program->Array.number;
+                                compile(program,cond,cond_vnt,_Integer);
+                                emitI(COND);
+                            }else{
+                                EventEachArgsCond[i].indexs[j] = 0;
+                            }
+                            para = para->Pair.b;//move to next param
+                        }
+                    }
+
+                    //define Event Action
+                    event_index[i] = program->Array.number;//where
+                    compO(block);
+                    //2 line: make a space for varialbe
+                    int m_size = vnt->Array.size;
+                    Array_put(program,m_loc -1, _newInteger(m_size));
+                        vnt = nil;
+                        isEntry = 0;//entry() 
+                        emitI(MPOP);
+                        emitI(EOE);
+                    Array_put(program,jump_i -1,_newInteger(program->Array.number - jump));// jump event 
+                    isEntry = 0;
+                    break;
+                }
+                default:fatal("line %d not apper\n",__LINE__);
+            }
+        }//end of definition of state variable and event 
+        
+        // 状態遷移の位置
+        int stt_loc = program->Array.number;
+        exp->State.index = stt_loc;
+
+        if(Entry_bool==1){
+            emitII(ENTRY,event_index[stt_val_c] - (stt_loc));
+        }
+        emitII(THREAD,size - Entry_bool - stt_val_c);
+        stt_loc = program->Array.number;
+
+                        /*SIZE OP + SIZE INT */ //now
+        // int d = stt_loc + (1 + INTSIZE)*size;
+        for(int i=size;i>Entry_bool+stt_val_c;i--){
+                                    // +5 => JUMP(1) num(4) => (size 5)
+            
+            oop eve1 = get(events[i-1],Event,id);
+            oop eve2 = get(eve1,Symbol,value);
+            if(getType(eve2)!=EventFunc){
+                fprintf(stderr,"this event is not define\n");
+                exit(1);
+            }                                         //for jump?
+            emitII(i_load,event_index[i-1] - stt_loc +(1 + INTSIZE));//d => stt_loc
+            //emit event condition location
+            for(int j=0;j<EventEachArgsCond[i-1].size;j++){
+                emitII(i_load,EventEachArgsCond[i-1].indexs[j] - (1 + INTSIZE) - event_index[i-1]);
+            }
+            //emit event function initialize args
+            for(int i=0;i<eve2->EventFunc.size_of_pin_num;i++){//gress, pin load
+                emitII(i_load,eve2->EventFunc.pin_num[i]);
+            }
+            emitOIII(CALL_E, eve2->EventFunc.lib_num, eve2->EventFunc.eve_num, eve2->EventFunc.size_of_pin_num)//now
+        }
+        Local_VNT = newArray(0);
+        break;
     }
+
     case Run:{
         oop id = get(exp,Run,state);
         emitII(TRANS,0);
@@ -1146,6 +1153,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         state_Pair = newPair(newPair(id,newPair(_newInteger(L_i),_newInteger(L))),state_Pair);
         break;
     }
+
     case END:{
         while(state_Pair->_type_ == Pair){
             oop node = state_Pair->Pair.a;
@@ -1160,6 +1168,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         }
         return sys_false;
     }
+
 	default:{
         printf("%s\n",TYPENAME[exp->_type_]);
         assert(!"this cannot happen compile");

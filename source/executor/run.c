@@ -343,18 +343,6 @@ void stdlib_appendchar(oop process,oop GM){
     return;
 }
 
-// void stdlib_time(oop process, oop GM){
-//     getInt(mpc);int size_args = int_value;
-//     int t = time(1);
-//     Array_push(mstack,_newInteger(t));
-// }
-
-// void stdlib_queue(oop process, oop GM){
-//     getInt(mpc);int size_args = int_value;
-//     while(size_args--){
-        
-//     }
-// }
 
 void lib_stdlib(oop process,oop GM){
     //is it need gc_push
@@ -744,9 +732,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 double r = apd(),l = apd();
                 Array_push(mstack,_newDouble(l/r));
                 continue;
-            } 
-
-
+            }
             case s_EQ: {
                 char* r = aps(),*l = aps();
                 if(strcmp(l,r)==0)Array_push(mstack,sys_true);
@@ -790,11 +776,6 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 Array_push(mstack,newStr);
                 continue;
             }
-
-
-
-
-
 /* end calc */
             case CALL:{
 #if TEST  
@@ -820,7 +801,6 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data = Array_get(mstack,mrbp + int_value);
-                printlnObject(data,1);
                 Array_push(mstack,data);//index
                 continue;
             }

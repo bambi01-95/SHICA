@@ -906,7 +906,7 @@ oop _newThread(size_t vd_size,int stk_size,int num_args)
     node->Thread.stack      = newArray(stk_size);
 #if MSGC
     #if SBC
-        int* loc_cond = gc_beAtomic(gc_alloc(num_args*sizeof(int)));
+        unsigned int* loc_cond = gc_beAtomic(gc_alloc(num_args*sizeof(int)));
         node->Thread.loc_cond = loc_cond;
         VD vd = gc_beAtomic(gc_alloc(vd_size));
     #else //C++
