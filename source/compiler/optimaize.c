@@ -1081,6 +1081,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                                 oop cond_vnt = newArray(1);
                                 Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
                                 EventEachArgsCond[i].indexs[j] = program->Array.number;
+                                SHICA_PRINTF("program %d\n",program->Array.number);
                                 compile(program,cond,cond_vnt,_Integer);
                                 emitI(COND);
                             }else{
@@ -1131,8 +1132,14 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             }                                         //for jump?
             emitII(i_load,event_index[i-1] - stt_loc +(1 + INTSIZE));//d => stt_loc
             //emit event condition location
+            SHICA_PRINTF("event_index[%d] = %d\n",i-1,EventEachArgsCond[i-1].size);
             for(int j=0;j<EventEachArgsCond[i-1].size;j++){
-                emitII(i_load,EventEachArgsCond[i-1].indexs[j] - (1 + INTSIZE) - event_index[i-1]);
+                if(EventEachArgsCond[i-1].indexs[j]!=0){
+                    emitII(i_load,EventEachArgsCond[i-1].indexs[j] - (1 + INTSIZE) - event_index[i-1]);
+                }
+                else{
+                    emitII(i_load,0);
+                }
             }
             //emit event function initialize args
             for(int i=0;i<eve2->EventFunc.size_of_pin_num;i++){//gress, pin load

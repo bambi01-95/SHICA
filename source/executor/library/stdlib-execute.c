@@ -10,6 +10,64 @@
     threads: multi function thread space
     argsCond: それぞれのconditionの内容が入っている
 */
+#if SBC //event()
+oop eve_test(oop t){
+    time_t current_time = time(NULL);
+    if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
+        t->Thread.vd->VarTI.v_t1 = current_time;
+        t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
+        //eval cond
+#if MSGC
+                GC_PUSH(oop, code,newThread(Default,10,0));//FIXME: this is  not good for memory
+#else   
+                oop code = newThread(Default,20,0);
+#endif//Add instruction of JUDGE, if it is ture, FLAG some, else some....
+                int isFalse = 0;
+                for(int i=0;i<2;i++){
+                    if(t->Thread.loc_cond[i] == 0)continue;
+                    code->Thread.pc = t->Thread.base + t->Thread.loc_cond[i];
+                    Array_push(code->Thread.stack,new_Basepoint(0));
+                    Array_push(code->Thread.stack,_newInteger(t->Thread.vd->VarTI.v_i1));
+                    for(;;){
+                        FLAG flag = sub_execute(code,nil);
+                        if(flag == F_TRUE){
+                            // SHICA_PRINTF("TRUE\n");
+                            break;
+                        }
+                        else if(flag == F_FALSE){
+                            // SHICA_PRINTF("FALSE\n");
+                            isFalse = 1;
+                            break;
+                        }
+                    }
+                }
+                // FIXME: Array-free or somthing need
+#if MSGC
+                GC_POP(code);
+#else
+                // free(code);
+#endif  
+        if(!isFalse){
+            //protect t:thread
+            gc_pushRoot((void*)&t);
+            oop data = newArray(2);
+            Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
+            Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
+            gc_popRoots(1);
+            enqueue(t->Thread.queue,data);
+        }
+    }
+    return t;
+}
+#else
+oop eve_test(oop t){
+    SHICA_PRINTF("eve_test\n");
+    return t;
+}
+#endif
+
+
+
 oop eve_loop(oop t){
     if(t->Thread.flag == 0){
         //protect t:thread
@@ -144,6 +202,22 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
     //protect t:new thread
     GC_PUSH(oop,t,0);
     switch(eve_num){
+        case TEST_E:{
+#if SBC     
+            t = newThread(VarTI,stk_size,1);
+            t->Thread.vd->VarTI.v_t1 = time(NULL);
+            t->Thread.vd->VarTI.v_i1  = 0;
+            t->Thread.vd->VarTI.v_i2  = 1;
+            t->Thread.func = &eve_test;
+            t->Thread.loc_cond[0] =  _Integer_value(Array_pop(stack)); //first argument condition
+            t->Thread.loc_cond[1] =  _Integer_value(Array_pop(stack)); //second argument condition
+#else
+            t = newThread(Default,stk_size);
+            t->Thread.vd->Default.count = 0;
+            t->Thread.func = &eve_test;
+#endif
+            break;
+        }
         case LOOP_E:{
             t = newThread(Default,stk_size,1);
             t->Thread.vd->Default.count = 0;

@@ -2,6 +2,7 @@
 #define STDLIB_H
 
 extern enum STDLIB_E{
+    TEST_E,/*for test*/
     LOOP_E,
     TIMERSEC_E,
     KEYGET_E,

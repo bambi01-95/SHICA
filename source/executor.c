@@ -57,8 +57,9 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
 #endif
 #if TEST
         printf("\n \x1b[31m print byte code after memory read ******************\x1b[0m\n\n");
-        printByteCode();
+        
 #endif
+printByteCode();
         main_execute();
     return 0;
 }

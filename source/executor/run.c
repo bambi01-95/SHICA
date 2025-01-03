@@ -1027,6 +1027,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 SHICA_PRINTF("HALT with %d items on mstack\n",getChild(mstack,Array,size));
                 int size = getChild(mstack,Array,size);
                 for(int i = 0; i<size;i++)
+                    SHICA_PRINTF("%d: ",i);
                     printlnObject(Array_pop(mstack),1);
                 return F_NONE;
             }
