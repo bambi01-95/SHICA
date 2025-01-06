@@ -1,5 +1,3 @@
-
-
 #ifndef OBJECT_C
 #define OBJECT_C
 #include <stdlib.h>
@@ -22,6 +20,60 @@ typedef union Object Object;
 typedef Object *oop;
 typedef oop (*Func)(oop);
 
+#if DEBUG
+// DEBUG LOG Function
+void debug_log(char *file,int line,const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    printf("[LOG] %s line %d:\t",file,line);
+    vprintf(format, args);
+    printf("\n");
+    va_end(args);
+}
+#define DEBUG_LOG(...) debug_log(__FILE__, __LINE__, __VA_ARGS__)
+
+void debug_log_ref(char *file1,int line1,char* file2,int line2,const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    printf("[LOG] %s line %d:\n",file1,line1);
+    printf("        %s line %d:\t",file2,line2);
+    vprintf(format, args);
+    printf("\n");
+    va_end(args);
+}
+#define DEBUG_LOG_REF(...) debug_log_ref(__FILE__, __LINE__,file,line, __VA_ARGS__)
+
+void debug_error_1ref(char* file,int line,const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file,line);
+    vprintf(format, args); 
+    SHICA_FPRINTF(stderr, "\n");
+    va_end(args);
+}
+#define DEBUG_ERROR(...) debug_error_1ref(__FILE__, __LINE__,__VA_ARGS__)
+#define DEBUG_ERROR_COND(COND,...) ({ \
+    if(!(COND)){ \
+        debug_error_1ref(__FILE__,__LINE__,__VA_ARGS__);\
+    }\
+})
+
+void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file1,line1);//that call function that include debug_error()
+        SHICA_FPRINTF(stderr, "        %s line %d:\t",file2,line2);//that call debug_error()
+    vprintf(format, args); 
+    SHICA_FPRINTF(stderr, "\n");
+    va_end(args);
+}
+#define DEBUG_ERROR_REF(...) debug_error_2ref(__FILE__, __LINE__,file,line, __VA_ARGS__)
+#define DEBUG_ERROR_COND_REF(COND,...) ({ \
+    if(!(COND)){ \
+        debug_error_2ref(__FILE__,__LINE__,file,line,__VA_ARGS__);\
+    }\
+})
+#endif
 
 #define user_error(COND,MSG,LINE) ({ \
     if(COND){ \

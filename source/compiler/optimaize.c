@@ -1,8 +1,8 @@
 #include "object.c"
 #include "../common/inst.c"
 
-#ifndef COMPILER_C
-#define COMPILER_C
+#ifndef OPTIMAIZE_C
+#define OPTIMAIZE_C
 
 enum instrac Binop_oprand(enum Type type,enum binop binop,int line){
     switch(type){
@@ -114,13 +114,6 @@ enum instrac Binop_oprand(enum Type type,enum binop binop,int line){
     exit(1);
     return 0;
 }
-
-
-/*
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                        compile code
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-*/
 
 // break stack
 int *b_stack = 0;
@@ -404,6 +397,38 @@ oop addStructTable(oop id, oop child)
     return struct_symbols[lo] = newStruct(id,child);
 }
 
+//FOR multi Function
+struct ThreadData{
+    int eventLoc;
+    int size;
+    int *condLocs;
+};
+struct CoreData{
+    oop id;
+    int size;
+    struct ThreadData **threadData;
+    struct CoreData *next;
+};
+struct CoreData *inseartCoreData(struct CoreData *core,oop id){
+    while(core!=0){
+        if(core->id == id){
+            core->threadData = realloc(core->threadData,sizeof(struct ThreadData*)*(core->size+1));
+            return core;
+        }
+        if(core->next == 0)break;
+        core = core->next;
+    }
+    struct CoreData *new = calloc(1,sizeof(struct CoreData));
+    new->id = id;
+    new->next = 0;
+    new->size = 0;
+    new->threadData = (struct ThreadData**)calloc(1,sizeof(struct ThreadData*));
+    core->next = new;
+    return new;
+}
+
+
+
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 {
     switch (getType(exp)) {
@@ -613,33 +638,69 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         compOT(value,ass->Assoc.kind);
                         emitII(DEFINE,ass->Assoc.index); 
                     }
-                }else{// in the entry(){...}
-                    oop ass = assoc(id,Global_VNT);
-                    if(ass!=nil){
-                        if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
-                        compOT(value,ass->Assoc.kind);
-                        emitII(DEFINE_G,ass->Assoc.index); 
-                    }
-                    else{
-                        ass = assoc(id, Local_VNT);
-                        if(ass == nil){
-                            if(t==Undefined)//it is first time defining this symbol, indicate type.
-                                fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
-                            //define new symbol with type
-                            ass = newAssoc(get(exp, SetVar,id),t,Local_VNT->Array.size);
-                            Array_push(Local_VNT, ass);
-                        }
-                        else if(t!=Undefined){
-                            fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
-                        }
-                        compOT(value,ass->Assoc.kind);
-                        emitII(DEFINE_L,ass->Assoc.index); 
-                    }
                 }
-
+            //FIXME with (2025/01/04): sttローカルがうまく実行できたなら下記を消す  
+                //else{ in the entry(){...}
+                //     oop ass = assoc(id,Global_VNT);
+                //     if(ass!=nil){
+                //         if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
+                //         compOT(value,ass->Assoc.kind);
+                //         emitII(DEFINE_G,ass->Assoc.index); 
+                //     }
+                //     else{
+                //         ass = assoc(id, Local_VNT);
+                //         if(ass == nil){
+                //             if(t==Undefined)//it is first time defining this symbol, indicate type.
+                //                 fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
+                //             //define new symbol with type
+                //             ass = newAssoc(get(exp, SetVar,id),t,Local_VNT->Array.size);
+                //             Array_push(Local_VNT, ass);
+                //         }
+                //         else if(t!=Undefined){
+                //             fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
+                //         }
+                //         compOT(value,ass->Assoc.kind);
+                //         emitII(DEFINE_L,ass->Assoc.index); 
+                //     }
+                //}
+            //end of remove
             }
         }
 	    break;
+    }
+    case SetVarL:{
+        
+        int t     = get(exp,SetVar,typeset); //setting type of symbolfdfdfd
+        oop id    = get(exp,SetVar,id);      //get symbol
+        oop value = get(exp,SetVar,rhs);     //get value, = 10 or (int a,int b){return a + b}
+
+        oop ass = assoc(id,Global_VNT);
+        if(ass!=nil){
+            if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
+            compOT(value,ass->Assoc.kind);
+            emitII(DEFINE_G,ass->Assoc.index); 
+        }
+        else{
+            ass = assoc(id, Local_VNT);
+            if(ass == nil){
+                if(t==Undefined)//it is first time defining this symbol, indicate type.
+                    fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
+                //define new symbol with type
+                ass = newAssoc(get(exp, SetVar,id),t,Local_VNT->Array.size);
+                Array_push(Local_VNT, ass);
+            }
+            else if(t!=Undefined){
+                fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
+            }
+            compOT(value,ass->Assoc.kind);
+            emitII(DEFINE_L,ass->Assoc.index); 
+        }
+        
+        #if DEBUG
+        //FIXME with (2025/01/04): sttローカルがうまく実行できたなら、SetVarのFIXMEを消す
+        SHICA_PRINTF("SetVarL\n is it work?");
+        #endif
+        break;
     }
 
     case SetVarG:{
@@ -1002,29 +1063,57 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop *events = get(exp,State,events);
 
         int event_index[size];
-        int event_cond[size]; //FIXME: for testing//Remoce this line
+        /*
+        Event Table
+        oop sym: eve->Symbol.value
+        int *event_index;
+        EvenetEachArgsCond *EventEachArgsConds;
+        */
+        struct CoreData *core = (struct CoreData *)malloc(sizeof(struct CoreData));
+        core->size = 0;
+        core->id = entry_sym;
+        core->next = 0;
+
+
         struct cond{
             int size;
             int *indexs;
         }EventEachArgsCond[size];
         int Entry_bool = 0;
-
-        // compile event
         int stt_val_c = 0;//for state variable 
 
-        for(int i=0;i<size; i++){//definition of state variable and event 
+    //<1.変数とイベントアクションの定義>/<Definition of variables and event actions> 
+        for(int i=0;i<size; i++){
             switch(getType(events[i])){
                 case SetArray:
-                case SetVar:{
-                    isEntry = 1;
+                case SetVarL:{
                     stt_val_c++;
                     compO(events[i]);
-                    isEntry = 0;
                     break;
                 }
                 case Event:{
                     
-                    if(get(events[i],Event,id)==entry_sym){
+                        emitII(JUMP,0);
+                    int jump_i = program->Array.size;
+                    int jump = program->Array.number;
+
+                    vnt = newArray(0);
+                    int m_loc = program->Array.size;
+
+                    oop id    = get(events[i], Event, id);
+                    oop para  = get(events[i], Event, parameters);
+                    oop block = get(events[i], Event, body);
+
+                    struct CoreData* coreData = inseartCoreData(core,id);
+                    struct ThreadData *threadData = (struct ThreadData *)malloc(sizeof(struct ThreadData));
+                    //REMOVE
+                    // while(core!=0){
+                    //     DEBUG_LOG("%s\n",core->id->Symbol.name);
+                    //     core = core->next;
+                    // }
+                    // exit(0);
+
+                    if(id==entry_sym){
                         if(i-stt_val_c==0){//IF entry() is defined at first element of state
                             Entry_bool = 1;
                             isEntry = 1;
@@ -1034,33 +1123,33 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                             exit(1);
                         }
                     }
+                    else{
+                        /*  check Table 
+                            if in the table, 
+                                set the count + 1
+                                set the varialbe X
+                            if not in the table, 
+                                mknew table
+                                set the 1
+                                set the varialbe X
+                        */
 
-                    //Definition of Event 
-                        emitII(JUMP,0);
-                    int jump_i = program->Array.size;
-                    int jump = program->Array.number;
 
-                    oop id    = get(events[i], Event, id);
-                    oop para  = get(events[i], Event, parameters);
-                    oop block = get(events[i], Event, body);
-
-                    vnt = newArray(0);
-                    int m_loc = program->Array.size;
-                    
-                    if(id!=entry_sym){//isEntry: assign should be define STT local
                         oop eve   = get(id,Symbol, value);
                         int args_s =  eve->EventFunc.size_of_args_type_array;
                         char *args =  eve->EventFunc.args_type_array;
 
-                        EventEachArgsCond[i].indexs = (int *)malloc(sizeof(int)*args_s);
-                        EventEachArgsCond[i].size = args_s;
+                        threadData->condLocs = (int *)malloc(sizeof(int)*args_s);
+                        threadData->size = args_s;
 
-                //now: check parameter: e,g,. timer(int n) <= int n
+                        EventEachArgsCond[i].indexs = (int *)malloc(sizeof(int)*args_s);//remove
+                        EventEachArgsCond[i].size = args_s;//remove
+
                         if(args_s==0 && para!=nil){
-                            printf("%s line %dthis is error\n",__FILE__,__LINE__);
+                            DEBUG_ERROR("%s line %d over parameter\n",__FILE__,__LINE__);
                         }
                         for(int j=0;j<args_s;j++){
-                            if(para==nil){fprintf(stderr,"event fuction args tatinai error\n");exit(1);}
+                            if(para==nil){fprintf(stderr,"event fuction args less parameter\n");exit(1);}
                             oop a = get(para,Pair,a);
                             getType(a->EventParam.type);
                             if(args[j]!=getType(a->EventParam.type)){
@@ -1071,85 +1160,122 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                                 fatal("type error: cannot apply same symbol in parameter\n");
                             if(assoc(a->EventParam.symbol,Global_VNT)!=nil)
                                 fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
-                            /* LOCAL VNT */           
+                            
+                        //<引数の追加>/<add args>    
                             oop ass  = newAssoc(a->EventParam.symbol,args[j],vnt->Array.size);
                             Array_push(vnt,ass);
 
-                        //Event Condition
+                        //<Event条件のコンパイル>/<compile event condition>
                             oop cond = get(a,EventParam,cond);
                             if(cond!=nil){
                                 oop cond_vnt = newArray(1);
                                 Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
-                                EventEachArgsCond[i].indexs[j] = program->Array.number;
-                                SHICA_PRINTF("program %d\n",program->Array.number);
+                                EventEachArgsCond[i].indexs[j] = program->Array.number;//remove
+                                threadData->condLocs[j] = program->Array.number;
                                 compile(program,cond,cond_vnt,_Integer);
                                 emitI(COND);
                             }else{
-                                EventEachArgsCond[i].indexs[j] = 0;
+                                EventEachArgsCond[i].indexs[j] = 0;//remove
+                                threadData->condLocs[j] = 0;
                             }
                             para = para->Pair.b;//move to next param
                         }
                     }
 
                     //define Event Action
-                    event_index[i] = program->Array.number;//where
+                    event_index[i] = program->Array.number;//remove
+                    threadData->eventLoc = program->Array.number;
                     compO(block);
                     //2 line: make a space for varialbe
                     int m_size = vnt->Array.size;
                     Array_put(program,m_loc -1, _newInteger(m_size));
-                        vnt = nil;
-                        isEntry = 0;//entry() 
+                    vnt = nil;
+                    isEntry = 0;//entry() is not in the entry(){} block
                         emitI(MPOP);
                         emitI(EOE);
                     Array_put(program,jump_i -1,_newInteger(program->Array.number - jump));// jump event 
                     isEntry = 0;
+                    coreData->threadData[coreData->size] = threadData;
+                    coreData->size++;
                     break;
                 }
                 default:fatal("line %d not apper\n",__LINE__);
             }
         }//end of definition of state variable and event 
-        
-        // 状態遷移の位置
+
+    // <2.状態遷移の呼び出し>/<state transition call>
         int stt_loc = program->Array.number;
         exp->State.index = stt_loc;
 
-        if(Entry_bool==1){
+        if(Entry_bool==1){//entry()の実行
             emitII(ENTRY,event_index[stt_val_c] - (stt_loc));
         }
         emitII(THREAD,size - Entry_bool - stt_val_c);
         stt_loc = program->Array.number;
 
-                        /*SIZE OP + SIZE INT */ //now
-        // int d = stt_loc + (1 + INTSIZE)*size;
-        for(int i=size;i>Entry_bool+stt_val_c;i--){
-                                    // +5 => JUMP(1) num(4) => (size 5)
-            
-            oop eve1 = get(events[i-1],Event,id);
-            oop eve2 = get(eve1,Symbol,value);
-            if(getType(eve2)!=EventFunc){
-                fprintf(stderr,"this event is not define\n");
-                exit(1);
-            }                                         //for jump?
-            emitII(i_load,event_index[i-1] - stt_loc +(1 + INTSIZE));//d => stt_loc
-            //emit event condition location
-            SHICA_PRINTF("event_index[%d] = %d\n",i-1,EventEachArgsCond[i-1].size);
-            for(int j=0;j<EventEachArgsCond[i-1].size;j++){
-                if(EventEachArgsCond[i-1].indexs[j]!=0){
-                    emitII(i_load,EventEachArgsCond[i-1].indexs[j] - (1 + INTSIZE) - event_index[i-1]);
-                }
-                else{
-                    emitII(i_load,0);
-                }
+    // <3.イベント関数の呼び出し>/<Event function call>
+        
+        while(core!=0){
+            DEBUG_LOG("hello\n");
+            struct CoreData *tmp = core;
+            if(tmp->id==entry_sym){
+                core = core->next;
+                continue;
             }
-            //emit event function initialize args
-            for(int i=0;i<eve2->EventFunc.size_of_pin_num;i++){//gress, pin load
-                emitII(i_load,eve2->EventFunc.pin_num[i]);
+            oop eveF = get(tmp->id,Symbol,value);
+            DEBUG_LOG("temp size %d\n",tmp->size);
+            for(int i=0;i<tmp->size;i++){
+                struct ThreadData *threadData = tmp->threadData[i];
+                emitII(i_load,threadData->eventLoc - stt_loc +(1 + INTSIZE));// event action location
+                
+                for(int j=0;j<threadData->size;j++){
+                    if(threadData->condLocs[j]!=0){
+                        emitII(i_load,threadData->condLocs[j] - (1 + INTSIZE) - threadData->eventLoc);        //event condition location
+                    }else{
+                        emitII(i_load,0);
+                    }
+                }
+                for(int pin_i=0;i<eveF->EventFunc.size_of_pin_num;pin_i++){//gress, pin load
+                    emitII(i_load,eveF->EventFunc.pin_num[pin_i]);
+                }
+                emitOIII(CALL_E, eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num)
             }
-            emitOIII(CALL_E, eve2->EventFunc.lib_num, eve2->EventFunc.eve_num, eve2->EventFunc.size_of_pin_num)//now
+            core = core->next;
         }
+        //ローカル変数の初期化
         Local_VNT = newArray(0);
         break;
-    }
+
+        // for(int i=size;i>Entry_bool+stt_val_c;i--){
+        //                             // +5 => JUMP(1) num(4) => (size 5)
+            
+        //     oop eve1 = get(events[i-1],Event,id);
+        //     oop eve2 = get(eve1,Symbol,value);
+        //     if(getType(eve2)!=EventFunc){
+        //         fprintf(stderr,"this event is not define\n");
+        //         exit(1);
+        //     }                                         //for jump?
+        //     emitII(i_load,event_index[i-1] - stt_loc +(1 + INTSIZE));//d => stt_loc
+        //     //emit event condition location
+        //     SHICA_PRINTF("event_index[%d] = %d\n",i-1,EventEachArgsCond[i-1].size);
+        //     for(int j=0;j<EventEachArgsCond[i-1].size;j++){
+        //         if(EventEachArgsCond[i-1].indexs[j]!=0){
+        //             emitII(i_load,EventEachArgsCond[i-1].indexs[j] - (1 + INTSIZE) - event_index[i-1]);
+        //         }
+        //         else{
+        //             emitII(i_load,0);
+        //         }
+        //     }
+        //     //emit event function initialize args
+        //     for(int i=0;i<eve2->EventFunc.size_of_pin_num;i++){//gress, pin load
+        //         emitII(i_load,eve2->EventFunc.pin_num[i]);
+        //     }
+        //     emitOIII(CALL_E, eve2->EventFunc.lib_num, eve2->EventFunc.eve_num, eve2->EventFunc.size_of_pin_num)//now
+        // }
+        // Local_VNT = newArray(0);
+        
+        // break;
+    }//end of case State
 
     case Run:{
         oop id = get(exp,Run,state);

@@ -1,4 +1,8 @@
-#include "../executor/setting.h" //need to consider the compile time
+#if COMPILER_C
+    #include "../compiler/setting.h"
+#else
+    #include "../executor/setting.h" //need to consider the compile time
+#endif
 
 #ifndef MEMORY_C
 #define MEMORY_C

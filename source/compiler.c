@@ -1,3 +1,5 @@
+#define COMPILER_C 1
+#include "./compiler/setting.h"
 
 #include <stdio.h>
 FILE* SOURCE_FILE;

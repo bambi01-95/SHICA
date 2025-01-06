@@ -1,4 +1,9 @@
-#include "../executor/setting.h"
+#if COMPILER_C
+    #include "../compiler/setting.h"
+#else
+    #include "../executor/setting.h"
+#endif
+
 #ifndef INST_C
 #define INST_C
 

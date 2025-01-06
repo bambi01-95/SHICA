@@ -18,16 +18,16 @@ oop eve_test(oop t){
         t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
         //eval cond
 #if MSGC
-                GC_PUSH(oop, code,newThread(Default,10,0));//FIXME: this is  not good for memory
+                GC_PUSH(oop, code,newThread(Default,10,0));//for Eval args cond
 #else   
                 oop code = newThread(Default,20,0);
 #endif//Add instruction of JUDGE, if it is ture, FLAG some, else some....
                 int isFalse = 0;
-                for(int i=0;i<2;i++){
-                    if(t->Thread.loc_cond[i] == 0)continue;
-                    code->Thread.pc = t->Thread.base + t->Thread.loc_cond[i];
-                    Array_push(code->Thread.stack,new_Basepoint(0));
-                    Array_push(code->Thread.stack,_newInteger(t->Thread.vd->VarTI.v_i1));
+                for(int i=0;i<2/*number of args*/;i++){//一般にLoopを使用しない（配列を作成した場合はLoopを使用可能）
+                    if(t->Thread.loc_cond[i] == 0)continue;//if it is 0, it is not defined
+                    code->Thread.pc = t->Thread.base + t->Thread.loc_cond[i];//set pc to condition location
+                    Array_push(code->Thread.stack,new_Basepoint(0));//set basepoint
+                    Array_push(code->Thread.stack,_newInteger(t->Thread.vd->VarTI.v_i1));//set args
                     for(;;){
                         FLAG flag = sub_execute(code,nil);
                         if(flag == F_TRUE){
