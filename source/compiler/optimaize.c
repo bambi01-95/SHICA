@@ -1062,25 +1062,15 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         int size = get(exp,State,size);
         oop *events = get(exp,State,events);
 
-        int event_index[size];
-        /*
-        Event Table
-        oop sym: eve->Symbol.value
-        int *event_index;
-        EvenetEachArgsCond *EventEachArgsConds;
-        */
+
         struct CoreData *core = (struct CoreData *)malloc(sizeof(struct CoreData));
         core->size = 0;
         core->id = entry_sym;
         core->next = 0;
 
+        char Entry_bool = 0; //for ...
+        unsigned char stt_val_c = 0;  //for state variable 
 
-        struct cond{
-            int size;
-            int *indexs;
-        }EventEachArgsCond[size];
-        int Entry_bool = 0;
-        int stt_val_c = 0;//for state variable 
 
     //<1.変数とイベントアクションの定義>/<Definition of variables and event actions> 
         for(int i=0;i<size; i++){
@@ -1106,12 +1096,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
                     struct CoreData* coreData = inseartCoreData(core,id);
                     struct ThreadData *threadData = (struct ThreadData *)malloc(sizeof(struct ThreadData));
-                    //REMOVE
-                    // while(core!=0){
-                    //     DEBUG_LOG("%s\n",core->id->Symbol.name);
-                    //     core = core->next;
-                    // }
-                    // exit(0);
 
                     if(id==entry_sym){
                         if(i-stt_val_c==0){//IF entry() is defined at first element of state
@@ -1124,17 +1108,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         }
                     }
                     else{
-                        /*  check Table 
-                            if in the table, 
-                                set the count + 1
-                                set the varialbe X
-                            if not in the table, 
-                                mknew table
-                                set the 1
-                                set the varialbe X
-                        */
-
-
                         oop eve   = get(id,Symbol, value);
                         int args_s =  eve->EventFunc.size_of_args_type_array;
                         char *args =  eve->EventFunc.args_type_array;
@@ -1142,8 +1115,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         threadData->condLocs = (int *)malloc(sizeof(int)*args_s);
                         threadData->size = args_s;
 
-                        EventEachArgsCond[i].indexs = (int *)malloc(sizeof(int)*args_s);//remove
-                        EventEachArgsCond[i].size = args_s;//remove
 
                         if(args_s==0 && para!=nil){
                             DEBUG_ERROR("%s line %d over parameter\n",__FILE__,__LINE__);
@@ -1170,12 +1141,10 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                             if(cond!=nil){
                                 oop cond_vnt = newArray(1);
                                 Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
-                                EventEachArgsCond[i].indexs[j] = program->Array.number;//remove
                                 threadData->condLocs[j] = program->Array.number;
                                 compile(program,cond,cond_vnt,_Integer);
                                 emitI(COND);
                             }else{
-                                EventEachArgsCond[i].indexs[j] = 0;//remove
                                 threadData->condLocs[j] = 0;
                             }
                             para = para->Pair.b;//move to next param
@@ -1183,7 +1152,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     }
 
                     //define Event Action
-                    event_index[i] = program->Array.number;//remove
                     threadData->eventLoc = program->Array.number;
                     compO(block);
                     //2 line: make a space for varialbe
@@ -1208,26 +1176,41 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         exp->State.index = stt_loc;
 
         if(Entry_bool==1){//entry()の実行
-            emitII(ENTRY,event_index[stt_val_c] - (stt_loc));
+            emitII(ENTRY,core->threadData[0]->eventLoc - (stt_loc));
         }
-        emitII(THREAD,size - Entry_bool - stt_val_c);
+
+        struct CoreData *tmp = core;
+        unsigned char num_of_core = 0;
+        while(tmp!=0){
+            if(tmp->id!=entry_sym){
+                num_of_core++;
+            }
+            tmp = tmp->next;
+        }
+
+        emitII(MKCORE,num_of_core);
+        // emitII(THREAD,size - Entry_bool - stt_val_c);
         stt_loc = program->Array.number;
 
     // <3.イベント関数の呼び出し>/<Event function call>
-        
         while(core!=0){
-            DEBUG_LOG("hello\n");
-            struct CoreData *tmp = core;
-            if(tmp->id==entry_sym){
+            if(core->id==entry_sym){
                 core = core->next;
                 continue;
             }
-            oop eveF = get(tmp->id,Symbol,value);
-            DEBUG_LOG("temp size %d\n",tmp->size);
-            for(int i=0;i<tmp->size;i++){
-                struct ThreadData *threadData = tmp->threadData[i];
-                emitII(i_load,threadData->eventLoc - stt_loc +(1 + INTSIZE));// event action location
-                
+            oop eveF = get(core->id,Symbol,value);
+            //ILOAD Ii: event trigger initial value, pin, ip address, etc.
+            for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){
+                emitII(i_load,eveF->EventFunc.pin_num[pin_i]);
+            }
+            //MKTHREAD LN EN TN: library number, event number, size of thread
+            emitOIII(MKTHREAD,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,core->size);
+
+            for(int i=0;i<core->size;i++){
+                struct ThreadData *threadData = core->threadData[i];
+                //ILOAD A: event action location
+                emitII(i_load,threadData->eventLoc - stt_loc +(1 + INTSIZE));
+                //ILOAD Ci: event condition location
                 for(int j=0;j<threadData->size;j++){
                     if(threadData->condLocs[j]!=0){
                         emitII(i_load,threadData->condLocs[j] - (1 + INTSIZE) - threadData->eventLoc);        //event condition location
@@ -1235,10 +1218,8 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         emitII(i_load,0);
                     }
                 }
-                for(int pin_i=0;i<eveF->EventFunc.size_of_pin_num;pin_i++){//gress, pin load
-                    emitII(i_load,eveF->EventFunc.pin_num[pin_i]);
-                }
-                emitOIII(CALL_E, eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num)
+                //SETTHREAD: set thread
+                emitI(SETTHREAD);
             }
             core = core->next;
         }
@@ -1246,34 +1227,35 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         Local_VNT = newArray(0);
         break;
 
-        // for(int i=size;i>Entry_bool+stt_val_c;i--){
-        //                             // +5 => JUMP(1) num(4) => (size 5)
-            
-        //     oop eve1 = get(events[i-1],Event,id);
-        //     oop eve2 = get(eve1,Symbol,value);
-        //     if(getType(eve2)!=EventFunc){
-        //         fprintf(stderr,"this event is not define\n");
-        //         exit(1);
-        //     }                                         //for jump?
-        //     emitII(i_load,event_index[i-1] - stt_loc +(1 + INTSIZE));//d => stt_loc
-        //     //emit event condition location
-        //     SHICA_PRINTF("event_index[%d] = %d\n",i-1,EventEachArgsCond[i-1].size);
-        //     for(int j=0;j<EventEachArgsCond[i-1].size;j++){
-        //         if(EventEachArgsCond[i-1].indexs[j]!=0){
-        //             emitII(i_load,EventEachArgsCond[i-1].indexs[j] - (1 + INTSIZE) - event_index[i-1]);
-        //         }
-        //         else{
-        //             emitII(i_load,0);
-        //         }
+        // while(core!=0){
+        //     DEBUG_LOG("hello\n");
+        //     struct CoreData *tmp = core;
+        //     if(tmp->id==entry_sym){
+        //         core = core->next;
+        //         continue;
         //     }
-        //     //emit event function initialize args
-        //     for(int i=0;i<eve2->EventFunc.size_of_pin_num;i++){//gress, pin load
-        //         emitII(i_load,eve2->EventFunc.pin_num[i]);
+        //     oop eveF = get(tmp->id,Symbol,value);
+        //     DEBUG_LOG("temp size %d\n",tmp->size);
+        //     for(int i=0;i<tmp->size;i++){
+        //         struct ThreadData *threadData = tmp->threadData[i];
+        //         emitII(i_load,threadData->eventLoc - stt_loc +(1 + INTSIZE));// event action location
+                
+        //         for(int j=0;j<threadData->size;j++){
+        //             if(threadData->condLocs[j]!=0){
+        //                 emitII(i_load,threadData->condLocs[j] - (1 + INTSIZE) - threadData->eventLoc);        //event condition location
+        //             }else{
+        //                 emitII(i_load,0);
+        //             }
+        //         }
+        //         for(int pin_i=0;i<eveF->EventFunc.size_of_pin_num;pin_i++){//gress, pin load
+        //             emitII(i_load,eveF->EventFunc.pin_num[pin_i]);
+        //         }
+        //         emitOIII(CALL_E, eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num)
         //     }
-        //     emitOIII(CALL_E, eve2->EventFunc.lib_num, eve2->EventFunc.eve_num, eve2->EventFunc.size_of_pin_num)//now
+        //     core = core->next;
         // }
+        // //ローカル変数の初期化
         // Local_VNT = newArray(0);
-        
         // break;
     }//end of case State
 

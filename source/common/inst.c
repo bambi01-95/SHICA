@@ -85,7 +85,9 @@ s_MOD,
 EOE,   /* end of event function*/
 COND,  /* event's condtion arugment */
 TRANS, /*transition: state change*/
-THREAD,/* make thread for event */
+MKCORE,  /*make core: core X:X is number of core*/
+MKTHREAD,/* make thread for event */
+SETTHREAD,/* set thread for event */
 SET_EVENT,
 GLOBAL,
 GLOBAL_END,
@@ -199,7 +201,9 @@ char* INSTNAME[s_PRINT + 1] = {
 "EOE",   /* end of event function*/
 "COND",
 "TRANS", /*transition: state change*/
-"THREAD",/* make thread for event */
+"MKCORE",  /*make core: core X:X is number of core*/
+"MKTHREAD",/* make thread for event */
+"SETTHREAD",/* set thread for event */
 "SET_EVENT",
 "GLOBAL",
 "GLOBAL_END",

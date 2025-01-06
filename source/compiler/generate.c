@@ -131,8 +131,17 @@ oop CodeWrite(oop program){
             case s_GE:   continue; 
             case s_GT:   continue; 
             case s_ADD:  continue;
-
-            case THREAD: genInt(_Integer_value(Array_get(program,pc++)));continue;
+            case MKCORE:{
+                genInt(_Integer_value(Array_get(program,pc++)));
+                continue;
+            }
+            case MKTHREAD:{
+                genInt(_Integer_value(Array_get(program,pc++)));
+                genInt(_Integer_value(Array_get(program,pc++)));
+                genInt(_Integer_value(Array_get(program,pc++)));
+                continue;
+            }
+            case SETTHREAD:continue;
             case EOE:    continue;
             case COND:   continue;
             case CALL:{

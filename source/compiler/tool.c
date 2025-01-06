@@ -207,7 +207,16 @@ oop printCode(oop program){
             case s_GE:   printf("d_GE\n");continue; 
             case s_GT:   printf("d_GT\n");continue; 
             case s_ADD:  printf("d_ADD\n");continue;
-            case THREAD: printf("thread    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
+            case MKCORE: printf("MKCORE    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
+            case MKTHREAD:{
+                printf("MKTHREAD ");//T
+                oop lib_num  = Array_get(program,pc++);
+                oop func_num = Array_get(program,pc++);
+                oop num_args = Array_get(program,pc++);
+                printf("%3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(func_num),_Integer_value(num_args));
+                continue;
+            }
+            case SETTHREAD: printf("SETTHREAD\n");continue;
             case EOE:    printf("EOE\n");continue;
             case COND:   printf("COND\n");continue;
 
