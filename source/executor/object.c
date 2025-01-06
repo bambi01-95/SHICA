@@ -237,6 +237,7 @@ enum Type {
     _Char,
     _String,
 
+    Core,
     Thread,
     Array,
     Queue,
@@ -256,6 +257,7 @@ enum Type {
         "_Double",
         "String",
 
+        "Core",
         "Thread",
         "Array",
         "END",   
@@ -322,13 +324,18 @@ struct _String    { enum Type type;  char *value; };
 struct Queue     { enum Type type;  oop *elements/*gc_mark*/; unsigned head:4; unsigned size:4; };
 struct Array     { enum Type type;  oop *elements/*gc_mark*/; int size; int capacity;};
 
+struct Core      {
+    enum Type type;
+    Func func;
+    union VarData*  vd;/*gc_mark*/
+    char size;
+    oop *threads; /*gc_mark*/
+};
 struct Thread{ 
     enum Type type;
     oop stack; /*gc_mark*/
     oop queue; /*gc_mark*/
-    Func func;
     unsigned int *loc_cond;/*stock location of condtion instraction*/
-    union VarData*  vd; /*gc_mark*/
     unsigned int pc,rbp,base;
     unsigned flag:1;
 };
@@ -347,6 +354,7 @@ union Object {
     struct _String    _String;
     struct Queue      Queue;
     struct Array      Array;
+    struct Core       Core;
     struct Thread     Thread;
 };
 

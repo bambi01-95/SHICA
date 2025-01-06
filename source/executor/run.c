@@ -60,6 +60,7 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 #define getInst(PC)     memcpy(&inst,&memory[PC],SIZE_INST); PC+=SIZE_INST
 #define getChar(PC)     memory[PC++]
 #define getInt(PC)      memcpy(&int_value,&memory[PC],SIZE_INT);PC+=SIZE_INT 
+#define getSetInt(VAL,PC) int VAL;memcpy(&VAL,&memory[PC],SIZE_INT);PC+=SIZE_INT
 #define getLong(PC)     memcpy(&long_value,&memory[PC],SIZE_LONG);PC+=SIZE_LONG
 #define getFloat(PC)    memcpy(&float_value,&memory[PC],SIZE_FLOAT);PC+=SIZE_FLOAT
 #define getDouble(PC)   memcpy(&double_value,&memory[PC],SIZE_DOUBLE);PC+=SIZE_DOUBLE
@@ -99,8 +100,68 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
                 Array_push(stack,_newInteger(int_value));
                 continue;
             }
-
-
+            case MKCORE:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+#endif
+                getSetInt(num_core,pc);
+                if(num_core == 0)continue;
+                //init setting core
+                //oop *cores = mkCore(num_core);
+                int core_pc = pc;
+#if DEBUG
+                DEBUG_LOG("setting\n");
+#endif
+                for(int core_index=0;core_index<num_core;core_index++){
+                    getInst(pc);
+                    switch(inst){
+                        case i_load:{   
+#if TEST
+SHICA_PRINTF("CORE => %s\n",INSTNAME[inst]);
+#endif
+                            getInt(pc);
+                            Array_push(stack,_newInteger(int_value));
+                            continue;
+                        }
+                        case MKTHREAD:{
+#if TEST
+SHICA_PRINTF("CORE => %s\n",INSTNAME[inst]);
+#endif
+                            getSetInt(libNum,pc);
+                            getSetInt(eveNum,pc);
+                            getSetInt(threadNum,pc);
+                            /*
+                            oop threadmkThread(libNum,eveNum,threadNum,stack);
+                            for(int t_i=0;i<threadNum;t_i++){
+                                getInst(pc);
+                                switch(ints){
+                                    case i_load:{
+                                        getInt(pc);
+                                        Array_push(stack,_newInteger(int_value));
+                                        continue;
+                                    }
+                                    case SETTHREAD:{
+                                        int inst_loc = core_pc + _Integer_value(Array_pop(stack));
+                                        cores[core_index]->Thread.pc = inst_loc;
+                                        cores[core_index]->Thread.base = inst_loc;
+                                        continue;
+                                    }
+                                }
+                            }
+                            */
+                 
+                /*
+                MKCORE X
+                iLoad I
+                    MKTHREAD LN EN X
+                        iload A
+                        iload Ci
+                        SETTHREAD
+                */
+            }
+/*
+    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+*/
             case THREAD:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
