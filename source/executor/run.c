@@ -80,9 +80,7 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 void main_execute(){
     int pc = 0;
     int rbp = 0;
-    oop *mainCore=0;
     int coreLoc = 0;    //FIXME: STTからの相対位置の取得に使用する
-    char coreSize = 0;
 
 #if MSGC
     //CHECK ME: GMとstackの違いは？使い分けは？
@@ -176,6 +174,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                     case F_EOE:{
                                         thread->Thread.flag = 0;
                                         thread->Thread.pc = thread->Thread.base;
+                                        break;
+                                    }
+                                    case F_NONE:{
                                         break;
                                     }
                                     default:{
@@ -879,7 +880,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));//number of args
                 getInt(mpc);
-                Array_push(mstack,_newInteger(mpc));//CHECKME: funtion index?
+                Array_push(mstack,_newInteger(mpc));//relative location of function
                 mpc = mpc + int_value;
                 return F_NONE;
             }

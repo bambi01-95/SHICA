@@ -43,13 +43,11 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
     sys_false = _newInteger(0);
     sys_true  = _newInteger(1);
     none      = _newInteger(2);
-    threads   = newArray(MAXTHREADSIZE);
 #if MSGC
     gc_pushRoot((void*)&nil);
     gc_pushRoot((void*)&sys_false);
     gc_pushRoot((void*)&sys_true);
     gc_pushRoot((void*)&none);
-    gc_pushRoot((void*)&threads);
 #endif
     // コマンドライン引数の確認
 #if SBC

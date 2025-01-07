@@ -220,7 +220,8 @@ oop nil       = 0;
 oop sys_false = 0;
 oop sys_true  = 0;
 oop none      = 0;
-oop threads   = 0;
+oop *mainCore   = 0;
+int coreSize = 0;
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
 typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR,F_TRUE,F_FALSE} FLAG;
@@ -359,7 +360,7 @@ union Object {
 };
 
 FLAG sub_execute(oop process,oop GM);
-
+void printlnObject(oop node, int indent);
 
 #define TAGINT	1			// tag bits value for Integer  ........1
 #define TAGFLT	2			// tag bits value for Float    .......10
@@ -409,6 +410,7 @@ void markObject(oop obj){
         }
         case Core:{
             gc_mark(obj->Core.vd);//atomic object
+            gc_markOnly(obj->Core.threads);// mark original pointer
             for(int i=0;i<obj->Core.size;i++){
                 gc_mark(obj->Core.threads[i]);
             }
@@ -474,7 +476,13 @@ void isMarkObject(oop obj){
 
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
-    gc_mark(threads); //MA FIXME: 
+    gc_markOnly(mainCore);
+    SHICA_PRINTF("size %d\n",coreSize);
+    for(int i=0;i<=coreSize;i++){
+        gc_mark(mainCore[i]);
+        // SHICA_PRINTF("mark mainCore[%d]\n",i);
+        // printlnObject(mainCore[i],0);
+    }
     return;
 }
 #endif

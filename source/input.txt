@@ -1,11 +1,12 @@
+int fib(int n){
+    if(n<=1){
+        return n
+    }
+    return fib(n-1)+fib(n-2)+1
+}
 
 state s{
     event(int a:a%2==0,int b){
-        print(int,a)
-        print(int,b)
-    }
-    event(int a,int b:b%3==0){
-        print(int,a)
-        print(int,b)
+        print(int,fib(17))
     }
 }

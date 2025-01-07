@@ -11,10 +11,6 @@ void m(int i){
 
 void printlnObject(oop node, int indent)
 {
-    if(indent==-1){//removeme
-        printlnObject(threads,0);
-        return;
-    }
     switch (getType(node)) {
 	case Undefined:	m(indent);SHICA_PRINTF("nil\n");				break;
     case _String :   m(indent);SHICA_PRINTF("s %s\n", getChild(node, _String, value));   break;

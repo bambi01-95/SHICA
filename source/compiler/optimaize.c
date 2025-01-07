@@ -1211,13 +1211,13 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 //ILOAD Ci: event condition location
                 for(int j=0;j<threadData->size;j++){
                     if(threadData->condLocs[j]!=0){
-                        emitII(i_load,threadData->condLocs[j] - (1 + INTSIZE) - threadData->eventLoc);        //event condition location
+                        emitII(i_load,threadData->condLocs[j]  - threadData->eventLoc);        //event condition location
                     }else{
                         emitII(i_load,0);
                     }
                 }
                 //SETTHREAD: set thread
-                emitOII(SETTHREAD, threadData->size, threadData->eventLoc - stt_loc +(1 + INTSIZE));
+                emitOII(SETTHREAD, threadData->size, threadData->eventLoc - stt_loc );
             }
             core = core->next;
         }
