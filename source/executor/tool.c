@@ -39,6 +39,13 @@ void printlnObject(oop node, int indent)
         }
         break;
     }
+    case Core:{
+        m(indent);SHICA_PRINTF("Core\n");
+        for(int i=0;i<node->Core.size;i++){
+            printlnObject(node->Core.threads[i],indent+1);
+        }
+        break;
+    }
     case Thread:{
         m(indent);SHICA_PRINTF("Thread\n");
         m(indent);SHICA_PRINTF("stack:\n");printlnObject(node->Thread.stack,indent+2);
@@ -134,7 +141,24 @@ oop printCode(oop program){
             case s_GE:   SHICA_PRINTF("d_GE\n");continue; 
             case s_GT:   SHICA_PRINTF("d_GT\n");continue; 
             case s_ADD:  SHICA_PRINTF("d_ADD\n");continue;
-            case THREAD: SHICA_PRINTF("thread    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
+            case MKCORE:{
+                SHICA_PRINTF("MKCORE    %3d\n",_Integer_value(Array_get(program,pc++)));
+                continue;
+            }
+            case MKTHREAD:{
+                oop lib_num  = Array_get(program,pc++);
+                oop eve_num = Array_get(program,pc++);
+                oop numThread = Array_get(program,pc++);
+                SHICA_PRINTF("MKTHREAD %3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(eve_num),_Integer_value(numThread));
+                continue;
+            }
+            case SETTHREAD: {
+                oop numThread  = Array_get(program,pc++);
+                oop relPos        = Array_get(program,pc++);
+                SHICA_PRINTF("SETTHREAD %3d  %3d\n",_Integer_value(numThread),_Integer_value(relPos));
+                continue;
+            }
+            case STARTIMP: SHICA_PRINTF("STARTIMP\n");continue;
             case EOE:    SHICA_PRINTF("EOE\n");continue;
             case COND:   SHICA_PRINTF("COND\n");continue;
 

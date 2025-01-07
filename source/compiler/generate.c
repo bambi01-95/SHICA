@@ -141,7 +141,8 @@ oop CodeWrite(oop program){
                 genInt(_Integer_value(Array_get(program,pc++)));
                 continue;
             }
-            case SETTHREAD:continue;
+            case SETTHREAD:genInt(_Integer_value(Array_get(program,pc++)));genInt(_Integer_value(Array_get(program,pc++)));continue;
+            case STARTIMP: continue;
             case EOE:    continue;
             case COND:   continue;
             case CALL:{

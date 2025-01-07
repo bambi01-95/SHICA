@@ -26,7 +26,7 @@ int SHICA_MAIN()
         exit(1);
     }
 #if MSGC
-    int memSize = 1024  * 8 * 10;//1024 * 2; // default memory size
+    int memSize = 1024  * 256;//8 * 10;//1024 * 2; // default memory size
     gc_init(memSize);
     gc_collectFunction = (gc_collectFunction_t)collectObjects;
     gc_markFunction    = (gc_markFunction_t)markObject;
@@ -55,11 +55,11 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
 #if SBC
         memoryRead("code.stt");
 #endif
-#if TEST
+#if DEBUG
         printf("\n \x1b[31m print byte code after memory read ******************\x1b[0m\n\n");
-        
+        printByteCode();
+        printf("\n \x1b[31m implement main()******************\x1b[0m\n\n");
 #endif
-printByteCode();
         main_execute();
     return 0;
 }

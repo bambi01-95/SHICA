@@ -216,7 +216,13 @@ oop printCode(oop program){
                 printf("%3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(func_num),_Integer_value(num_args));
                 continue;
             }
-            case SETTHREAD: printf("SETTHREAD\n");continue;
+            case SETTHREAD: {
+                oop numThread  = Array_get(program,pc++);
+                oop actLoc =    Array_get(program,pc++);
+                printf("SETTHREAD %3d %3d\n",_Integer_value(numThread),_Integer_value(actLoc));
+                continue;
+            }
+            case STARTIMP: printf("STARTIMP\n");continue;
             case EOE:    printf("EOE\n");continue;
             case COND:   printf("COND\n");continue;
 

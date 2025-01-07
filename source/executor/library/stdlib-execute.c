@@ -11,34 +11,45 @@
     argsCond: それぞれのconditionの内容が入っている
 */
 #if SBC //event()
-oop eve_test(oop t){
+oop eve_test(oop core){
     time_t current_time = time(NULL);
-    if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
-        t->Thread.vd->VarTI.v_t1 = current_time;
-        t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
-        //eval cond
+    if(current_time - core->Core.vd->VarTI.v_i1 >= core->Core.vd->VarTI.v_i2){
+        core->Core.vd->VarTI.v_t1 = current_time;
+        core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
+
 #if MSGC
-                GC_PUSH(oop, code,newThread(Default,10,0));//for Eval args cond
+                GC_PUSH(oop, code,newThread(0,0,10));
 #else   
-                oop code = newThread(Default,20,0);
-#endif//Add instruction of JUDGE, if it is ture, FLAG some, else some....
-                int isFalse = 0;
-                for(int i=0;i<2/*number of args*/;i++){//一般にLoopを使用しない（配列を作成した場合はLoopを使用可能）
-                    if(t->Thread.loc_cond[i] == 0)continue;//if it is 0, it is not defined
-                    code->Thread.pc = t->Thread.base + t->Thread.loc_cond[i];//set pc to condition location
-                    Array_push(code->Thread.stack,new_Basepoint(0));//set basepoint
-                    Array_push(code->Thread.stack,_newInteger(t->Thread.vd->VarTI.v_i1));//set args
-                    for(;;){
-                        FLAG flag = sub_execute(code,nil);
-                        if(flag == F_TRUE){
-                            // SHICA_PRINTF("TRUE\n");
-                            break;
+                oop code = newThread(0,0,10);
+#endif
+                for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
+                    int isFalse = 0;
+                    oop thread = core->Core.threads[thread_i];
+                    //<引数の評価>/<Evaluation of arguments>
+                    for(int cond_i=0;cond_i<2;cond_i++){  
+                        DEBUG_LOG("stack size %d\n",code->Thread.stack->Array.size);//REMOVEME
+                        if(thread->Thread.loc_cond[cond_i] == 0)continue;
+                        code->Thread.pc = thread->Thread.base + thread->Thread.loc_cond[cond_i];
+                        Array_push(code->Thread.stack,new_Basepoint(0));
+                        Array_push(code->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+                        for(;;){
+                            FLAG flag = sub_execute(code,nil);
+                            if(flag == F_TRUE)break;
+                            else if(flag == F_FALSE){
+                                isFalse = 1;
+                                break;
+                            }
                         }
-                        else if(flag == F_FALSE){
-                            // SHICA_PRINTF("FALSE\n");
-                            isFalse = 1;
-                            break;
-                        }
+                    }
+                    //<条件が満たされたときの処理>/<Processing when the condition is met>
+                    if(!isFalse){
+                        //protect t:thread
+                        gc_pushRoot((void*)&core);//CHECKME: is it need?
+                        oop data = newArray(2);
+                        Array_push(data,_newInteger(core->Core.vd->VarTI.v_i1));
+                        Array_push(data,_newInteger(core->Core.vd->VarTI.v_i1));
+                        gc_popRoots(1);
+                        enqueue(thread->Thread.queue,data);
                     }
                 }
                 // FIXME: Array-free or somthing need
@@ -47,55 +58,58 @@ oop eve_test(oop t){
 #else
                 // free(code);
 #endif  
-        if(!isFalse){
-            //protect t:thread
-            gc_pushRoot((void*)&t);
-            oop data = newArray(2);
-            Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
-            Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
-            gc_popRoots(1);
-            enqueue(t->Thread.queue,data);
-        }
     }
-    return t;
+    return core;
 }
 #else
-oop eve_test(oop t){
+oop eve_test(oop core){
     SHICA_PRINTF("eve_test\n");
-    return t;
+    return core;
 }
 #endif
 
 
 
-oop eve_loop(oop t){
-    if(t->Thread.flag == 0){
-        //protect t:thread
-        gc_pushRoot((void*)&t);
-        oop data = newArray(2);
-        Array_push(data,_newInteger(1));
-        gc_popRoots(1);
-        enqueue(t->Thread.queue,data);
+oop eve_loop(oop core){
+    for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
+        oop thread = core->Core.threads[thread_i];
+        if(thread->Thread.flag == 0){
+#if MSGC
+            gc_pushRoot((void*)&core);
+            oop data = newArray(2);
+            Array_push(data,_newInteger(1));
+            gc_popRoots(1);
+            enqueue(thread->Thread.queue,data);
+#else
+            oop data = newArray(2);
+            Array_push(data,_newInteger(1));
+            enqueue(thread->Thread.queue,data);
+#endif
+        }
     }
-    return t;
+    return core;
 }
 
+
 #if SBC
-oop eve_timer(oop t){
+oop eve_timer(oop core){
     time_t current_time = time(NULL);
-    if(current_time - t->Thread.vd->VarTI.v_t1 >= t->Thread.vd->VarTI.v_i2){
-        t->Thread.vd->VarTI.v_t1 = current_time;
-        t->Thread.vd->VarTI.v_i1  += t->Thread.vd->VarTI.v_i2;
-        //eval cond
+    if(current_time - core->Core.vd->VarTI.v_i1 >= core->Core.vd->VarTI.v_i2){
+        core->Core.vd->VarTI.v_t1 = current_time;
+        core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
 #if MSGC
-                GC_PUSH(oop, code,newThread(Default,10,0));//FIXME: this is  not good for memory
+        GC_PUSH(oop, code,newThread(0,0,10));
 #else   
-                oop code = newThread(Default,20,0);
-#endif//Add instruction of JUDGE, if it is ture, FLAG some, else some....
-                int isFalse = 0;
+        oop code = newThread(0,0,10);
+#endif
+        for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
+            int isFalse = 0;
+            oop t = core->Core.threads[thread_i];
+            Array_push(code->Thread.stack,new_Basepoint(0));
+            Array_push(code->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+
+            if(t->Thread.loc_cond[0] != 0){
                 code->Thread.pc = t->Thread.base + t->Thread.loc_cond[0];
-                Array_push(code->Thread.stack,new_Basepoint(0));
-                Array_push(code->Thread.stack,_newInteger(t->Thread.vd->VarTI.v_i1));
                 for(;;){
                     FLAG flag = sub_execute(code,nil);
                     if(flag == F_TRUE)break;
@@ -104,33 +118,37 @@ oop eve_timer(oop t){
                         break;
                     }
                 }
-                // FIXME: Array-free or somthing need
+            }
+            
+            if(!isFalse){
+                //protect t:thread
+                gc_pushRoot((void*)&t);
+                oop data = newArray(2);
+                Array_push(data,_newInteger(core->Core.vd->VarTI.v_i1));
+                gc_popRoots(1);
+                enqueue(t->Thread.queue,data);
+            }
+        }
 #if MSGC
                 GC_POP(code);
 #else
                 // free(code);
 #endif  
-        if(!isFalse){
-            //protect t:thread
-            gc_pushRoot((void*)&t);
-            oop data = newArray(2);
-            Array_push(data,_newInteger(t->Thread.vd->VarTI.v_i1));
-            gc_popRoots(1);
-            enqueue(t->Thread.queue,data);
-        }
     }
-    return t;
+    return core;
 }
 #else
-oop eve_timer(oop t){
+oop eve_timer(oop core){
     SHICA_PRINTF("eve_timer\n");
-    return t;
+    return core;
 }
 #endif
 
+
+
 #if SBC
 #include <termios.h> //keyboard input
-oop eve_keyget(oop t){
+oop eve_keyget(oop core){
     char buf;
     struct termios old_flags, new_flags;
     fd_set fds;
@@ -163,30 +181,56 @@ oop eve_keyget(oop t){
         exit(EXIT_FAILURE);
     } else if (ret == 0) {
         // 標準入力からの読み取りが利用可能でない場合
-        return 0;
+        return core;
     } else {
         // 標準入力からの読み取りが利用可能な場合、1バイト読み取る
         if (read(STDIN_FILENO, &buf, 1) < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 // 読み取りが非同期にブロックされている場合
-                return 0;
+                return core;
             } else {
                 perror("read");
                 exit(EXIT_FAILURE);
             }
         }
         // 読み取った文字を返す
-        //protect t:thread
-        gc_pushRoot((void*)&t);
-        oop data = newArray(2);
-        Array_push(data,_newInteger(buf));
-        gc_popRoots(1);
-        enqueue(t->Thread.queue,data);
-        return t;
+
+#if MSGC
+        GC_PUSH(oop, code,newThread(0,0,10));
+#else
+        oop code = newThread(0,0,10);
+#endif
+        for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
+            oop t = core->Core.threads[thread_i];
+            int isFalse = 0;
+            Array_push(code->Thread.stack,new_Basepoint(0));
+            Array_push(code->Thread.stack,_newInteger(buf));
+
+            if(t->Thread.loc_cond[0] == 0)continue;
+            code->Thread.pc = t->Thread.base + t->Thread.loc_cond[0];
+            for(;;){
+                FLAG flag = sub_execute(code,nil);
+                if(flag == F_TRUE)break;
+                else if(flag == F_FALSE){
+                    isFalse = 1;
+                    break;
+                }
+            }
+            
+            if(!isFalse){
+                //protect t:thread
+                gc_pushRoot((void*)&core);
+                oop data = newArray(2);
+                Array_push(data,_newInteger(buf));
+                gc_popRoots(1);
+                enqueue(t->Thread.queue,data);
+            }
+        }
+        return core;
     }
 }
 #else
-oop eve_keyget(oop t){
+oop eve_keyget(oop core){
     SHICA_PRINTF("eve_keyget\n");
     return t;
 }
@@ -196,53 +240,51 @@ oop eve_keyget(oop t){
 
 //STDLIB EVENT
 //FOR SETTING
-oop Event_stdlib(int eve_num,oop stack,int stk_size){
+oop Event_stdlib(int eve_num,oop stack,int numThread){
     //cheack: protect stack, but it is already protected
     gc_pushRoot((void*)&stack);
     //protect t:new thread
-    GC_PUSH(oop,t,0);
+    GC_PUSH(oop,core,0);
     switch(eve_num){
         case TEST_E:{
 #if SBC     
-            t = newThread(VarTI,stk_size,1);
-            t->Thread.vd->VarTI.v_t1 = time(NULL);
-            t->Thread.vd->VarTI.v_i1  = 0;
-            t->Thread.vd->VarTI.v_i2  = 1;
-            t->Thread.func = &eve_test;
-            t->Thread.loc_cond[0] =  _Integer_value(Array_pop(stack)); //first argument condition
-            t->Thread.loc_cond[1] =  _Integer_value(Array_pop(stack)); //second argument condition
+            core = newCore(VarTI,numThread);
+            core->Core.vd->VarTI.v_t1 = time(NULL);
+            core->Core.vd->VarTI.v_i1  = 0;
+            core->Core.vd->VarTI.v_i2  = 1;
+            core->Core.func = &eve_test;
 #else
-            t = newThread(Default,stk_size);
-            t->Thread.vd->Default.count = 0;
-            t->Thread.func = &eve_test;
+            core = newCore(Default,numThread);
+            core->Core.vd->Default.count = 0;
+            core->Core.func = &eve_test;
 #endif
             break;
         }
         case LOOP_E:{
-            t = newThread(Default,stk_size,1);
-            t->Thread.vd->Default.count = 0;
-            t->Thread.func = &eve_loop;
+            core = newCore(Default,numThread);
+            core->Core.vd->Default.count = 0;
+            core->Core.func = &eve_loop;
             break;
         }
         case TIMERSEC_E:{
 #if SBC     
-            t = newThread(VarTI,stk_size,1);
-            t->Thread.vd->VarTI.v_t1 = time(NULL);
-            t->Thread.vd->VarTI.v_i1  = 0;
-            t->Thread.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
-            t->Thread.func = &eve_timer;
-            t->Thread.loc_cond[0] =  _Integer_value(Array_pop(stack)); //first argument condition
+            core = newCore(VarTI,numThread);
+            core->Core.vd->VarTI.v_t1 = time(NULL);
+            core->Core.vd->VarTI.v_i1  = 0;
+            core->Core.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
+            core->Core.func = &eve_timer;
 #else
-            t = newThread(Default,stk_size);
-            t->Thread.vd->Default.count = 0;
-            t->Thread.func = &eve_timer;
+            core = newCore(Default,numThread);
+            core->Core.vd->Default.count = 0;
+            core->Core.func = &eve_timer;
 #endif
             break;
         }
         case KEYGET_E:{
-            t = newThread(Default,stk_size,1);
-            t->Thread.func = &eve_keyget;
-            while(0!=t->Thread.func(t))dequeue(t);
+            core = newCore(Default,numThread);
+            core->Core.func = &eve_keyget;
+            //clear key buffer
+            while(0!=core->Core.func(core))dequeue(core);
             break;
         }
         default:{
@@ -251,7 +293,7 @@ oop Event_stdlib(int eve_num,oop stack,int stk_size){
         }
     }
     gc_popRoots(2);
-    return t;
+    return core;
 }
 
 #endif

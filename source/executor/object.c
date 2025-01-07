@@ -177,7 +177,7 @@ void debug_error_1ref(char* file,int line,const char *format, ...) {
     va_list args;
     va_start(args, format);
     SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file,line);
-    vSHICA_FPRINTF(stderr, format, args); 
+    vprintf(format, args); 
     SHICA_FPRINTF(stderr, "\n");
     va_end(args);
 }
@@ -193,7 +193,7 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
     va_start(args, format);
     SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file1,line1);//that call function that include debug_error()
         SHICA_FPRINTF(stderr, "        %s line %d:\t",file2,line2);//that call debug_error()
-    vSHICA_FPRINTF(stderr, format, args); 
+    vprintf(format, args); 
     SHICA_FPRINTF(stderr, "\n");
     va_end(args);
 }
@@ -326,9 +326,9 @@ struct Array     { enum Type type;  oop *elements/*gc_mark*/; int size; int capa
 
 struct Core      {
     enum Type type;
+    char size;
     Func func;
     union VarData*  vd;/*gc_mark*/
-    char size;
     oop *threads; /*gc_mark*/
 };
 struct Thread{ 
@@ -394,23 +394,30 @@ int getType(oop o)
 void markObject(oop obj){
     switch(getType(obj)){
         case Queue:{
-            gc_markOnly(obj->Queue.elements);//this
+            gc_markOnly(obj->Queue.elements);// mark original pointer
             for(int i=0;i<obj->Queue.size;i++){
                 gc_mark(obj->Queue.elements[(obj->Queue.head + i) % QUEUE_SIZE]);
             }
             return ;
         }
         case Array:{
-            gc_markOnly(obj->Array.elements);//this
+            gc_markOnly(obj->Array.elements);// mark original pointer
             for(int i = 0;i<obj->Array.size;i++){
                 gc_mark(obj->Array.elements[i]);
             }
             return ;
         }
+        case Core:{
+            gc_mark(obj->Core.vd);//atomic object
+            for(int i=0;i<obj->Core.size;i++){
+                gc_mark(obj->Core.threads[i]);
+            }
+            return ;
+        }
         case Thread:{
+            gc_mark(obj->Thread.loc_cond);  //atomic object
             gc_mark(obj->Thread.stack);
             gc_mark(obj->Thread.queue);
-            gc_mark(obj->Thread.vd);
             return ;
         }
         default:{
@@ -440,11 +447,19 @@ void isMarkObject(oop obj){
             }
             break;
         }
+        case Core:{
+            SHICA_PRINTF("mark Core\n");
+            gc_isMark(obj->Core.vd);    //atomic object
+            for(int i=0;i<obj->Core.size;i++){
+                gc_isMark(obj->Core.threads[i]);
+            }
+            break;
+        }
         case Thread:{
             SHICA_PRINTF("mark Thread\n");
+            gc_isMark(obj->Thread.loc_cond);    //atomic object
             gc_isMark(obj->Thread.stack);
             gc_isMark(obj->Thread.queue);
-            gc_isMark(obj->Thread.vd);//atomic
             break;
         }
         default:{
@@ -459,7 +474,7 @@ void isMarkObject(oop obj){
 
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
-    gc_mark(threads);
+    gc_mark(threads); //MA FIXME: 
     return;
 }
 #endif
@@ -896,61 +911,127 @@ oop dequeue(oop t)
 }
 #endif
 
-
-
 //THREAD
-oop _newThread(size_t vd_size,int stk_size,int num_args)
+oop newThread(int base,int numCond,int stackSize)
 {
 #if MSGC
-    GC_PUSH(oop,node, newObject(Thread));
-#else
-    oop node = newObject(Thread);
-#endif
+    GC_PUSH(oop, node, newObject(Thread));
     node->Thread.queue      = newQueue(5);
     node->Thread.flag       =  0;
-    node->Thread.pc         =  0;
-    node->Thread.base       =  0;
+    node->Thread.pc         =  base;
+    node->Thread.base       =  base;
     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
-    node->Thread.stack      = newArray(stk_size);
-#if MSGC
-    #if SBC
-        unsigned int* loc_cond = gc_beAtomic(gc_alloc(num_args*sizeof(int)));
-        node->Thread.loc_cond = loc_cond;
-        VD vd = gc_beAtomic(gc_alloc(vd_size));
-    #else //C++
-        int* loc_cond = (int*)gc_beAtomic(gc_alloc(num_args*sizeof(int)));
-        VD vd = (VarData*)gc_beAtomic(gc_alloc(vd_size));
-    #endif
+    node->Thread.stack      = newArray(stackSize);
+    node->Thread.loc_cond   = gc_beAtomic(gc_alloc(numCond*sizeof(int)));
     GC_POP(node);
 #else
-    VD       vd = calloc(1,vd_size);
+    oop node = newObject(Thread);
+    node->Thread.queue      = newQueue(5);
+    node->Thread.flag       =  0;
+    node->Thread.pc         =  base;
+    node->Thread.base       =  base;
+    node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
+    node->Thread.stack      = newArray(stackSize);
+    node->Thread.loc_cond   = calloc(numCond,sizeof(int));
 #endif
-    node->Thread.vd         = vd;
     return node;
 }
-#define newThread(VD_TYPE,STACK_SIZE,NUM_ARGS)	_newThread(sizeof(struct VD_TYPE),STACK_SIZE,NUM_ARGS)
 
-oop _setThread(oop t,size_t size)
+//CORE
+oop *mkCores(int size)
 {
-    gc_pushRoot((void*)&t);
-    t->Thread.flag       =  0;
-    t->Thread.pc         =  0;
-    t->Thread.base       =  0;
-    t->Thread.rbp        =  0;
-    t->Thread.stack      = newArray(0);
 #if MSGC
-    #if SBC
-        VD vd = gc_beAtomic(gc_alloc(size));
-    #else //C++
-        VD vd = (VarData*)gc_alloc(size);
-    #endif
-    gc_popRoots(1);
+    GC_PUSH(oop*, cores, gc_alloc(size * sizeof(oop)));
+    for(int i = 0; i < size; i++){
+        cores[i] = nil;
+    }
+    GC_POP(cores);
 #else
-    VD vd = calloc(1,size);
+    oop *cores = calloc(size, sizeof(oop));
+    for(int i = 0; i < size; i++){
+        cores[i] = nil;
+    }
 #endif
-    t->Thread.vd         = vd;
-    return t;
+    return cores;
 }
-#define setThread(T,TYPE)	_setThread(T,sizeof(struct TYPE))
+
+oop _newCore(size_t vdMemSize,int numThread)
+{
+#if MSGC
+    GC_PUSH(oop, node, newObject(Core));
+    // node->Core.func = 0; //after calling this function, set function
+    VD vd = gc_beAtomic(gc_alloc(vdMemSize));
+    node->Core.vd   = vd;
+    node->Core.size = 0;
+    node->Core.threads = gc_alloc(numThread * sizeof(oop));
+    GC_POP(node);
+#else
+    oop node = newObject(Core);
+    // node->Core.func = 0; //after calling this function, set function
+    node->Core.vd = calloc(1,vdMemSize);
+    node->Core.size = 0;
+    node->Core.threads = calloc(numThread, sizeof(oop));
+#endif
+    return node;
+}
+#define newCore(VD_TYPE,numThread)	_newCore(sizeof(struct VD_TYPE),numThread)
+
+
+
+//Remove
+// //THREAD
+// oop _newThread(size_t vd_size,int stk_size,int num_args)
+// {
+// #if MSGC
+//     GC_PUSH(oop,node, newObject(Thread));
+// #else
+//     oop node = newObject(Thread);
+// #endif
+//     node->Thread.queue      = newQueue(5);
+//     node->Thread.flag       =  0;
+//     node->Thread.pc         =  0;
+//     node->Thread.base       =  0;
+//     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
+//     node->Thread.stack      = newArray(stk_size);
+// #if MSGC
+//     #if SBC
+//         unsigned int* loc_cond = gc_beAtomic(gc_alloc(num_args*sizeof(int)));
+//         node->Thread.loc_cond = loc_cond;
+//         VD vd = gc_beAtomic(gc_alloc(vd_size));
+//     #else //C++
+//         int* loc_cond = (int*)gc_beAtomic(gc_alloc(num_args*sizeof(int)));
+//         VD vd = (VarData*)gc_beAtomic(gc_alloc(vd_size));
+//     #endif
+//     GC_POP(node);
+// #else
+//     VD       vd = calloc(1,vd_size);
+// #endif
+//     node->Thread.vd         = vd;
+//     return node;
+// }
+// #define newThread(VD_TYPE,STACK_SIZE,NUM_ARGS)	_newThread(sizeof(struct VD_TYPE),STACK_SIZE,NUM_ARGS)
+
+// oop _setThread(oop t,size_t size)
+// {
+//     gc_pushRoot((void*)&t);
+//     t->Thread.flag       =  0;
+//     t->Thread.pc         =  0;
+//     t->Thread.base       =  0;
+//     t->Thread.rbp        =  0;
+//     t->Thread.stack      = newArray(0);
+// #if MSGC
+//     #if SBC
+//         VD vd = gc_beAtomic(gc_alloc(size));
+//     #else //C++
+//         VD vd = (VarData*)gc_alloc(size);
+//     #endif
+//     gc_popRoots(1);
+// #else
+//     VD vd = calloc(1,size);
+// #endif
+//     t->Thread.vd         = vd;
+//     return t;
+// }
+// #define setThread(T,TYPE)	_setThread(T,sizeof(struct TYPE))
 
 #endif //OBJECT_C

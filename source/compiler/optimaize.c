@@ -1208,8 +1208,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
             for(int i=0;i<core->size;i++){
                 struct ThreadData *threadData = core->threadData[i];
-                //ILOAD A: event action location
-                emitII(i_load,threadData->eventLoc - stt_loc +(1 + INTSIZE));
                 //ILOAD Ci: event condition location
                 for(int j=0;j<threadData->size;j++){
                     if(threadData->condLocs[j]!=0){
@@ -1219,44 +1217,14 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     }
                 }
                 //SETTHREAD: set thread
-                emitI(SETTHREAD);
+                emitOII(SETTHREAD, threadData->size, threadData->eventLoc - stt_loc +(1 + INTSIZE));
             }
             core = core->next;
         }
+        emitI(STARTIMP);
         //ローカル変数の初期化
         Local_VNT = newArray(0);
         break;
-
-        // while(core!=0){
-        //     DEBUG_LOG("hello\n");
-        //     struct CoreData *tmp = core;
-        //     if(tmp->id==entry_sym){
-        //         core = core->next;
-        //         continue;
-        //     }
-        //     oop eveF = get(tmp->id,Symbol,value);
-        //     DEBUG_LOG("temp size %d\n",tmp->size);
-        //     for(int i=0;i<tmp->size;i++){
-        //         struct ThreadData *threadData = tmp->threadData[i];
-        //         emitII(i_load,threadData->eventLoc - stt_loc +(1 + INTSIZE));// event action location
-                
-        //         for(int j=0;j<threadData->size;j++){
-        //             if(threadData->condLocs[j]!=0){
-        //                 emitII(i_load,threadData->condLocs[j] - (1 + INTSIZE) - threadData->eventLoc);        //event condition location
-        //             }else{
-        //                 emitII(i_load,0);
-        //             }
-        //         }
-        //         for(int pin_i=0;i<eveF->EventFunc.size_of_pin_num;pin_i++){//gress, pin load
-        //             emitII(i_load,eveF->EventFunc.pin_num[pin_i]);
-        //         }
-        //         emitOIII(CALL_E, eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num)
-        //     }
-        //     core = core->next;
-        // }
-        // //ローカル変数の初期化
-        // Local_VNT = newArray(0);
-        // break;
     }//end of case State
 
     case Run:{

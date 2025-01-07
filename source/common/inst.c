@@ -81,13 +81,13 @@ s_MUL,
 s_DIV,
 s_MOD,
 
-
 EOE,   /* end of event function*/
 COND,  /* event's condtion arugment */
 TRANS, /*transition: state change*/
 MKCORE,  /*make core: core X:X is number of core*/
 MKTHREAD,/* make thread for event */
 SETTHREAD,/* set thread for event */
+STARTIMP, /* start implement core*/
 SET_EVENT,
 GLOBAL,
 GLOBAL_END,
@@ -204,6 +204,7 @@ char* INSTNAME[s_PRINT + 1] = {
 "MKCORE",  /*make core: core X:X is number of core*/
 "MKTHREAD",/* make thread for event */
 "SETTHREAD",/* set thread for event */
+"STARTIMP",
 "SET_EVENT",
 "GLOBAL",
 "GLOBAL_END",

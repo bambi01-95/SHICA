@@ -26,10 +26,10 @@ oop Event_userlib(int eve_num,oop stack){
 }
 
 // EVENT...
-oop Event_Func(int lib_num,int eve_num,oop stack,int stk_size){
+oop setCore(int lib_num,int eve_num,oop stack,int numThread){
     switch(lib_num){
         case STDLIB:{
-            return Event_stdlib(eve_num,stack,stk_size);
+            return Event_stdlib(eve_num,stack,numThread);
         }
         case USERLIB:{
             return 0;
@@ -73,8 +73,6 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
     string_value[i] = memory[PC++]; \
 })
 
-//-----------_----------__------______----________--__________
-
 
 #include <unistd.h>//remove
 
@@ -82,184 +80,218 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 void main_execute(){
     int pc = 0;
     int rbp = 0;
+    oop *mainCore=0;
+    int coreLoc = 0;    //FIXME: STTからの相対位置の取得に使用する
+    char coreSize = 0;
+
 #if MSGC
+    //CHECK ME: GMとstackの違いは？使い分けは？
+    GC_PUSH(oop,GM,newThread(pc,0,20));
     GC_PUSH(oop,stack,newArray(20));
-    GC_PUSH(oop,GM,newThread(Default,10,0));
 #else
     oop stack = newArray(20);
-    oop GM    = newThread(Default,10,0);
+    oop GM    = newThread(pc,0,20);
 #endif
     for(;;){
         getInst(pc);
         switch(inst){
             case i_load:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 Array_push(stack,_newInteger(int_value));
                 continue;
             }
+
             case MKCORE:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
-                getSetInt(num_core,pc);
-                if(num_core == 0)continue;
+                getSetInt(numCore,pc);
+                if(numCore == 0)continue;
                 //init setting core
-                //oop *cores = mkCore(num_core);
-                int core_pc = pc;
-#if DEBUG
-                DEBUG_LOG("setting\n");
-#endif
-                for(int core_index=0;core_index<num_core;core_index++){
-                    getInst(pc);
-                    switch(inst){
-                        case i_load:{   
-#if TEST
-SHICA_PRINTF("CORE => %s\n",INSTNAME[inst]);
-#endif
-                            getInt(pc);
-                            Array_push(stack,_newInteger(int_value));
-                            continue;
-                        }
-                        case MKTHREAD:{
-#if TEST
-SHICA_PRINTF("CORE => %s\n",INSTNAME[inst]);
-#endif
-                            getSetInt(libNum,pc);
-                            getSetInt(eveNum,pc);
-                            getSetInt(threadNum,pc);
-                            /*
-                            oop threadmkThread(libNum,eveNum,threadNum,stack);
-                            for(int t_i=0;i<threadNum;t_i++){
-                                getInst(pc);
-                                switch(ints){
-                                    case i_load:{
-                                        getInt(pc);
-                                        Array_push(stack,_newInteger(int_value));
-                                        continue;
-                                    }
-                                    case SETTHREAD:{
-                                        int inst_loc = core_pc + _Integer_value(Array_pop(stack));
-                                        cores[core_index]->Thread.pc = inst_loc;
-                                        cores[core_index]->Thread.base = inst_loc;
-                                        continue;
-                                    }
-                                }
-                            }
-                            */
-                 
-                /*
-                MKCORE X
-                iLoad I
-                    MKTHREAD LN EN X
-                        iload A
-                        iload Ci
-                        SETTHREAD
-                */
-            }
-/*
-    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-*/
-            case THREAD:{
-#if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
-#endif
-                getInt(pc);
-                int num_thread = int_value;
-                if(num_thread == 0)continue;
-#if DEBUG //CHECK ME: 本番環境でここどうするのか？
-                DEBUG_ERROR_COND(MAXTHREADSIZE >= num_thread,"Number of Event definitin is over setting value");
-                DEBUG_ERROR_COND(Array==getType(threads),"TYPE is %d",getType(threads));
-#endif       
-                int thread_pc = pc;
-                
-            //init setting thread スレッドの初期設定
-                SHICA_PRINTF("\n              setting\n\n");
-                for(int thread_index=0; thread_index<num_thread;/*case CALL_E, thread_index++*/){
-                    getInst(pc);
-                    switch(inst){
-                        case i_load:{// load pin number / load location of event task
-#if TEST  
-SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
-#endif
-                            getInt(pc);
-                            Array_push(stack,_newInteger(int_value));
-                            continue;
-                        }
-                        case CALL_E:{//now
-#if TEST  
-SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
-#endif
-                            getInt(pc);int lib_num = int_value;
-                            getInt(pc);int eve_num = int_value;
-                            getInt(pc);int pin_num = int_value;
-                            assert(Array == getType(stack));
-                            oop thread = Event_Func(lib_num,eve_num,stack,120/num_thread);
-                            Array_push(threads,thread);              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
-                            // inside Event_Func, use Array_pop for Evaluating Event argument condition
-                            int inst_loc = thread_pc + _Integer_value(Array_pop(stack));
-                            threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
-                            threads->Array.elements[thread_index]->Thread.base = inst_loc;
-                            thread_index++;
-
-                            continue;
-                        }
-                        default:{
-                            SHICA_PRINTF("this is not happen, main main_execute case THREAD\n");
-                            exit(1);
-                        }
-                    }
-                }
-        #if DEBUG
-                DEBUG_LOG("\n              implement\n\n");
-        #endif
-    // implement thread/Event concurrelty
-                for(int is_active = 0,count = 5; is_active==0;){
-                    count++;
-                    for(int i =0;i<num_thread;i++){
-                        threads->Array.elements[i]->Thread.func(threads->Array.elements[i]);             //implement function of event
-                        if(threads->Array.elements[i]->Thread.flag == 1){
-                            FLAG flag = sub_execute(threads->Array.elements[i],GM);
-                            if(flag == F_TRANS){//TRANS
-                        #if DEBUG
-                                DEBUG_LOG("        TRANS\n");
-                        #endif
-                                int pc_i = threads->Array.elements[i]->Thread.pc++;//location of thread[i]'s pc
-                                getInt(pc_i);//thread num<-pc_i
-                                pc = int_value + pc_i;
-                                // SHICA_PRINTF("pc-> %d\n",pc);
-                                is_active = 1;
-                                int gm_size = GM->Thread.stack->Array.size;
-                                for(int i = gm_size;i>GM->Thread.rbp;i--){
-                                    Array_pop(GM->Thread.stack);
-                                }
-                                break;
-                            }
-                            else if(flag == F_EOE){//EOE
-                                threads->Array.elements[i]->Thread.flag = 0;
-                                threads->Array.elements[i]->Thread.pc = threads->Array.elements[i]->Thread.base;
-                                // Array_free(threads->Array.elements[i]->Thread.stack);
-                            }
-
-                        }
-                        else if(threads->Array.elements[i]->Thread.queue->Queue.size>0){
-                                threads->Array.elements[i]->Thread.flag = 1;
-                                oop variables =  dequeue(threads->Array.elements[i]->Thread.queue);
-                                Array_args_copy(variables,threads->Array.elements[i]->Thread.stack);
-                        }
-                    }
-                    // if(count>5){
-                    //     count = 0;
-                    // }
-                }
-                // Array_free(threads);
+                coreLoc = pc;
+                coreSize = -1;
+                mainCore = mkCores(numCore);
                 continue;
             }
 
+            case MKTHREAD:{//FIXME: rechange the name of this instruction => SETCORE
+#if TEST
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+                getSetInt(libNum,pc);
+                getSetInt(eveNum,pc);
+                getSetInt(numThread,pc);
+                oop core = setCore(libNum,eveNum,stack,numThread);
+                mainCore[++coreSize] = core;
+                continue;
+            }
 
+            case SETTHREAD:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+                getSetInt(numCond,pc);
+                getSetInt(base,pc);
 
+                oop thread = newThread(coreLoc + base,numCond,20);
+                //deal iload Ci
+                while(numCond--){
+                    thread->Thread.loc_cond[numCond] = _Integer_value(Array_pop(stack));
+                }
+                mainCore[coreSize]->Core.threads[mainCore[coreSize]->Core.size++] = thread;
+                continue;
+            }
+
+            case STARTIMP:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+                for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
+                    for(int core_i=0;core_i<coreSize;core_i++){
+                    //<イベントの確認>/<check event>
+                        mainCore[core_i]->Core.func(mainCore[core_i]);
+                    //<イベントアクションの実行>/<implement event action>
+                        for(int thread_i=0;thread_i<mainCore[core_i]->Core.size;thread_i++){
+                            oop thread = mainCore[core_i]->Core.threads[thread_i];
+                            if(thread->Thread.flag == 1){
+                                //implement function of event
+                                FLAG flag = sub_execute(thread,GM);
+                                switch(flag){
+                                    case F_TRANS:{
+                                        int pc_i = thread->Thread.pc++;//location of thread[i]'s pc
+                                        getSetInt(pos,pc_i);
+                                        pc = pos + pc_i;
+                                        isTrans = 1;
+                                        int gm_size = GM->Thread.stack->Array.size;
+                                    //CHECK ME: ここでGMのスタックをクリアするか？
+                                        for(int i = gm_size;i>GM->Thread.rbp;i--){
+                                            Array_pop(GM->Thread.stack);
+                                        }
+                                        break;
+                                    }
+                                    case F_EOE:{
+                                        thread->Thread.flag = 0;
+                                        thread->Thread.pc = thread->Thread.base;
+                                        break;
+                                    }
+                                    default:{
+                                    #if DEBUG
+                                        DEBUG_ERROR("this is not happen, main_execute case STARTIMP\n");
+                                        exit(1);
+                                    #else
+                                        SHICA_PRINTF("this is not happen, main_execute case STARTIMP\n");
+                                        exit(1);
+                                    #endif
+                                    }
+                                }
+                            }else if(thread->Thread.queue->Queue.size>0){
+                                thread->Thread.flag = 1;
+                                oop variables =  dequeue(thread->Thread.queue);
+                                Array_args_copy(variables,thread->Thread.stack);
+                            }
+                        }
+                    }
+                }
+            }
+/* REMOVE AFTER PUSH */
+//             case THREAD:{
+// #if TEST  
+// if(1){SHICA_PRINTF("line %d: main pc     [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+// #endif
+//                 getInt(pc);
+//                 int num_thread = int_value;
+//                 if(num_thread == 0)continue;
+// #if DEBUG //CHECK ME: 本番環境でここどうするのか？
+//                 DEBUG_ERROR_COND(MAXTHREADSIZE >= num_thread,"Number of Event definitin is over setting value");
+//                 DEBUG_ERROR_COND(Array==getType(threads),"TYPE is %d",getType(threads));
+// #endif       
+//                 int thread_pc = pc;
+                
+//             //init setting thread スレッドの初期設定
+//                 SHICA_PRINTF("\n              setting\n\n");
+//                 for(int thread_index=0; thread_index<num_thread;/*case CALL_E, thread_index++*/){
+//                     getInst(pc);
+//                     switch(inst){
+//                         case i_load:{// load pin number / load location of event task
+// #if TEST  
+// SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
+// #endif
+//                             getInt(pc);
+//                             Array_push(stack,_newInteger(int_value));
+//                             continue;
+//                         }
+//                         case CALL_E:{//now
+// #if TEST  
+// SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
+// #endif
+//                             getInt(pc);int lib_num = int_value;
+//                             getInt(pc);int eve_num = int_value;
+//                             getInt(pc);int pin_num = int_value;
+//                             assert(Array == getType(stack));
+//                             oop thread = Event_Func(lib_num,eve_num,stack,120/num_thread);
+//                             Array_push(threads,thread);              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
+//                             // inside Event_Func, use Array_pop for Evaluating Event argument condition
+//                             int inst_loc = thread_pc + _Integer_value(Array_pop(stack));
+//                             threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
+//                             threads->Array.elements[thread_index]->Thread.base = inst_loc;
+//                             thread_index++;
+
+//                             continue;
+//                         }
+//                         default:{
+//                             SHICA_PRINTF("this is not happen, main main_execute case THREAD\n");
+//                             exit(1);
+//                         }
+//                     }
+//                 }
+//         #if DEBUG
+//                 DEBUG_LOG("\n              implement\n\n");
+//         #endif
+//     // implement thread/Event concurrelty
+//                 for(int is_active = 0,count = 5; is_active==0;){
+//                     count++;
+//                     for(int i =0;i<num_thread;i++){
+//                         threads->Array.elements[i]->Thread.func(threads->Array.elements[i]);             //implement function of event
+//                         if(threads->Array.elements[i]->Thread.flag == 1){
+//                             FLAG flag = sub_execute(threads->Array.elements[i],GM);
+//                             if(flag == F_TRANS){//TRANS
+//                         #if DEBUG
+//                                 DEBUG_LOG("        TRANS\n");
+//                         #endif
+//                                 int pc_i = threads->Array.elements[i]->Thread.pc++;//location of thread[i]'s pc
+//                                 getInt(pc_i);//thread num<-pc_i
+//                                 pc = int_value + pc_i;
+//                                 // SHICA_PRINTF("pc-> %d\n",pc);
+//                                 is_active = 1;
+//                                 int gm_size = GM->Thread.stack->Array.size;
+//                                 for(int i = gm_size;i>GM->Thread.rbp;i--){
+//                                     Array_pop(GM->Thread.stack);
+//                                 }
+//                                 break;
+//                             }
+//                             else if(flag == F_EOE){//EOE
+//                                 threads->Array.elements[i]->Thread.flag = 0;
+//                                 threads->Array.elements[i]->Thread.pc = threads->Array.elements[i]->Thread.base;
+//                                 // Array_free(threads->Array.elements[i]->Thread.stack);
+//                             }
+
+//                         }
+//                         else if(threads->Array.elements[i]->Thread.queue->Queue.size>0){
+//                                 threads->Array.elements[i]->Thread.flag = 1;
+//                                 oop variables =  dequeue(threads->Array.elements[i]->Thread.queue);
+//                                 Array_args_copy(variables,threads->Array.elements[i]->Thread.stack);
+//                         }
+//                     }
+//                     // if(count>5){
+//                     //     count = 0;
+//                     // }
+//                 }
+//                 // Array_free(threads);
+//                 continue;
+//             }
             case DEFINE_L:{
                 getInt(pc);
                 oop data  = Array_pop(stack);
@@ -268,12 +300,12 @@ SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
             }
             case GLOBAL:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
 #if MSGC
-                GC_PUSH(oop,code,newThread(Default,10,0));//FIXME: using new thread here is not good for ...
+                GC_PUSH(oop,code,newThread(0,0,10));//FIXME: using new thread here is not good for ...
 #else
-                oop code = newThread(Default,10,0);
+                oop code = newThread(0,0,10);
 #endif
                 code->Thread.pc = pc;
                 for(;;){
@@ -290,14 +322,14 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case ENTRY:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 int s_pc = pc;//store corrent pc
 #if MSGC
-                GC_PUSH(oop, code,newThread(Default,20,0));//FIXME: this is  not good for memory
+                GC_PUSH(oop, code,newThread(0,0,20));//FIXME: this is  not good for memory
 #else   
-                oop code = newThread(Default,20,0);
+                oop code = newThread(0,0,20);
 #endif
                 code->Thread.pc = pc + int_value;
                 Array_push(code->Thread.stack,new_Basepoint(0));
@@ -315,7 +347,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MSET:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
                 getInt(pc);GM->Thread.rbp = int_value;
                 for(int i =0;i<int_value ;i++){
@@ -325,14 +357,14 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case JUMP:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
                 getInt(pc); pc += int_value;
                 continue;       
             }
             case HALT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
                 return;
             }
@@ -456,13 +488,13 @@ FLAG sub_execute(oop process,oop GM){
         switch(inst){
             case TRANS:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 return F_TRANS;
             }
             case i_load:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));
@@ -507,7 +539,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 /* _Integer */
             case i_EQ:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l == r));
@@ -515,7 +547,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_NE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l != r));
@@ -523,7 +555,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_LT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api();
                 printf("line %d r: %d\n",__LINE__,r);
@@ -534,7 +566,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_LE:{//inprogress
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l <= r));
@@ -542,7 +574,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_GE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >= r));
@@ -550,7 +582,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_GT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >  r));
@@ -558,7 +590,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_AND:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l && r));
@@ -566,7 +598,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_OR:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l || r));
@@ -574,7 +606,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_ADD:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l + r));
@@ -582,7 +614,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_SUB:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l - r));
@@ -590,7 +622,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_MUL:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l * r));
@@ -598,7 +630,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_DIV:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l / r));
@@ -606,7 +638,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_MOD:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l % r));
@@ -615,7 +647,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 /* Long */
             case l_EQ:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 long long int r = apl(),l = apl();
                 if(l==r)Array_push(mstack,sys_true);
@@ -624,7 +656,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case l_NE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 long long int r = apl(),l = apl();
                 if(l!=r)Array_push(mstack,sys_true);
@@ -840,7 +872,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
 /* end calc */
             case CALL:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));//number of args
@@ -858,7 +890,7 @@ SHICA_PRINTF("CALL_P\n");
             }
             case GET:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data = Array_get(mstack,mrbp + int_value);
@@ -867,7 +899,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case GET_L:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 // SHICA_PRINTF("    %s\n",TYPENAME[getType(mstack)]);
@@ -876,7 +908,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case GET_G:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,Array_get(GM->Thread.stack,int_value));//index
@@ -884,7 +916,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -893,7 +925,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE_L:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -902,7 +934,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE_G:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data = Array_pop(mstack);
@@ -911,7 +943,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case DEFINE_List:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
 #if DEBUG
                 DEBUG_LOG("this is not support now");
@@ -927,19 +959,19 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case GLOBAL_END:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 return F_EOE;
             }
             case SETQ:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 continue;
             }
             case RET:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 oop value = Array_pop(mstack);//return value
                 oop data = nil;
@@ -954,7 +986,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case JUMPF:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);//get offset inpro
                 oop cond = Array_pop(mstack);
@@ -966,7 +998,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case JUMP:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);     //get offset
                 mpc += int_value;//get offset
@@ -974,7 +1006,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MSUB:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 //now
                 mstack = Array_push(mstack, new_Basepoint(mrbp));//before mrpb
@@ -988,7 +1020,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MPOP:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 for(;;){
                     oop data = Array_pop(mstack);
@@ -1001,7 +1033,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case MPICK:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 int adress = int_value;
@@ -1013,49 +1045,49 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case i_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%d\n",_Integer_value(Array_pop(mstack)));
                 continue;
             }
             case l_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%lld\n",Array_pop(mstack)->_Long.value);
                 continue;
             }
             case f_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%f\n",_Float_value(Array_pop(mstack)));
                 continue;
             }
             case d_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%f\n",Array_pop(mstack)->_Double.value);
                 continue;
             }
             case c_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%c\n",_Char_value(Array_pop(mstack)));
                 continue;
             }
             case s_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%s\n",Array_pop(mstack)->_String.value);
                 continue;
             }
             case EOE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 // mpc  = mrbp;
                 mpc -= 1;
@@ -1067,7 +1099,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case COND:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 oop cond = Array_pop(mstack);
                 //FIXME: usign sys_false and sys_true
@@ -1078,7 +1110,7 @@ if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
             }
             case HALT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: %s\n",__LINE__,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 if(getChild(mstack,Array,size)==1){
                     SHICA_PRINTF("HALT-----------------------\n");
@@ -1165,7 +1197,24 @@ oop printByteCode(){
             case s_GT:   SHICA_PRINTF("d_GT\n");continue; 
             case s_ADD:  SHICA_PRINTF("d_ADD\n");continue;
 
-            case THREAD: getInt(pc);SHICA_PRINTF("thread    %3d\n",int_value);continue;
+            case MKCORE:    getInt(pc);SHICA_PRINTF("MKCORE    %3d\n",int_value);continue;
+            case MKTHREAD:{
+                SHICA_PRINTF("MKTHREAD    ");
+                getInt(pc);int libNum = int_value;
+                getInt(pc);int eveNum = int_value;
+                getInt(pc);int threadNum = int_value;
+                SHICA_PRINTF("%3d  %3d  %3d\n",libNum,eveNum,threadNum);
+                continue;
+            }
+            case SETTHREAD:{
+                SHICA_PRINTF("SETTHREAD    ");
+                getInt(pc);int threadNum = int_value;
+                getInt(pc);int relPos = int_value;
+                SHICA_PRINTF("%3d  %3d\n",threadNum,relPos);
+                continue;
+            }
+            case STARTIMP:  SHICA_PRINTF("STARTIMP\n");continue;
+
             case EOE:    SHICA_PRINTF("EOE\n");continue;
             case COND:   SHICA_PRINTF("COND\n");continue;
 
