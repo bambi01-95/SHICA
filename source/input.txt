@@ -1,3 +1,4 @@
+
 state s{
     event(int a:a%2==0,int b){
         print(int,a)

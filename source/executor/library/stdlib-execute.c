@@ -13,7 +13,7 @@
 #if SBC //event()
 oop eve_test(oop core){
     time_t current_time = time(NULL);
-    if(current_time - core->Core.vd->VarTI.v_i1 >= core->Core.vd->VarTI.v_i2){
+    if(current_time - core->Core.vd->VarTI.v_t1 >= core->Core.vd->VarTI.v_i2){
         core->Core.vd->VarTI.v_t1 = current_time;
         core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
 
@@ -27,7 +27,6 @@ oop eve_test(oop core){
                     oop thread = core->Core.threads[thread_i];
                     //<引数の評価>/<Evaluation of arguments>
                     for(int cond_i=0;cond_i<2;cond_i++){  
-                        DEBUG_LOG("stack size %d\n",code->Thread.stack->Array.size);//REMOVEME
                         if(thread->Thread.loc_cond[cond_i] == 0)continue;
                         code->Thread.pc = thread->Thread.base + thread->Thread.loc_cond[cond_i];
                         Array_push(code->Thread.stack,new_Basepoint(0));
@@ -40,6 +39,7 @@ oop eve_test(oop core){
                                 break;
                             }
                         }
+                        code->Thread.stack->Array.size = 0;
                     }
                     //<条件が満たされたときの処理>/<Processing when the condition is met>
                     if(!isFalse){

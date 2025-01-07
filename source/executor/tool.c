@@ -41,9 +41,11 @@ void printlnObject(oop node, int indent)
     }
     case Core:{
         m(indent);SHICA_PRINTF("Core\n");
+        m(indent);SHICA_PRINTF("size %d\n",node->Core.size);
         for(int i=0;i<node->Core.size;i++){
             printlnObject(node->Core.threads[i],indent+1);
         }
+        SHICA_PRINTF("end\n");
         break;
     }
     case Thread:{
