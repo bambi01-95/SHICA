@@ -217,13 +217,14 @@ oop printCode(oop program){
                 continue;
             }
             case SETTHREAD: {
-                oop numThread  = Array_get(program,pc++);
                 oop actLoc =    Array_get(program,pc++);
-                printf("SETTHREAD %3d %3d\n",_Integer_value(numThread),_Integer_value(actLoc));
+                oop condLoc =  Array_get(program,pc++);
+                printf("SETTHREAD %3d %3d\n",_Integer_value(condLoc),_Integer_value(actLoc));
                 continue;
             }
             case STARTIMP: printf("STARTIMP\n");continue;
             case EOE:    printf("EOE\n");continue;
+            case EOC:    printf("EOC\n");continue;
             case COND:   printf("COND\n");continue;
 
             case CALL:{

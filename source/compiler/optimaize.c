@@ -401,7 +401,7 @@ oop addStructTable(oop id, oop child)
 struct ThreadData{
     int eventLoc;
     int size;
-    int *condLocs;
+    int condRelPos; // <イベントアクションから条件までの相対距離>/<relative distance from event action to condition>
 };
 struct CoreData{
     oop id;
@@ -1086,7 +1086,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         emitII(JUMP,0);
                     int jump_i = program->Array.size;
                     int jump = program->Array.number;
-
+                    //init stt local variable
                     vnt = newArray(0);
                     int m_loc = program->Array.size;
 
@@ -1112,8 +1112,8 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         int args_s =  eve->EventFunc.size_of_args_type_array;
                         char *args =  eve->EventFunc.args_type_array;
 
-                        threadData->condLocs = (int *)malloc(sizeof(int)*args_s);
-                        threadData->size = args_s;
+                        threadData->condRelPos = 0;
+                        threadData->size       = args_s;
 
 
                         if(args_s==0 && para!=nil){
@@ -1139,16 +1139,19 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         //<Event条件のコンパイル>/<compile event condition>
                             oop cond = get(a,EventParam,cond);
                             if(cond!=nil){
-                                oop cond_vnt = newArray(1);
-                                Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
-                                threadData->condLocs[j] = program->Array.number;
-                                compile(program,cond,cond_vnt,_Integer);
+                                if(threadData->condRelPos == 0){
+                                    threadData->condRelPos = program->Array.size;
+                                }
+                                //REMOVE ME: 3line
+                                // oop cond_vnt = newArray(1);
+                                // Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
+                                //threadData->condLocs[j] = program->Array.number;
+                                compile(program,cond,vnt,_Integer);
                                 emitI(COND);
-                            }else{
-                                threadData->condLocs[j] = 0;
                             }
                             para = para->Pair.b;//move to next param
-                        }
+                        }//end of param
+                        emitI(EOC);
                     }
 
                     //define Event Action
@@ -1208,16 +1211,22 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
             for(int i=0;i<core->size;i++){
                 struct ThreadData *threadData = core->threadData[i];
+                //REMOVE ME: 
                 //ILOAD Ci: event condition location
-                for(int j=0;j<threadData->size;j++){
-                    if(threadData->condLocs[j]!=0){
-                        emitII(i_load,threadData->condLocs[j]  - threadData->eventLoc);        //event condition location
-                    }else{
-                        emitII(i_load,0);
-                    }
-                }
+                // for(int j=0;j<threadData->size;j++){
+                    
+                //     if(threadData->condLocs[j]!=0){
+                //         emitII(i_load,threadData->condLocs[j]  - threadData->eventLoc);        //event condition location
+                //     }else{
+                //         emitII(i_load,0);
+                //     }
+                // }
                 //SETTHREAD: set thread
-                emitOII(SETTHREAD, threadData->size, threadData->eventLoc - stt_loc );
+                if(threadData->condRelPos!=0){// event has args condition
+                    emitOII(SETTHREAD, threadData->size, threadData->condRelPos - threadData->eventLoc );
+                }else{
+                    emitOII(SETTHREAD, threadData->size, 0 );
+                }
             }
             core = core->next;
         }

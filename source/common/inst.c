@@ -82,6 +82,7 @@ s_DIV,
 s_MOD,
 
 EOE,   /* end of event function*/
+EOC,   /* end of condition */
 COND,  /* event's condtion arugment */
 TRANS, /*transition: state change*/
 MKCORE,  /*make core: core X:X is number of core*/
@@ -199,6 +200,7 @@ char* INSTNAME[s_PRINT + 1] = {
 "s_MOD",
 
 "EOE",   /* end of event function*/
+"EOC",   /* end of condition */
 "COND",
 "TRANS", /*transition: state change*/
 "MKCORE",  /*make core: core X:X is number of core*/

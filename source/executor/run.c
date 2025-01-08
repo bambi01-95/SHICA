@@ -199,102 +199,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 }
                 continue;
             }
-/* REMOVE AFTER PUSH */
-//             case THREAD:{
-// #if TEST  
-// if(1){SHICA_PRINTF("line %d: main pc     [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
-// #endif
-//                 getInt(pc);
-//                 int num_thread = int_value;
-//                 if(num_thread == 0)continue;
-// #if DEBUG //CHECK ME: 本番環境でここどうするのか？
-//                 DEBUG_ERROR_COND(MAXTHREADSIZE >= num_thread,"Number of Event definitin is over setting value");
-//                 DEBUG_ERROR_COND(Array==getType(threads),"TYPE is %d",getType(threads));
-// #endif       
-//                 int thread_pc = pc;
-                
-//             //init setting thread スレッドの初期設定
-//                 SHICA_PRINTF("\n              setting\n\n");
-//                 for(int thread_index=0; thread_index<num_thread;/*case CALL_E, thread_index++*/){
-//                     getInst(pc);
-//                     switch(inst){
-//                         case i_load:{// load pin number / load location of event task
-// #if TEST  
-// SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
-// #endif
-//                             getInt(pc);
-//                             Array_push(stack,_newInteger(int_value));
-//                             continue;
-//                         }
-//                         case CALL_E:{//now
-// #if TEST  
-// SHICA_PRINTF("THREAD => %s\n",INSTNAME[inst]);
-// #endif
-//                             getInt(pc);int lib_num = int_value;
-//                             getInt(pc);int eve_num = int_value;
-//                             getInt(pc);int pin_num = int_value;
-//                             assert(Array == getType(stack));
-//                             oop thread = Event_Func(lib_num,eve_num,stack,120/num_thread);
-//                             Array_push(threads,thread);              // connect function of event / イベントの関数と紐付け                            assert(Array == getType(stack));
-//                             // inside Event_Func, use Array_pop for Evaluating Event argument condition
-//                             int inst_loc = thread_pc + _Integer_value(Array_pop(stack));
-//                             threads->Array.elements[thread_index]->Thread.pc   = inst_loc;
-//                             threads->Array.elements[thread_index]->Thread.base = inst_loc;
-//                             thread_index++;
-
-//                             continue;
-//                         }
-//                         default:{
-//                             SHICA_PRINTF("this is not happen, main main_execute case THREAD\n");
-//                             exit(1);
-//                         }
-//                     }
-//                 }
-//         #if DEBUG
-//                 DEBUG_LOG("\n              implement\n\n");
-//         #endif
-//     // implement thread/Event concurrelty
-//                 for(int is_active = 0,count = 5; is_active==0;){
-//                     count++;
-//                     for(int i =0;i<num_thread;i++){
-//                         threads->Array.elements[i]->Thread.func(threads->Array.elements[i]);             //implement function of event
-//                         if(threads->Array.elements[i]->Thread.flag == 1){
-//                             FLAG flag = sub_execute(threads->Array.elements[i],GM);
-//                             if(flag == F_TRANS){//TRANS
-//                         #if DEBUG
-//                                 DEBUG_LOG("        TRANS\n");
-//                         #endif
-//                                 int pc_i = threads->Array.elements[i]->Thread.pc++;//location of thread[i]'s pc
-//                                 getInt(pc_i);//thread num<-pc_i
-//                                 pc = int_value + pc_i;
-//                                 // SHICA_PRINTF("pc-> %d\n",pc);
-//                                 is_active = 1;
-//                                 int gm_size = GM->Thread.stack->Array.size;
-//                                 for(int i = gm_size;i>GM->Thread.rbp;i--){
-//                                     Array_pop(GM->Thread.stack);
-//                                 }
-//                                 break;
-//                             }
-//                             else if(flag == F_EOE){//EOE
-//                                 threads->Array.elements[i]->Thread.flag = 0;
-//                                 threads->Array.elements[i]->Thread.pc = threads->Array.elements[i]->Thread.base;
-//                                 // Array_free(threads->Array.elements[i]->Thread.stack);
-//                             }
-
-//                         }
-//                         else if(threads->Array.elements[i]->Thread.queue->Queue.size>0){
-//                                 threads->Array.elements[i]->Thread.flag = 1;
-//                                 oop variables =  dequeue(threads->Array.elements[i]->Thread.queue);
-//                                 Array_args_copy(variables,threads->Array.elements[i]->Thread.stack);
-//                         }
-//                     }
-//                     // if(count>5){
-//                     //     count = 0;
-//                     // }
-//                 }
-//                 // Array_free(threads);
-//                 continue;
-//             }
             case DEFINE_L:{
                 getInt(pc);
                 oop data  = Array_pop(stack);
@@ -1105,6 +1009,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 oop cond = Array_pop(mstack);
+                printlnObject(mstack,1);
                 //FIXME: usign sys_false and sys_true
                 if(cond == sys_false)return F_FALSE;//offset
                 else if(cond == sys_true)return F_TRUE;
