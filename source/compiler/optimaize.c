@@ -186,6 +186,7 @@ oop kill_assoc(oop vnt,int end){
     int size = vnt->Array.size;
     for(int i=size-1; i==end;i--){
         vnt->Array.elements[i] = nil;
+        vnt->Array.size--;
     }
     return nil;
 }
