@@ -243,6 +243,7 @@ struct Pair  	 { enum Type _type_;  oop a, b; };
 struct EventParam   { enum  Type _type_; oop type,symbol,cond;};
 //struct Param   { enum Type _type_; oop type, symbol;};
 struct Assoc     { enum Type _type_;  oop symbol; enum Type kind; int index; };
+
 struct Array     { enum Type _type_;  oop *elements; int size/* related capacity */,number/* run time memory location */; int capacity;};
 
 struct Binop   	 { enum Type _type_;  enum binop op;  oop lhs, rhs;       int line;};

@@ -199,8 +199,19 @@ void gc_isMark(void *ptr){
 }
 
 #if UNMARK //unmark function that is usefull
-void gc_unmark(void *ptr)
-{
+// void gc_unmark(void *ptr)
+// {
+//     if (!GC_PTR(ptr)) return;			// NULL or outside memory
+//     gc_header *here = (gc_header *)ptr - 1;	// object to header
+//     assert(gc_memory <= here);
+//     assert(here < gc_memend);
+//     assert(here->busy);
+//     if (here->mark) return;			// stop if already marked
+//     here->mark = 0;
+//     if (here->atom) return;			// stop if atomic (no pointers)
+//     gc_unmarkFunction(ptr);			// recursively mark object contents   
+// }
+void gc_unmarkOnly(void *ptr){
     if (!GC_PTR(ptr)) return;			// NULL or outside memory
     gc_header *here = (gc_header *)ptr - 1;	// object to header
     assert(gc_memory <= here);
@@ -208,8 +219,6 @@ void gc_unmark(void *ptr)
     assert(here->busy);
     if (here->mark) return;			// stop if already marked
     here->mark = 0;
-    if (here->atom) return;			// stop if atomic (no pointers)
-    gc_unmarkFunction(ptr);			// recursively mark object contents   
 }
 #endif
 

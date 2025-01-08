@@ -21,4 +21,5 @@
     #define SHICA_FPRINTF(S,...) Serial.printf(__VA_ARGS__)
 #endif
 
+#define UNMARK 1
 #endif

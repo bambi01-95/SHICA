@@ -161,7 +161,8 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                 FLAG flag = sub_execute(thread,GM);
                                 switch(flag){
                                     case F_TRANS:{
-                                        if(evalEventArgsThread->Thread.stack->Array.capacity>20){
+                                        if(evalEventArgsThread->Thread.stack->Array.capacity>0){
+                                            gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
                                             evalEventArgsThread->Thread.stack = newArray(10);
                                         }
                                         int pc_i = thread->Thread.pc++;//location of thread[i]'s pc
