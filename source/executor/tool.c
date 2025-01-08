@@ -151,13 +151,14 @@ oop printCode(oop program){
                 continue;
             }
             case SETTHREAD: {
-                oop numThread  = Array_get(program,pc++);
-                oop relPos        = Array_get(program,pc++);
-                SHICA_PRINTF("SETTHREAD %3d  %3d\n",_Integer_value(numThread),_Integer_value(relPos));
+                oop aRelPos        = Array_get(program,pc++);
+                oop cRelPos        = Array_get(program,pc++);
+                SHICA_PRINTF("SETTHREAD %3d  %3d\n",_Integer_value(aRelPos),_Integer_value(cRelPos));
                 continue;
             }
             case STARTIMP: SHICA_PRINTF("STARTIMP\n");continue;
             case EOE:    SHICA_PRINTF("EOE\n");continue;
+            case EOC:    SHICA_PRINTF("EOC\n");continue;
             case COND:   SHICA_PRINTF("COND\n");continue;
 
             case CALL:{

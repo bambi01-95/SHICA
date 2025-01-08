@@ -84,11 +84,11 @@ void main_execute(){
 
 #if MSGC
     //CHECK ME: GMとstackの違いは？使い分けは？
-    GC_PUSH(oop,GM,newThread(pc,0,20));
+    GC_PUSH(oop,GM,newThread(pc,20));
     GC_PUSH(oop,stack,newArray(20));
 #else
     oop stack = newArray(20);
-    oop GM    = newThread(pc,0,20);
+    oop GM    = newThread(pc,20);
 #endif
     for(;;){
         getInst(pc);
@@ -131,14 +131,15 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
-                getSetInt(numCond,pc);
-                getSetInt(base,pc);
+                getSetInt(aRelPos,pc);
+                getSetInt(cRelPos,pc);
 
-                oop thread = newThread(coreLoc + base,numCond,20);
-                //deal iload Ci
-                while(numCond--){
-                    thread->Thread.loc_cond[numCond] = _Integer_value(Array_pop(stack));
-                }
+                oop thread = newThread(coreLoc + aRelPos,20);
+                //REMOVE
+                // while(numCond--){
+                //     thread->Thread.loc_cond[numCond] = _Integer_value(Array_pop(stack));
+                // }
+                thread->Thread.condRelPos = cRelPos;
                 mainCore[coreSize]->Core.threads[mainCore[coreSize]->Core.size++] = thread;
                 continue;
             }
@@ -199,6 +200,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 }
                 continue;
             }
+
             case DEFINE_L:{
                 getInt(pc);
                 oop data  = Array_pop(stack);
@@ -210,9 +212,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
 #if MSGC
-                GC_PUSH(oop,code,newThread(0,0,10));//FIXME: using new thread here is not good for ...
+                GC_PUSH(oop,code,newThread(0,10));//FIXME: using new thread here is not good for ...
 #else
-                oop code = newThread(0,0,10);
+                oop code = newThread(0,10);
 #endif
                 code->Thread.pc = pc;
                 for(;;){
@@ -234,9 +236,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 getInt(pc);
                 int s_pc = pc;//store corrent pc
 #if MSGC
-                GC_PUSH(oop, code,newThread(0,0,20));//FIXME: this is  not good for memory
+                GC_PUSH(oop, code,newThread(0,20));//FIXME: this is  not good for memory
 #else   
-                oop code = newThread(0,0,20);
+                oop code = newThread(0,20);
 #endif
                 code->Thread.pc = pc + int_value;
                 Array_push(code->Thread.stack,new_Basepoint(0));
@@ -1004,17 +1006,22 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 
                 return F_EOE;
             }
+            case EOC:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+#endif
+                return F_TRUE;
+            }
             case COND:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 oop cond = Array_pop(mstack);
-                printlnObject(mstack,1);
                 //FIXME: usign sys_false and sys_true
                 if(cond == sys_false)return F_FALSE;//offset
-                else if(cond == sys_true)return F_TRUE;
+                else if(cond == sys_true)continue;
                 else if(_Integer_value(cond)==0)return F_FALSE;//offset
-                return F_TRUE;
+                continue;
             }
             case HALT:{
 #if TEST  
@@ -1031,6 +1038,14 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
                     SHICA_PRINTF("%d: ",i);
                     printlnObject(Array_pop(mstack),1);
                 return F_NONE;
+            }
+            default:
+            {
+#if DEBUG
+            SHICA_FPRINTF(stderr,"  sub_execute error %s\n",INSTNAME[inst]);
+#else
+            SHICA_FPRINTF(stderr,"  sub_execute error %d\n",inst);
+#endif
             }
         }
         return F_NONE;
@@ -1124,6 +1139,7 @@ oop printByteCode(){
             case STARTIMP:  SHICA_PRINTF("STARTIMP\n");continue;
 
             case EOE:    SHICA_PRINTF("EOE\n");continue;
+            case EOC:    SHICA_PRINTF("EOC\n");continue;
             case COND:   SHICA_PRINTF("COND\n");continue;
 
             case CALL:{

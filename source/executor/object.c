@@ -220,8 +220,10 @@ oop nil       = 0;
 oop sys_false = 0;
 oop sys_true  = 0;
 oop none      = 0;
+
 oop *mainCore   = 0;
 int coreSize = 0;
+oop evalEventArgsThread = 0;
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
 typedef enum {F_NONE,// Jump,Fjump,Call,Call_P,Ret,HALLT,SETQ,COND,GLOBAL_END
@@ -342,7 +344,7 @@ struct Thread{
     enum Type type;
     oop stack; /*gc_mark*/
     oop queue; /*gc_mark*/
-    unsigned int *loc_cond;/*stock location of condtion instraction*/
+    unsigned int condRelPos;/*stock location of condtion instraction*/
     unsigned int pc,rbp,base;
     unsigned flag:1;
 };
@@ -423,7 +425,6 @@ void markObject(oop obj){
             return ;
         }
         case Thread:{
-            gc_mark(obj->Thread.loc_cond);  //atomic object
             gc_mark(obj->Thread.stack);
             gc_mark(obj->Thread.queue);
             return ;
@@ -465,7 +466,6 @@ void isMarkObject(oop obj){
         }
         case Thread:{
             SHICA_PRINTF("mark Thread\n");
-            gc_isMark(obj->Thread.loc_cond);    //atomic object
             gc_isMark(obj->Thread.stack);
             gc_isMark(obj->Thread.queue);
             break;
@@ -926,7 +926,7 @@ oop dequeue(oop t)
 #endif
 
 //THREAD
-oop newThread(int base,int numCond,int stackSize)
+oop newThread(int base,int stackSize)
 {
 #if MSGC
     GC_PUSH(oop, node, newObject(Thread));
@@ -936,7 +936,7 @@ oop newThread(int base,int numCond,int stackSize)
     node->Thread.base       =  base;
     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
     node->Thread.stack      = newArray(stackSize);
-    node->Thread.loc_cond   = gc_beAtomic(gc_alloc(numCond*sizeof(int)));
+    node->Thread.condRelPos   = 0;
     GC_POP(node);
 #else
     oop node = newObject(Thread);
@@ -946,7 +946,7 @@ oop newThread(int base,int numCond,int stackSize)
     node->Thread.base       =  base;
     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
     node->Thread.stack      = newArray(stackSize);
-    node->Thread.loc_cond   = calloc(numCond,sizeof(int));
+    node->Thread.condRelPos = 0;
 #endif
     return node;
 }
@@ -990,62 +990,5 @@ oop _newCore(size_t vdMemSize,int numThread)
 }
 #define newCore(VD_TYPE,numThread)	_newCore(sizeof(struct VD_TYPE),numThread)
 
-
-
-//Remove
-// //THREAD
-// oop _newThread(size_t vd_size,int stk_size,int num_args)
-// {
-// #if MSGC
-//     GC_PUSH(oop,node, newObject(Thread));
-// #else
-//     oop node = newObject(Thread);
-// #endif
-//     node->Thread.queue      = newQueue(5);
-//     node->Thread.flag       =  0;
-//     node->Thread.pc         =  0;
-//     node->Thread.base       =  0;
-//     node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
-//     node->Thread.stack      = newArray(stk_size);
-// #if MSGC
-//     #if SBC
-//         unsigned int* loc_cond = gc_beAtomic(gc_alloc(num_args*sizeof(int)));
-//         node->Thread.loc_cond = loc_cond;
-//         VD vd = gc_beAtomic(gc_alloc(vd_size));
-//     #else //C++
-//         int* loc_cond = (int*)gc_beAtomic(gc_alloc(num_args*sizeof(int)));
-//         VD vd = (VarData*)gc_beAtomic(gc_alloc(vd_size));
-//     #endif
-//     GC_POP(node);
-// #else
-//     VD       vd = calloc(1,vd_size);
-// #endif
-//     node->Thread.vd         = vd;
-//     return node;
-// }
-// #define newThread(VD_TYPE,STACK_SIZE,NUM_ARGS)	_newThread(sizeof(struct VD_TYPE),STACK_SIZE,NUM_ARGS)
-
-// oop _setThread(oop t,size_t size)
-// {
-//     gc_pushRoot((void*)&t);
-//     t->Thread.flag       =  0;
-//     t->Thread.pc         =  0;
-//     t->Thread.base       =  0;
-//     t->Thread.rbp        =  0;
-//     t->Thread.stack      = newArray(0);
-// #if MSGC
-//     #if SBC
-//         VD vd = gc_beAtomic(gc_alloc(size));
-//     #else //C++
-//         VD vd = (VarData*)gc_alloc(size);
-//     #endif
-//     gc_popRoots(1);
-// #else
-//     VD vd = calloc(1,size);
-// #endif
-//     t->Thread.vd         = vd;
-//     return t;
-// }
-// #define setThread(T,TYPE)	_setThread(T,sizeof(struct TYPE))
 
 #endif //OBJECT_C

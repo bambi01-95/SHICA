@@ -1140,7 +1140,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                             oop cond = get(a,EventParam,cond);
                             if(cond!=nil){
                                 if(threadData->condRelPos == 0){
-                                    threadData->condRelPos = program->Array.size;
+                                    threadData->condRelPos = program->Array.number;
                                 }
                                 //REMOVE ME: 3line
                                 // oop cond_vnt = newArray(1);
@@ -1211,7 +1211,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
             for(int i=0;i<core->size;i++){
                 struct ThreadData *threadData = core->threadData[i];
-                //REMOVE ME: 
                 //ILOAD Ci: event condition location
                 // for(int j=0;j<threadData->size;j++){
                     
@@ -1222,10 +1221,11 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 //     }
                 // }
                 //SETTHREAD: set thread
-                if(threadData->condRelPos!=0){// event has args condition
-                    emitOII(SETTHREAD, threadData->size, threadData->condRelPos - threadData->eventLoc );
+                DEBUG_LOG("\nstt_loc %d\neventLoc %d\n condRelPos %d\n",stt_loc,threadData->eventLoc,threadData->condRelPos);
+                if(threadData->condRelPos!=0){
+                    emitOII(SETTHREAD, threadData->eventLoc - stt_loc, threadData->condRelPos - threadData->eventLoc );
                 }else{
-                    emitOII(SETTHREAD, threadData->size, 0 );
+                    emitOII(SETTHREAD, threadData->eventLoc - stt_loc, 0 );
                 }
             }
             core = core->next;

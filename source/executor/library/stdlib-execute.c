@@ -18,29 +18,39 @@ oop eve_test(oop core){
         core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
 
 #if MSGC
-                GC_PUSH(oop, code,newThread(0,0,10));
+                GC_PUSH(oop, code,newThread(0,10));
 #else   
-                oop code = newThread(0,0,10);
+                oop code = newThread(0,10);
 #endif
+                int isOnce = 0;
                 for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
                     int isFalse = 0;
                     oop thread = core->Core.threads[thread_i];
+
                     //<引数の評価>/<Evaluation of arguments>
-                    for(int cond_i=0;cond_i<2;cond_i++){  
-                        if(thread->Thread.loc_cond[cond_i] == 0)continue;
-                        code->Thread.pc = thread->Thread.base + thread->Thread.loc_cond[cond_i];
-                        Array_push(code->Thread.stack,new_Basepoint(0));
-                        Array_push(code->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+                    if(thread->Thread.condRelPos != 0){
+                        if(isOnce == 0){
+                            Array_push(code->Thread.stack,new_Basepoint(0));
+                            Array_push(code->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+                            Array_push(code->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+                            isOnce = 1;
+                        }else
+                        {
+                            code->Thread.stack->Array.size = 3;
+                        }
+                        code->Thread.pc = thread->Thread.base + thread->Thread.condRelPos;
                         for(;;){
                             FLAG flag = sub_execute(code,nil);
-                            if(flag == F_TRUE)break;
+                            if(flag == F_TRUE){
+                                break;
+                            }
                             else if(flag == F_FALSE){
                                 isFalse = 1;
                                 break;
                             }
                         }
-                        code->Thread.stack->Array.size = 0;
                     }
+                    
                     //<条件が満たされたときの処理>/<Processing when the condition is met>
                     if(!isFalse){
                         //protect t:thread
@@ -98,18 +108,23 @@ oop eve_timer(oop core){
         core->Core.vd->VarTI.v_t1 = current_time;
         core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
 #if MSGC
-        GC_PUSH(oop, code,newThread(0,0,10));
+        GC_PUSH(oop, code,newThread(0,10));
 #else   
-        oop code = newThread(0,0,10);
+        oop code = newThread(0,10);
 #endif
+        int isOnce = 0;
         for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
             int isFalse = 0;
             oop t = core->Core.threads[thread_i];
-            Array_push(code->Thread.stack,new_Basepoint(0));
-            Array_push(code->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
-
-            if(t->Thread.loc_cond[0] != 0){
-                code->Thread.pc = t->Thread.base + t->Thread.loc_cond[0];
+            if(t->Thread.condRelPos != 0){
+                if(isOnce ==0){
+                    Array_push(code->Thread.stack,new_Basepoint(0));
+                    Array_push(code->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+                    isOnce = 1;
+                }else{
+                    code->Thread.stack->Array.size = 3;
+                }
+                code->Thread.pc = t->Thread.base + t->Thread.condRelPos;
                 for(;;){
                     FLAG flag = sub_execute(code,nil);
                     if(flag == F_TRUE)break;
@@ -196,24 +211,31 @@ oop eve_keyget(oop core){
         // 読み取った文字を返す
 
 #if MSGC
-        GC_PUSH(oop, code,newThread(0,0,10));
+        GC_PUSH(oop, code,newThread(0,10));
 #else
-        oop code = newThread(0,0,10);
+        oop code = newThread(0,10);
 #endif
+        int isOnce = 0;
         for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
             oop t = core->Core.threads[thread_i];
             int isFalse = 0;
-            Array_push(code->Thread.stack,new_Basepoint(0));
-            Array_push(code->Thread.stack,_newInteger(buf));
+            if(!isOnce){
+                Array_push(code->Thread.stack,new_Basepoint(0));
+                Array_push(code->Thread.stack,_newInteger(buf));
+                isOnce = 1;
+            }else{
+                code->Thread.stack->Array.size = 2;
+            }
 
-            if(t->Thread.loc_cond[0] == 0)continue;
-            code->Thread.pc = t->Thread.base + t->Thread.loc_cond[0];
-            for(;;){
-                FLAG flag = sub_execute(code,nil);
-                if(flag == F_TRUE)break;
-                else if(flag == F_FALSE){
-                    isFalse = 1;
-                    break;
+            if(t->Thread.condRelPos != 0){
+                code->Thread.pc = t->Thread.base + t->Thread.condRelPos;
+                for(;;){
+                    FLAG flag = sub_execute(code,nil);
+                    if(flag == F_TRUE)break;
+                    else if(flag == F_FALSE){
+                        isFalse = 1;
+                        break;
+                    }
                 }
             }
             
