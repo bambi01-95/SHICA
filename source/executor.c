@@ -44,6 +44,7 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
     sys_true  = _newInteger(1);
     none      = _newInteger(2);
     evalEventArgsThread = newThread(0,10);
+    Array_push(evalEventArgsThread->Thread.stack,new_Basepoint(0));
 #if MSGC
     gc_pushRoot((void*)&nil);
     gc_pushRoot((void*)&sys_false);

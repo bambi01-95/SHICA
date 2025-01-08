@@ -483,7 +483,6 @@ void isMarkObject(oop obj){
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
     gc_markOnly(mainCore);
-    SHICA_PRINTF("size %d\n",coreSize);
     for(int i=0;i<=coreSize;i++){
         gc_mark(mainCore[i]);
         // SHICA_PRINTF("mark mainCore[%d]\n",i);
