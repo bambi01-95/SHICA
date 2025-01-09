@@ -16,6 +16,8 @@ int newline = 1;
 start	= bln d:define 	{ result = d }
 
 define  = t:STATE i:id s:state                { $$ = newSetVar(t,i,s,newline)  }
+		| ADVICE   i:id b:block { $$ = newAdvice(i,b) }
+		| POINTCUT i:id j:jointps { $$ = newPointcut(i,j) }
 		| STRUCT i:id  p:child { $$ = newSetType(i,p,newline) }
         | d:bracket 	{ result = d }
         | t:TYPE   i:id p:params s:stmtbl     { $$ = newSetVar(t,i,newFunction(p,s),newline) } 
@@ -24,7 +26,15 @@ define  = t:STATE i:id s:state                { $$ = newSetVar(t,i,s,newline)  }
         | !.                                  { $$ = newEND() }
 	    | < (!eol &. .)* >                    { fatal("line %d syntax error: [%s]",newline, yytext); }
 
-# type -> id and type
+jointps  = LBRACE p:mkNil
+		( bln !RBRACE j:jointp COMMA { p = newPair(j, p) }
+	    )+
+		bln RBRACE				{ $$ = p }
+
+jointp   = BEF i:id  { $$ = newJointp(BEF,i) }
+		| AFT i:id   { $$ = newJointp(AFT,i)  }
+		| AROUD i:id { $$ = newJointp(AROUND,i) }
+
 child	= LBRACE p:mkNil
 		( bln !RBRACE t:TYPE i:id SEMI{ p = newPair(newPair(t,i), p) }
 	    )+
@@ -263,6 +273,13 @@ CONTINUE = "continue"
 BREAK    = "break"
 RETURN   = "return"
 STRUCT   = "struct"   !alnum - 
+
+ADVICE   = "advice"   !alnum -
+POINTCUT = "pointcut" !alnum -
+BEF   = "before"	  !alnum -
+AFT	  = "after"		  !alnum -
+AROUD = "around"      !alnum -
+
 %%;
 // https://programming-place.net/ppp/contents/c/appendix/operation.html
 #undef getchar

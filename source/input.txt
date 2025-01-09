@@ -1,24 +1,9 @@
-int fib(int n){
-    if(n<=1){
-        return n
-    }
-    return fib(n-1)+fib(n-2)
+advice name{
+    print(int,1)
 }
 
-state s{
-    event(int a:a%2==0,int b){
-        print(int,fib(17))
-        if(a>10){
-            state k
-        }
-    }
-}
-
-state k{
-    event(int a:a%3==0,int b){
-        print(int,fib(10))
-        if(a>12){
-            state s
-        }
-    }
+pointcut name{
+	before funcname,
+	after  eventname,
+	around sttName,
 }

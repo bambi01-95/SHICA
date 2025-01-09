@@ -232,6 +232,7 @@ oop compile(oop,oop,oop,enum Type);
         kill_assoc(Local_VNT,size);/*kill*/ \
     } \
 })
+
 oop state_Pair = 0; //state (id index)
 oop Global_VNT = 0; //Gloval variable name table
 oop Local_VNT  = 0; //STATE Local variable name table
@@ -805,6 +806,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         }
         break;
     }
+
     case SetType:{
         oop id = get(exp, SetType,id);
         oop child = get(exp,SetType,child);
@@ -1236,6 +1238,44 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         Local_VNT = newArray(0);
         break;
     }//end of case State
+
+    case Advice:{
+        DEBUG_LOG("Advice\n");
+        oop id = get(exp,Advice,id);
+        oop block = get(exp,Advice,body);
+
+        //FIXME: check get(id,Symbol,value) is empty
+
+    emitII(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
+        vnt = newArray(0);          //Create symbol name table
+        int jump = program->Array.number;
+        int jump_i = program->Array.size;
+        get(exp,Advice,position) = program->Array.number;  //CALL num: num is this number
+    emitII(MSUB,0);                 //rbp for variable
+    int msub_loc = program->Array.size;
+        compOT(get(exp,Advice,body),Undefined);
+    int vnt_size = vnt->Array.size;
+    Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
+        int end  = program->Array.number;
+    Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
+        id->Symbol.value = exp;
+        DEBUG_LOG("Advice End\n");
+        break;
+    }
+    case Pointcut:{
+        DEBUG_LOG("Pointcut\n");
+        oop id = get(exp,Pointcut,id);
+        oop pair = get(exp,Pointcut,pair);
+        oop advice = get(id,Symbol,aspect);
+
+        while(pair!=nil){
+            oop jointp = pair->Pair.a;
+            get(jointp,Jointp,position) = get(advice,Advice,position);
+            get(jointp,Jointp,id)->Symbol.value = jointp;
+            pair = pair->Pair.b;
+        }
+        break;
+    }
 
     case Run:{
         oop id = get(exp,Run,state);
