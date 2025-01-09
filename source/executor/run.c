@@ -77,6 +77,10 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 #include <unistd.h>//remove
 
 
+//should be one execute function
+// FLAG executor(oop thread,oop GM){
+
+// }
 void main_execute(){
     int pc = 0;
     int rbp = 0;
@@ -99,6 +103,29 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 #endif
                 getInt(pc);
                 Array_push(stack,_newInteger(int_value));
+                continue;
+            }
+            case CALL:{
+#if TEST    
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+#if MSGC
+                GC_PUSH(oop,code,newThread(pc,20));
+#else
+                oop code = newThread(pc,20);
+#endif
+                DEBUG_LOG("MAIN CALL\n");
+                Array_push(code->Thread.stack,new_Basepoint(0));
+                getInt(pc);
+                Array_push(code->Thread.stack,_newInteger(int_value));//number of args
+                getInt(pc);
+                Array_push(code->Thread.stack,_newInteger(pc));//relative location of function
+                code->Thread.pc = int_value + pc;
+                for(;;){
+                    FLAG flag = sub_execute(code,GM);
+                    if(flag == F_EOA)break;
+                }
+                DEBUG_LOG("MAIN CALL END\n");
                 continue;
             }
 
@@ -1021,6 +1048,13 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 return F_TRUE;
             }
+            case EOA:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+#endif
+                //WRITE HERE
+                return F_EOA;
+            }
             case COND:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
@@ -1043,9 +1077,12 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
                 }
                 SHICA_PRINTF("HALT with %d items on mstack\n",getChild(mstack,Array,size));
                 int size = getChild(mstack,Array,size);
-                for(int i = 0; i<size;i++)
+                for(int i = 0; i<size;i++){
                     SHICA_PRINTF("%d: ",i);
                     printlnObject(Array_pop(mstack),1);
+                    
+                }
+                exit(1);
                 return F_NONE;
             }
             default:
@@ -1149,6 +1186,7 @@ oop printByteCode(){
 
             case EOE:    SHICA_PRINTF("EOE\n");continue;
             case EOC:    SHICA_PRINTF("EOC\n");continue;
+            case EOA:    SHICA_PRINTF("EOA\n");continue;
             case COND:   SHICA_PRINTF("COND\n");continue;
 
             case CALL:{
@@ -1160,14 +1198,6 @@ oop printByteCode(){
             }
             case CALL_P:{
                 SHICA_PRINTF("CALL_P      ");
-                getInt(pc);int lib_num = int_value;
-                getInt(pc);int func_num = int_value;
-                getInt(pc);int args_s = int_value;
-                SHICA_PRINTF("%3d  %3d  %3d\n",lib_num,func_num,args_s);
-                continue;
-            }
-            case CALL_E:{
-                SHICA_PRINTF("CALL_E      ");
                 getInt(pc);int lib_num = int_value;
                 getInt(pc);int func_num = int_value;
                 getInt(pc);int args_s = int_value;

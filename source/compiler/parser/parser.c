@@ -2030,7 +2030,7 @@ YY_ACTION(void) yy_2_jointp(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_2_jointp\n"));
   {
 #line 35
-   __ = newJointp(AFT,i)  ;
+   __ = newJointp(AFTER,i)  ;
   }
 #undef yythunkpos
 #undef yypos
@@ -2046,7 +2046,7 @@ YY_ACTION(void) yy_1_jointp(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_jointp\n"));
   {
 #line 34
-   __ = newJointp(BEF,i) ;
+   __ = newJointp(BEFORE,i) ;
   }
 #undef yythunkpos
 #undef yypos
@@ -2375,7 +2375,7 @@ YY_ACTION(void) yy_1_define(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_define\n"));
   {
 #line 18
-   __ = newSetVar(t,i,s,newline)  ;
+   __ = setState(i,s)  ;
   }
 #undef yythunkpos
 #undef yypos

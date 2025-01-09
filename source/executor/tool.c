@@ -159,6 +159,7 @@ oop printCode(oop program){
             case STARTIMP: SHICA_PRINTF("STARTIMP\n");continue;
             case EOE:    SHICA_PRINTF("EOE\n");continue;
             case EOC:    SHICA_PRINTF("EOC\n");continue;
+            case EOA:    SHICA_PRINTF("EOA\n");continue;
             case COND:   SHICA_PRINTF("COND\n");continue;
 
             case CALL:{
@@ -176,8 +177,8 @@ oop printCode(oop program){
                 SHICA_PRINTF("%3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(func_num),_Integer_value(num_args));
                 continue;
             }
-            case CALL_E:{
-                SHICA_PRINTF("CALL_E     ");//T
+            case CALL_A:{
+                SHICA_PRINTF("CALL_A     ");//T
                 oop lib_num  = Array_get(program,pc++);
                 oop func_num = Array_get(program,pc++);
                 oop num_args = Array_get(program,pc++);

@@ -170,68 +170,69 @@ enum Type {
 };
 
 char *TYPENAME[END+1] = {
-"Undefined",
-"Operator",
-"Integer", 
-"Float", 
-"String",
+    "Undefined",
+    "Operator",
+    "Integer",
+    "Float",
+    "String",
     "List_d1",
-"Key",    
-"Symbol",  
-"Function", 
-"Struct",
-"Event",
-"State", 
-"Advice",
-"Pointcut",
+    "Key",
+    "Symbol",
+    "Function",
+    "Struct",
+    "Event",
+    "State",
+    "Advice",
+    "Pointcut",
 
-"Pair", 
-"Assoc",
-"Array",
+    "Pair",
+    "EventParam",
+    "Assoc",
+    "Array",
 
-"Binop", 
-"Unyop",  
-"Jointp",
+    "Binop",
+    "Unyop",
+    "Jointp",
 
-"GetVar", 
-"SetVar",  
-"SetVarG",
-"SetVarL",
+    "GetVar",
+    "SetVar",
+    "SetVarG",
+    "SetVarL",
     "SetArray",
     "GetArray",
     "SetType",
-"Call",  
-"Run",   
+    "Call",
+    "Run",
 
-"Print", 
-"If",       
-"While", 
-"For",
-"Block",
-"Continue",
-"Break",
-"Return",
+    "Print",
+    "If",
+    "While",
+    "For",
+    "Block",
+    "Continue",
+    "Break",
+    "Return",
 
-"Primitive",
-"EventFunc",
+    "Primitive",
+    "EventFunc",
 
-"_BasePoint",
-"_Undefined",
-"_Integer",
-"_Long",
-"_Float",
-"_Double",
-"_Char",
-"_IntegerArray",
-"Thread",
-"END",
+    "_BasePoint",
+    "_Undefined",
+    "_Integer",
+    "_Long",
+    "_Float",
+    "_Double",
+    "_Char",
+    "_IntegerArray",
+    "Thread",
+    "END",
 };
 
 
 
 enum binop { AND, OR, ADD, SUB, MUL, DIV, MOD, LT, LE, GE, GT, EQ, NE };
 enum unyop { NEG, AINC, BINC, ADEC, BDEC};
-enum jointp{ BEF, AFT, AROUND,};
+enum jointp{ BEFORE, AFTER, AROUND,};
 
 struct Undefined { enum Type _type_; };
 struct Operator  { enum Type _type_; char value;};    // for operator
@@ -243,7 +244,7 @@ struct Symbol  	 { enum Type _type_;  char *name;  oop value,aspect; };
 struct Function	 { enum Type _type_;  oop parameters, body;int position;enum Type kind;};
 struct Struct    { enum Type _type_;  oop symbol, members;};
 struct Event     { enum Type _type_; oop id, parameters, body; };
-struct State     { enum Type _type_; oop *events; int size,index; };
+struct State     { enum Type _type_; oop id; oop *events; int size,index; };
 struct Advice    { enum Type _type_; oop id,body; int position; };
 struct Pointcut  { enum Type _type_; oop id,pair; };
 
@@ -257,7 +258,7 @@ struct Array     { enum Type _type_;  oop *elements; int size/* related capacity
 
 struct Binop   	 { enum Type _type_;  enum binop op;  oop lhs, rhs;       int line;};
 struct Unyop   	 { enum Type _type_;  enum unyop op;  oop rhs;            int line;};
-struct Jointp    { enum Type _type_;  enum jointp point; oop id, advice;};
+struct Jointp    { enum Type _type_;  enum jointp point; oop id; int position;};
 
 struct GetVar  	 { enum Type _type_;  oop id;                             int line;};
 struct SetVar  	 { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
@@ -625,6 +626,7 @@ oop newSymbol(char *name)
     oop sym = newObject(Symbol);
     sym->Symbol.name  = strdup(name);
     sym->Symbol.value = sys_false;
+    sym->Symbol.aspect = nil;
     return sym;
 }
 
@@ -715,7 +717,7 @@ oop newJointp(enum jointp point, oop id)
     oop node = newObject(Jointp);
     node->Jointp.point = point;
     node->Jointp.id    = id;
-    node->Jointp.advice = 0; // it is used at the optimaize.c
+    node->Jointp.position = 0; // it is used at the optimaize.c
     return node;
 }
 
@@ -874,6 +876,11 @@ oop newState(void)
     node->State.events = 0;
     node->State.size   = 0;
     return node;
+}
+
+oop setState(oop id,oop s){
+    s->State.id = id;
+    return s;
 }
 
 oop newEvent(oop id,oop params,oop body){

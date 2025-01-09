@@ -15,7 +15,7 @@ int newline = 1;
 
 start	= bln d:define 	{ result = d }
 
-define  = t:STATE i:id s:state                { $$ = newSetVar(t,i,s,newline)  }
+define  = t:STATE i:id s:state                { $$ = setState(i,s)  }
 		| ADVICE   i:id b:block { $$ = newAdvice(i,b) }
 		| POINTCUT i:id j:jointps { $$ = newPointcut(i,j) }
 		| STRUCT i:id  p:child { $$ = newSetType(i,p,newline) }
@@ -31,8 +31,8 @@ jointps  = LBRACE p:mkNil
 	    )+
 		bln RBRACE				{ $$ = p }
 
-jointp   = BEF i:id  { $$ = newJointp(BEF,i) }
-		| AFT i:id   { $$ = newJointp(AFT,i)  }
+jointp   = BEF i:id  { $$ = newJointp(BEFORE,i) }
+		| AFT i:id   { $$ = newJointp(AFTER,i)  }
 		| AROUD i:id { $$ = newJointp(AROUND,i) }
 
 child	= LBRACE p:mkNil

@@ -242,8 +242,9 @@ oop printCode(oop program){
                 printf("%3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(func_num),_Integer_value(num_args));
                 continue;
             }
-            case CALL_E:{
-                printf("CALL_E     ");//T
+            case CALL_A:{
+                printf("CALL_A     ");//T
+                
                 oop lib_num  = Array_get(program,pc++);
                 oop func_num = Array_get(program,pc++);
                 oop num_args = Array_get(program,pc++);

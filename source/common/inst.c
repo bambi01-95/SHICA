@@ -83,6 +83,7 @@ s_MOD,
 
 EOE,   /* end of event function*/
 EOC,   /* end of condition */
+EOA,   /* end of advice */
 COND,  /* event's condtion arugment */
 TRANS, /*transition: state change*/
 MKCORE,  /*make core: core X:X is number of core*/
@@ -106,7 +107,7 @@ DEFINE_List_G,  /* vnt index */
 /*don't change order end*/
 CALL,
 CALL_P,
-CALL_E,
+CALL_A,
 SETQ,
 RET,
 MSUB,
@@ -201,6 +202,7 @@ char* INSTNAME[s_PRINT + 1] = {
 
 "EOE",   /* end of event function*/
 "EOC",   /* end of condition */
+"EOA",   /* end of advice */
 "COND",
 "TRANS", /*transition: state change*/
 "MKCORE",  /*make core: core X:X is number of core*/
@@ -224,7 +226,7 @@ char* INSTNAME[s_PRINT + 1] = {
 /*don't change order end*/
 "CALL",
 "CALL_P",
-"CALL_E",
+"CALL_A",
 "SETQ",
 "RET",
 "MSUB",

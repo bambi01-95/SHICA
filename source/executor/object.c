@@ -228,10 +228,12 @@ oop evalEventArgsThread = 0;
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
 typedef enum {F_NONE,// Jump,Fjump,Call,Call_P,Ret,HALLT,SETQ,COND,GLOBAL_END
                F_EOE,// EOE
+               F_EOA,// EOA
              F_TRANS,// TRANS
              F_ERROR,
              F_TRUE, // COND
              F_FALSE,// COND
+
              } FLAG;
 
 enum Type {

@@ -161,7 +161,7 @@ oop CodeWrite(oop program){
                 genInt(_Integer_value(Array_get(program,pc++)));
                 continue;
             }
-            case CALL_E:{
+            case CALL_A:{
                 genInt(_Integer_value(Array_get(program,pc++)));
                 genInt(_Integer_value(Array_get(program,pc++)));
                 genInt(_Integer_value(Array_get(program,pc++)));

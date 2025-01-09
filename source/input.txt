@@ -1,9 +1,29 @@
-advice name{
-    print(int,1)
+advice log{
+    print(int,10)
 }
 
-pointcut name{
-	before funcname,
-	after  eventname,
-	around sttName,
+pointcut log{
+    after s1,
+    before s2,
+}
+
+int add(){
+    return 111
+}
+
+state s1{
+    event(int a,int b){
+        if(a>4){
+            print(int,add())
+            state s2
+        }
+    }
+}
+
+state s2{
+    event(int a,int b){
+        if(a>4){
+            state s1
+        }
+    }
 }
