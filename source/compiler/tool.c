@@ -225,6 +225,7 @@ oop printCode(oop program){
             case STARTIMP: printf("STARTIMP\n");continue;
             case EOE:    printf("EOE\n");continue;
             case EOC:    printf("EOC\n");continue;
+            case EOA:    printf("EOA\n");continue;
             case COND:   printf("COND\n");continue;
 
             case CALL:{

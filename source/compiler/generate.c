@@ -149,6 +149,7 @@ oop CodeWrite(oop program){
             case STARTIMP: continue;
             case EOE:      continue;
             case EOC:      continue;
+            case EOA:      continue;
             case COND:     continue;
             case CALL:{
                 genInt(_Integer_value(Array_get(program,pc++)));
@@ -257,7 +258,11 @@ oop CodeWrite(oop program){
                 return nil;
             }
             default:{
+#if DEBUG
+                printf("%s line %d this is not happen %s\n",__FILE__,__LINE__,INSTNAME[op]);
+#else
                 printf("%s line %d this is not happen \n",__FILE__,__LINE__);
+#endif
             }
         }
     }

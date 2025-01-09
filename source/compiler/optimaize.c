@@ -429,7 +429,7 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
     return new;
 }
 
-
+oop stateNameG = 0;
 
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 {
@@ -1066,6 +1066,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         int size = get(exp,State,size);
         oop stateName = get(exp,State,id);
         oop *events = get(exp,State,events);
+        stateNameG = stateName;//for aop (case TRANS)
 
 
         struct CoreData *core = (struct CoreData *)malloc(sizeof(struct CoreData));
@@ -1183,15 +1184,13 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         int stt_loc = program->Array.number;
         exp->State.index = stt_loc;
         get(stateName,Symbol,aspect);
-        DEBUG_LOG("AOP\n");
+        
         //<AOPの呼び出し>/<AOP call>
 
         if(get(stateName,Symbol,aspect)!=nil){
-            DEBUG_LOG("LOG\n");
             oop aspect = get(stateName,Symbol,aspect);
             int size = get(aspect,Array,size);
             oop *jointps = get(aspect,Array,elements);
-            DEBUG_LOG("LOG\n");
             for(int i=0;i<size;i++){
                 oop jointp = jointps[i];
                 switch(get(jointp,Jointp,point)){
@@ -1206,7 +1205,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 }
             }
         }
-        DEBUG_LOG("AOP END\n");
+        
 
         if(Entry_bool==1){//entry()の実行
             emitII(ENTRY,core->threadData[0]->eventLoc - (stt_loc));
@@ -1258,7 +1257,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }//end of case State
 
     case Advice:{
-        DEBUG_LOG("Advice\n");
         oop id = get(exp,Advice,id);
         oop block = get(exp,Advice,body);
 
@@ -1278,11 +1276,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         int end  = program->Array.number;
     Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
         id->Symbol.value = exp;
-        DEBUG_LOG("Advice End\n");
         break;
     }
     case Pointcut:{
-        DEBUG_LOG("Pointcut\n");
         oop name = get(exp,Pointcut,id);
         oop pair = get(exp,Pointcut,pair);
 
@@ -1301,12 +1297,36 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             id->Symbol.aspect = aspect;
             pair = pair->Pair.b;
         }
-        DEBUG_LOG("Pointcut End\n");
         break;
     }
 
     case Run:{
         oop id = get(exp,Run,state);
+        
+        //<AOPの呼び出し>/<AOP call>
+        if(get(stateNameG,Symbol,aspect)!=nil){
+            DEBUG_LOG("AOP AFTER\n");
+            oop aspect = get(stateNameG,Symbol,aspect);
+            int size = get(aspect,Array,size);
+            oop *jointps = get(aspect,Array,elements);
+            for(int i=0;i<size;i++){
+                oop jointp = jointps[i];
+                switch(get(jointp,Jointp,point)){
+                    case BEFORE:break;
+                    case AFTER:  
+                    case AROUND:{
+                        int pos = get(jointp,Jointp,position);
+                        int cpc = program->Array.number;
+                        emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
+                        DEBUG_LOG("%d\n",pos - program->Array.number == pos - cpc -(OPESIZE + INTSIZE*2));
+                        break;
+                    }
+                }
+            }
+            DEBUG_LOG("AOP AFTER END\n");
+        }
+        
+
         emitII(TRANS,0);
         int L = program->Array.number;
         int L_i = program->Array.size;

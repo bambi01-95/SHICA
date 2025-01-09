@@ -114,7 +114,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 #else
                 oop code = newThread(pc,20);
 #endif
-                DEBUG_LOG("MAIN CALL\n");
                 Array_push(code->Thread.stack,new_Basepoint(0));
                 getInt(pc);
                 Array_push(code->Thread.stack,_newInteger(int_value));//number of args
@@ -125,7 +124,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                     FLAG flag = sub_execute(code,GM);
                     if(flag == F_EOA)break;
                 }
-                DEBUG_LOG("MAIN CALL END\n");
                 continue;
             }
 
@@ -208,6 +206,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                         thread->Thread.pc = thread->Thread.base;
                                         break;
                                     }
+                                    case F_EOA:
                                     case F_NONE:{
                                         break;
                                     }
@@ -1052,7 +1051,10 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #if TEST
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
-                //WRITE HERE
+                oop data = nil;
+                while(getType(data = Array_pop(mstack)) != _BasePoint);
+                mrbp = getChild(data,_BasePoint,adress);
+                mpc = api();//next mpc 
                 return F_EOA;
             }
             case COND:{
@@ -1193,7 +1195,7 @@ oop printByteCode(){
                 SHICA_PRINTF("CALL      ");
                 getInt(pc);int num_arg = int_value;
                 getInt(pc);int index = int_value;
-                SHICA_PRINTF("%3d  %3d\n",num_arg,index);
+                SHICA_PRINTF("%3d  %3d (to %3d)\n",num_arg,index,pc + index);
                 continue;
             }
             case CALL_P:{

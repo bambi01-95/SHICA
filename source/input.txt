@@ -3,8 +3,7 @@ advice log{
 }
 
 pointcut log{
-    after s1,
-    before s2,
+    around s1,
 }
 
 int add(){
@@ -23,6 +22,7 @@ state s1{
 state s2{
     event(int a,int b){
         if(a>4){
+            print(int,222)
             state s1
         }
     }
