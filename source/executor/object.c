@@ -25,117 +25,7 @@
     // #include <termios.h>
 
 // <stdlib.h>
-/*
-malloc();      // メモリを動的に割り当てる
-calloc();      // メモリを動的に割り当て、ゼロで初期化
-realloc();     // メモリのサイズを変更
-free();        // 動的に割り当てたメモリを解放
-exit();        // プログラムを終了
-atoi();        // 文字列を整数に変換
-atof();        // 文字列を浮動小数点数に変換
-strtol();      // 文字列を長整数に変換
-*/
 
-// <stdio.h>
-/*
-printf();      // 標準出力にフォーマット付き出力
-scanf();       // 標準入力からフォーマット付き入力
-fopen();       // ファイルをオープン
-fclose();      // ファイルをクローズ
-fread();       // ファイルからデータを読み込む
-fwrite();      // ファイルにデータを書き込む
-SHICA_FPRINTF();     // フォーマット付きのファイル出力
-fscanf();      // フォーマット付きのファイル入力
-*/
-
-// <string.h>
-/*
-strlen();      // 文字列の長さを取得
-strcpy();      // 文字列をコピー
-strncpy();     // 指定した長さで文字列をコピー
-strcat();      // 文字列を連結
-strncat();     // 指定した長さで文字列を連結
-strcmp();      // 文字列を比較
-strncmp();     // 指定した長さで文字列を比較
-*/
-
-// <ctype.h>
-/*
-isalnum();     // 文字が英数字か判定
-isalpha();     // 文字がアルファベットか判定
-isdigit();     // 文字が数字か判定
-toupper();     // 文字を大文字に変換
-tolower();     // 文字を小文字に変換
-*/
-
-// <assert.h>
-/*
-assert();      // 条件が真であることを確認
-*/
-
-// <stdarg.h>
-/*
-va_start();    // 可変引数の処理開始
-va_arg();      // 次の引数を取得
-va_end();      // 可変引数の処理終了
-*/
-
-// <time.h>
-/*
-time();        // 現在の時刻を取得
-difftime();    // 2つの時刻の差を計算
-strftime();    // 時刻をフォーマットする
-*/
-
-// <sys/time.h>
-/*
-gettimeofday(); // 現在の時刻を取得
-*/
-
-// <sys/stat.h>
-/*
-stat();        // ファイルの情報を取得
-chmod();       // ファイルのパーミッションを変更
-mkdir();       // ディレクトリを作成
-*/
-
-// <unistd.h>
-/*
-read();        // ファイルを読み込む
-write();       // ファイルに書き込む
-close();       // ファイルディスクリプタをクローズ
-sleep();       // 指定した時間だけ処理を停止
-*/
-
-// <fcntl.h>
-/*
-open();        // ファイルをオープン
-fcntl();       // ファイルディスクリプタの操作
-O_RDONLY;     // 読み取り専用モード
-O_WRONLY;     // 書き込み専用モード
-O_RDWR;       // 読み書きモード
-*/
-
-// <errno.h>
-/*
-errno;        // エラー番号を格納するグローバル変数
-*/
-
-// <sys/select.h>
-/*
-select();      // 複数のファイルディスクリプタを監視
-FD_SET();      // ファイルディスクリプタをセット
-FD_CLR();      // ファイルディスクリプタをクリア
-FD_ISSET();    // ファイルディスクリプタがセットされているか判定
-*/
-
-// <termios.h>
-/*
-tcgetattr();   // 端末属性を取得
-tcsetattr();   // 端末属性を設定
-cfmakeraw();   // 端末を生データモードに設定
-tcflush();     // 入力・出力キューをフラッシュ
-*/
 #endif
 
 
@@ -404,6 +294,10 @@ int getType(oop o)
 #if MSGC
 void markObject(oop obj){
     switch(getType(obj)){
+        case _String:{
+            gc_mark(obj->_String.value);//atomic object
+            return ;
+        }
         case Queue:{
             gc_markOnly(obj->Queue.elements);// mark original pointer
             for(int i=0;i<obj->Queue.size;i++){
@@ -444,6 +338,11 @@ void markObject(oop obj){
 
 void isMarkObject(oop obj){
     switch(getType(obj)){
+        case _String:{
+            SHICA_PRINTF("mark String\n");
+            gc_isMark(obj->_String.value);//atomic object
+            break;
+        }
         case Queue:{
             SHICA_PRINTF("mark Queue\n");
             for(int i=0;i<obj->Queue.size;i++){
@@ -621,13 +520,13 @@ oop _newDouble(double value){
     return node;
 }
 
-//IGNOREME: 
 oop newString(char *value){
-    SHICA_PRINTF("now, String is not string type\n");
-    exit(1);
 #if MSGC
-    oop node = newAtomicObject(_String);
-    // node->String.value = strdup(value);
+    GC_PUSH(oop, node, newObject(_String));
+    char* str = gc_beAtomic(gc_alloc(strlen(value)+1));
+    strcpy(str,value);
+    node->_String.value = str;
+    GC_POP(node);
 #else
     oop node = newObject(_String);
     node->_String.value = strdup(value);
