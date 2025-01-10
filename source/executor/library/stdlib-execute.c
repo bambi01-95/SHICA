@@ -25,7 +25,6 @@ oop eve_test(oop core){
             //<引数の評価>/<Evaluation of arguments>
             if(thread->Thread.condRelPos != 0){
                 if(isOnce == 0){
-                    Array_push(evalEventArgsThread->Thread.stack,new_Basepoint(0));
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
                     isOnce = 1;
@@ -105,7 +104,6 @@ oop eve_timer(oop core){
             oop t = core->Core.threads[thread_i];
             if(t->Thread.condRelPos != 0){
                 if(isOnce ==0){
-                    Array_push(evalEventArgsThread->Thread.stack,new_Basepoint(0));
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
                     isOnce = 1;
                 }else{
@@ -198,7 +196,6 @@ oop eve_keyget(oop core){
             oop t = core->Core.threads[thread_i];
             int isFalse = 0;
             if(!isOnce){
-                Array_push(evalEventArgsThread->Thread.stack,new_Basepoint(0));
                 Array_push(evalEventArgsThread->Thread.stack,_newInteger(buf));
                 isOnce = 1;
             }else{

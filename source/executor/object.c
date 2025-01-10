@@ -149,19 +149,18 @@ enum Type {
     char *TYPENAME[END+1] = {
         "Undefined",
         "_BasePoint",
-
         "_Undefined",
-        "_Char",
         "_Integer",
         "_Long",
         "_Float",
         "_Double",
-        "String",
-
+        "_Char",
+        "_String",
         "Core",
         "Thread",
         "Array",
-        "END",   
+        "Queue",
+        "END",
     };
 #endif
 
@@ -460,7 +459,7 @@ oop _newInteger(int value)
 #if DEBUG
 int Integer_value(char* file, int line, oop obj)
 {
-    DEBUG_ERROR_COND_REF(_Integer==getType(obj),"INTEGER but %d",getType(obj));
+    DEBUG_ERROR_COND_REF(_Integer==getType(obj),"INTEGER but %s\n",TYPENAME[getType(obj)]);
     return (intptr_t)obj >> TAGBITS;
 }
 #define _Integer_value(OBJ) Integer_value(__FILE__,__LINE__, OBJ)

@@ -1,0 +1,33 @@
+advice beforeLog{
+    print(str,"beforeLog")
+}
+
+pointcut beforeLog{
+    before s1,
+}
+
+advice afterLog{
+    print(str,"afterLog")
+}
+
+pointcut afterLog{
+    after s1,
+}
+
+state s1{
+    event(int a,int b){
+        if(a>4){
+            print(str,"s1->s2")
+            state s2
+        }
+    }
+}
+
+state s2{
+    event(int a,int b){
+        if(a>4){
+            print(str,"s2->s1")
+            state s1
+        }
+    }
+}
