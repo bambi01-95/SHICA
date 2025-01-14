@@ -21,6 +21,10 @@ enum instrac Binop_oprand(enum Type type,enum binop binop,int line){
                 case MUL:return i_MUL;
                 case DIV:return i_DIV;
                 case MOD:return i_MOD;
+                case BAND:return i_BAND;
+                case BOR:return i_BOR;
+                case LSH:return i_LSH;
+                case RSH:return i_RSH;
                 default: printf("this cannot happen in Binop_oprand Integer\n");
             }
             break;

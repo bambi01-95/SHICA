@@ -1,5 +1,6 @@
 state s{
-    event(int a:a%2==0,int b:b%3==0){
-        print(int,a)
+    event(int a,int b){
+        print(a)
+
     }
 }

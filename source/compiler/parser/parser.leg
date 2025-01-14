@@ -130,19 +130,25 @@ mkNil	= 				{ $$ = nil }
 
 logadd  = lhs:logmul ( LOGOR rhs:logmul { lhs = newBinop(OR,lhs,rhs,newline) })* { $$ = lhs }
 
-logmul  = lhs:eqop (LOGAND rhs:eqop { lhs = newBinop(AND,lhs,rhs,newline) })* { $$ = lhs }
+logmul  = lhs:bitadd (LOGAND rhs:bitadd { lhs = newBinop(AND,lhs,rhs,newline) })* { $$ = lhs }
 
+bitadd  = lhs:eqop ( BITOR rhs:eqop    { lhs = newBinop(BOR,lhs,rhs,newline) }
+					 | BITAND rhs:eqop { lhs = newBinop(BAND,lhs,rhs,newline) }
+					 )* { $$ = lhs }
 
 eqop    = lhs:ineq ( EQUAL rhs:ineq	{ lhs = newBinop(EQ, lhs, rhs,newline) }
 	  	   | NOTEQ rhs:ineq	{ lhs = newBinop(NE, lhs, rhs,newline) }
 	  	  )*			{ $$ = lhs }
 
-ineq    = lhs:add ( GREATER rhs:add	{ lhs = newBinop(GT, lhs, rhs,newline) }
-	          | GREATEQ rhs:add	{ lhs = newBinop(GE, lhs, rhs,newline) }
-	          | LESSEQ  rhs:add	{ lhs = newBinop(LE, lhs, rhs,newline) }
-	          | LESS    rhs:add	{ lhs = newBinop(LT, lhs, rhs,newline) }
+ineq    = lhs:shift ( GREATER rhs:shift	{ lhs = newBinop(GT, lhs, rhs,newline) }
+	          | GREATEQ rhs:shift	{ lhs = newBinop(GE, lhs, rhs,newline) }
+	          | LESSEQ  rhs:shift	{ lhs = newBinop(LE, lhs, rhs,newline) }
+	          | LESS    rhs:shift	{ lhs = newBinop(LT, lhs, rhs,newline) }
 	  	  )*			{ $$ = lhs }
 
+shift   = lhs:add ( LSHIFT rhs:add	{ lhs = newBinop(LSH, lhs, rhs,newline) }
+	              | RSHIFT rhs:add	{ lhs = newBinop(RSH, lhs, rhs,newline) }
+	  	  )*			{ $$ = lhs }
 
 add	= lhs:mul ( PLURS   rhs:mul	{ lhs = newBinop(ADD, lhs, rhs,newline) }
 	  	  | MINUS  rhs:mul	{ lhs = newBinop(SUB, lhs, rhs,newline) }
@@ -228,9 +234,9 @@ MULEQU  = "*="      -
 DIVEQU  = "/="      -
 
 LOGAND     = "&&"      -
-
 LOGOR      = "||"      -
-
+BITAND     = "&"![=&]  -
+BITOR      = "|"![=|]  -
 EQUAL   = "=="	    -
 NOTEQ   = "!="      -
 
@@ -238,6 +244,8 @@ LESS    = "<" ![=<] -
 LESSEQ  = "<="      -
 GREATEQ = ">="      -
 GREATER = ">" ![=>] -
+LSHIFT  = "<<"      -
+RSHIFT  = ">>"      -
 
 PLURS	= "+" 	    -
 MINUS	= "-" 	    -

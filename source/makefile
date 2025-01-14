@@ -13,3 +13,12 @@ vm:
 
 run:
 	./vm
+
+git:
+	git fetch origin
+	git pull origin main
+
+daygit:
+	git add .
+	git commit -m "dalily commit"
+	git push origin main

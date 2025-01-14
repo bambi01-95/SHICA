@@ -92,6 +92,10 @@ oop CodeWrite(oop program){
             case i_MUL:  continue;
             case i_DIV:  continue;
             case i_MOD:  continue;
+            case i_BAND: continue;
+            case i_BOR:  continue;
+            case i_LSH:  continue;
+            case i_RSH:  continue;
             case l_EQ:   continue; 
             case l_NE:   continue; 
             case l_LT:   continue; 

@@ -230,7 +230,7 @@ char *TYPENAME[END+1] = {
 
 
 
-enum binop { AND, OR, ADD, SUB, MUL, DIV, MOD, LT, LE, GE, GT, EQ, NE };
+enum binop { AND, OR, ADD, SUB, MUL, DIV, MOD, LT, LE, GE, GT, EQ, NE,BAND,BOR,LSH,RSH };
 enum unyop { NEG, AINC, BINC, ADEC, BDEC};
 enum jointp{ BEFORE, AFTER, AROUND,};
 

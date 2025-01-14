@@ -169,6 +169,10 @@ oop printCode(oop program){
             case i_MUL:  printf("i_MUL\n");continue;
             case i_DIV:  printf("i_DIV\n");continue;
             case i_MOD:  printf("i_MOD\n");continue;
+            case i_BAND: printf("i_BAND\n");continue;
+            case i_BOR:  printf("i_BOR\n");continue;
+            case i_LSH:  printf("i_LSH\n");continue;
+            case i_RSH:  printf("i_RSH\n");continue;
             case l_EQ:   printf("l_EQ\n");continue; 
             case l_NE:   printf("l_NE\n");continue; 
             case l_LT:   printf("l_LT\n");continue; 
