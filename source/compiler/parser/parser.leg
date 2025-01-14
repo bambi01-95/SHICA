@@ -2,8 +2,6 @@
 #ifndef PARSER_C
 #define PARSER_C
 
-
-
 #define YYSTYPE oop
 
 YYSTYPE result;
@@ -53,7 +51,7 @@ event   = i:id p:eventparams b:block             { $$ = newEvent(i,p,b) }
         | t:TYPE  i:id  ASSIGN  x:exp       { $$ = newSetVarL(t, i, x,newline);}
         | t:TYPE  i:id b:bracket ASSIGN x:list NLINE { $$ = newSetArray(t,i,b,x,newline); }
 
-stmt	= PRINT LPAR t:TYPE COMMA x:exp RPAR NLINE      { $$ =  newPrint(x,t); }
+stmt	= PRINT a:args NLINE      { $$ =  newPrint(a); }
 	    | IF LPAR c:exp RPAR s:stmtbl
 	      bln ELSE t:stmtbl            	        { $$ = newIf(c, s, t) }
 	    | IF    LPAR c:exp RPAR s:stmtbl	{ $$ = newIf(c, s, sys_false) }

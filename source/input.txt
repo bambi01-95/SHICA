@@ -1,29 +1,5 @@
-advice log{
-    print(int,10)
-}
-
-pointcut log{
-    around s1,
-}
-
-int add(){
-    return 111
-}
-
-state s1{
+state s{
     event(int a,int b){
-        if(a>4){
-            print(int,add())
-            state s2
-        }
-    }
-}
-
-state s2{
-    event(int a,int b){
-        if(a>4){
-            print(int,222)
-            state s1
-        }
+        print(a,"this is",1.0,"a\n")
     }
 }

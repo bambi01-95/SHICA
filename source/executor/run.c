@@ -991,35 +991,40 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #if TEST  
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
-                SHICA_PRINTF("%d\n",_Integer_value(Array_pop(mstack)));
+                SHICA_PRINTF("%d",_Integer_value(Array_pop(mstack)));
+                putchar(' ');
                 continue;
             }
             case l_PRINT:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
-                SHICA_PRINTF("%lld\n",Array_pop(mstack)->_Long.value);
+                SHICA_PRINTF("%lld",Array_pop(mstack)->_Long.value);
+                putchar(' ');
                 continue;
             }
             case f_PRINT:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
-                SHICA_PRINTF("%f\n",_Float_value(Array_pop(mstack)));
+                SHICA_PRINTF("%f",_Float_value(Array_pop(mstack)));
+                putchar(' ');
                 continue;
             }
             case d_PRINT:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
-                SHICA_PRINTF("%f\n",Array_pop(mstack)->_Double.value);
+                SHICA_PRINTF("%f",Array_pop(mstack)->_Double.value);
+                putchar(' ');
                 continue;
             }
             case c_PRINT:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
-                SHICA_PRINTF("%c\n",_Char_value(Array_pop(mstack)));
+                SHICA_PRINTF("%c",_Char_value(Array_pop(mstack)));
+                putchar(' ');
                 continue;
             }
             case s_PRINT:{
@@ -1027,6 +1032,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%s\n",Array_pop(mstack)->_String.value);
+                putchar(' ');
                 continue;
             }
             case EOE:{

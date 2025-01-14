@@ -69,7 +69,7 @@ void printlnObject(oop node, int indent)
 	}
 	case Print: {
 	    printf("Print\n");
-	    printlnObject(get(node, Print,argument), indent+1);
+	    printlnObject(get(node, Print,arguments), indent+1);
 	    break;
 	}
 	case If: {
