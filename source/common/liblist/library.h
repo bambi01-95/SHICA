@@ -4,6 +4,9 @@
 extern enum LIB{
     STDLIB,
     USERLIB,
+#if RPI
+    GPIOLIB,
+#endif //RPI
 }LIB;
 
 #endif

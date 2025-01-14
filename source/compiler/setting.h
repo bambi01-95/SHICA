@@ -17,4 +17,9 @@
     #define SHICA_FPRINTF(S,...) Serial.printf(__VA_ARGS__)
 #endif
 
+
+//Device
+#define RPI 0// 1:RaspberryPi 0:Other
+
+
 #endif

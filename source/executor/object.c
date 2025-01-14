@@ -261,6 +261,7 @@ union Object {
 FLAG sub_execute(oop process,oop GM);
 void printlnObject(oop node, int indent);
 
+
 #define TAGINT	1			// tag bits value for Integer  ........1
 #define TAGFLT	2			// tag bits value for Float    .......10
 #define TAGCHA  3

@@ -22,4 +22,8 @@
 #endif
 
 #define UNMARK 1
+
+//Device
+#define RPI 0 // 1:RaspberryPi 0:Other
+
 #endif
