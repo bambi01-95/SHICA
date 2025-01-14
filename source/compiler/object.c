@@ -268,7 +268,7 @@ struct SetType   { enum Type _type_;  oop id; oop child; int line;};
 struct Call 	 { enum Type _type_;  oop function, arguments;            int line;};
 struct Run       { enum Type _type_; oop state; };
 
-struct Print   	 { enum Type _type_;  oop argument; enum Type kind;};
+struct Print   	 { enum Type _type_;  oop arguments;};
 struct If      	 { enum Type _type_;  oop condition, statement1, statement2; };
 struct While   	 { enum Type _type_;  oop condition, statement; };
 struct For       { enum Type _type_;  oop initstate, condition,  update, statement; };
@@ -800,11 +800,10 @@ oop newCall(oop arguments, oop function,int line)
     return node;
 }
 
-oop newPrint(oop argument,oop kind)
+oop newPrint(oop arguments)
 {
     oop node = newObject(Print);
-    node->Print.argument = argument;
-    node->Print.kind     = kind->_type_;
+    node->Print.arguments = arguments;
     return node;
 }
 

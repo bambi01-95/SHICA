@@ -6,6 +6,7 @@
 
 enum instrac Binop_oprand(enum Type type,enum binop binop,int line){
     switch(type){
+        case Integer:
         case _Integer:{
             switch(binop){
                 case AND: return i_AND;
@@ -195,6 +196,15 @@ oop kill_assoc(oop vnt,int end){
     return nil;
 }
 
+oop rePair(oop p,oop tail){
+    if(getType(p)!=Pair){
+        return tail;
+    }
+    oop child = get(p,Pair,b);
+    get(p,Pair,b) = tail;
+    return rePair(child,p); 
+}
+
 
 void manage(oop program,enum Type type){
     int size  = 0;
@@ -288,6 +298,7 @@ int child_type(oop exp,oop vnt){
     switch (getType(exp)) {
 	case Integer:return Integer;
     case Float:return   Float;
+    case String:return String;
 	case Binop: {
         int l = child_type(get(exp,Binop,lhs),vnt);
         switch(l){
@@ -342,7 +353,7 @@ int child_type(oop exp,oop vnt){
 	    break;
     }
 	default:{
-        fatal("line %d HACK: this cannot happen chiled type");
+        fatal("line %d HACK: this cannot happen inst %s",INSTNAME[getType(exp)]);
     }
     }
     return Undefined;
@@ -444,6 +455,10 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             case _Integer:emitIO(i_load, _newCharInteger(get(exp,Integer,number)),_Integer);break;
             case _Long:   emitIO(l_load, _newCharLong(get(exp,Integer,number))   ,_Long);   break;
             case _Char:   emitIO(c_load, _newStrChar(get(exp,Integer,number))   ,_Char);   break;
+            case Integer:{
+                emitIO(i_load,_newCharInteger(get(exp,Integer,number)),_Integer);
+                break;
+            }
             default:{
                 fprintf(stderr,"line %d type error: %s but %s, ",exp->Integer.line ,TYPENAME[type],TYPENAME[getType(exp)]);
                 printlnObject(exp,0);
@@ -456,6 +471,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         switch(type){
             case _Float: emitIO(f_load,_newCharFloat(get(exp,Float,number)) ,_Float);break;
             case _Double:emitIO(d_load,_newCharDouble(get(exp,Float,number)),_Double);break;
+            case Float:emitIO(f_load,_newCharFloat(get(exp,Float,number)),_Float);break;//CHECK ME if double
             default:{
                 fprintf(stderr,"line %d type error: %s but %s, ",exp->Float.line, TYPENAME[type],TYPENAME[getType(exp)]);
                 printlnObject(exp,0);
@@ -887,16 +903,31 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
 	case Print:{
-        compOT(get(exp, Print,argument),get(exp,Print,kind));
-        //TODO: make four type of print
-        int k_type = get(exp,Print,kind);
-        switch(k_type){
-            case _Integer:emitI(i_PRINT);break;
-            case _Long   :emitI(l_PRINT);break;
-            case _Float  :emitI(f_PRINT);break;
-            case _Double :emitI(d_PRINT);break;
-            case String  :emitI(s_PRINT);break;
-            case _Char   :emitI(c_PRINT);break;
+        oop argsPair = get(exp,Print,arguments);
+        argsPair = rePair(argsPair,nil);
+        while(argsPair!=nil){
+            oop arg = get(argsPair,Pair,a);
+            printlnObject(arg,1);
+            int argType = child_type(arg,vnt);
+            compOT(arg,argType);
+            switch(argType){
+                case _Integer:
+                case Integer:emitI(i_PRINT);break;
+                case _Long   :emitI(l_PRINT);break;
+                case _Float  :
+                case Float:   emitI(f_PRINT);break;
+                case _Double :emitI(d_PRINT);break;
+                case String  :emitI(s_PRINT);break;
+                case _Char   :emitI(c_PRINT);break;
+                defalut:{
+#if DEBUG
+                    DEBUG_ERROR("type %s\n",TYPENAME[argType]);
+#else
+                    SHICA_PRINTF("type %i\n",argType);
+#endif
+                }
+            }
+            argsPair = get(argsPair,Pair,b);
         }
         break;
     }
@@ -1187,7 +1218,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     // <2.状態遷移の呼び出し>/<state transition call>
         int stt_loc = program->Array.number;
         exp->State.index = stt_loc;
-        get(stateName,Symbol,aspect);
         
         //<AOPの呼び出し>/<AOP call>
 

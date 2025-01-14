@@ -38,6 +38,10 @@ void printlnObject(oop node, int indent)
 		case MUL: printf("MUL\n"); break;
 		case DIV: printf("DIV\n"); break;
 		case MOD: printf("MOD\n"); break;
+        case BAND: printf("AND\n"); break;
+        case BOR:  printf("OR\n"); break;
+        case LSH:  printf("LSH\n"); break;
+        case RSH:  printf("RSH\n"); break;
 		default:  assert(!"this cannot happen binop");
 	    }
 	    printlnObject(get(node, Binop,lhs), indent+1);
@@ -69,7 +73,7 @@ void printlnObject(oop node, int indent)
 	}
 	case Print: {
 	    printf("Print\n");
-	    printlnObject(get(node, Print,argument), indent+1);
+	    printlnObject(get(node, Print,arguments), indent+1);
 	    break;
 	}
 	case If: {
