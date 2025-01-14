@@ -29,7 +29,6 @@ int main() {
             // LEDの状態を切り替える
             ledState = !ledState;
             gpioWrite(LED_PIN, ledState);
-
             printf("LEDの状態: %s\n", ledState ? "ON" : "OFF");
         }
 

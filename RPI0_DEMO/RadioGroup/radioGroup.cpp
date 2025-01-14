@@ -5,6 +5,7 @@
 #define BUTTON_PIN 27    // Button pin
 #define COMM_PIN 22      // Communication pin
 
+// Function to initialize GPIO pins
 void setup() {
     gpioSetMode(LED_PIN, PI_OUTPUT);       // Set LED pin as output
     gpioSetMode(BUTTON_PIN, PI_INPUT);     // Set button pin as input
@@ -13,6 +14,7 @@ void setup() {
     gpioSetPullUpDown(COMM_PIN, PI_PUD_DOWN);  // Enable pull-down for communication pin
 }
 
+// Function to debounce button
 int debounceButton(int pin) {
     if (gpioRead(pin) == 0) {
         gpioDelay(50000);  // 50ms debounce delay
@@ -32,26 +34,31 @@ int main() {
     setup();
     printf("Radio group system started.\n");
 
-    while (1) {
-        // Check if the local button is pressed
-        if (debounceButton(BUTTON_PIN)) {
-            printf("Button pressed on this Pi.\n");
+    int ledState = 0;  // Track the LED state (0 = OFF, 1 = ON)
 
-            // Turn on the local LED and notify others
-            gpioWrite(LED_PIN, 1);
+    while (1) {
+        // Check if the button is pressed
+        if (debounceButton(BUTTON_PIN)) {
+            // Toggle the LED state
+            ledState = !ledState;
+            gpioWrite(LED_PIN, ledState);
+
+            // Print the current state of the LED
+            printf("LED is now %s.\n", ledState ? "ON" : "OFF");
+            
+            // Notify other Raspberry Pis
             gpioSetMode(COMM_PIN, PI_OUTPUT);
             gpioWrite(COMM_PIN, 1);
-
-            // Keep communication pin high for a short time
-            gpioDelay(100000);  // 100ms
+            gpioDelay(100000);  // 100ms delay
             gpioWrite(COMM_PIN, 0);
             gpioSetMode(COMM_PIN, PI_INPUT);
         }
 
-        // Check if another Pi has pressed its button
+        // Check if another Pi has sent a signal to turn off the LED
         if (gpioRead(COMM_PIN) == 1) {
             gpioWrite(LED_PIN, 0);  // Turn off the local LED
-            printf("Another Pi button pressed. Turning off LED.\n");
+            printf("Received signal from another Pi. LED turned OFF.\n");
+            ledState = 0;  // Update the LED state
         }
 
         gpioDelay(10000);  // 10ms delay to reduce CPU usage
