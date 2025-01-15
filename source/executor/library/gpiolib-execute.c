@@ -1,7 +1,7 @@
 #if RPI
 
-#ifndef GPIOLIB_H
-#define GPIOLIB_H
+#ifndef GPIOLIB_EXECUTE_C
+#define GPIOLIB_EXECUTE_C
 
 #include "../object.c"
 #include "../../common/liblist/gpiolib.h"
@@ -137,8 +137,8 @@ void lib_gpiolib(oop process,oop GM){
     switch(lib_num){
         case GPIO_SET_MODE_P:gpiolib_setMode(process,GM);return;
         case GPIO_WRITE_P:gpiolib_write(process,GM);return;
-        case GPIO_READ_P:gpio_read(process,GM);return;
-        case GPIO_SET_PULL_UP_DOWN_P:gpio_setPullUpDown(process,GM);return;
+        case GPIO_READ_P:gpiolib_read(process,GM);return;
+        case GPIO_SET_PULL_UP_DOWN_P:gpiolib_setPullUpDown(process,GM);return;
         case GPIO_DELAY_P:gpiolib_delay(process,GM);return;
         case GPIO_TERMINATE_P:gpio_terminate(process,GM);return;
         default:{
