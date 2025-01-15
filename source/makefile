@@ -29,5 +29,6 @@ daygit:
 	git push origin main
 
 gitKillUpdata:
+	git reset --hard
 	git fetch origin
-	git reset --hard origin/main
+	git reset --hard origin/maingi
