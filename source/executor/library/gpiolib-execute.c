@@ -59,10 +59,6 @@ oop eve_gpio_read(oop core){
 }
 #endif
 
-
-
-//Normal Function
-
 oop Event_gpiolib(int eve_num,oop stack,int numThread){
     //cheack: protect stack, but it is already protected
     gc_pushRoot((void*)&stack);
@@ -82,6 +78,17 @@ oop Event_gpiolib(int eve_num,oop stack,int numThread){
     }
     gc_popRoots(2);
     return core;
+}
+
+
+
+//Normal Function
+
+void gpiolib_initialise(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int value = gpioInitialise();
+    Array_push(mstack,_newInteger(value));
+    return;
 }
 
 void gpiolib_setMode(oop process,oop GM){
@@ -135,6 +142,7 @@ void gpiolib_terminate(oop process,oop GM){
 void lib_gpiolib(oop process,oop GM){
     getInt(mpc);int lib_num = int_value;
     switch(lib_num){
+        case GPIO_INITIALISE_P:gpiolib_initialise(process,GM);return;
         case GPIO_SET_MODE_P:gpiolib_setMode(process,GM);return;
         case GPIO_WRITE_P:gpiolib_write(process,GM);return;
         case GPIO_READ_P:gpiolib_read(process,GM);return;

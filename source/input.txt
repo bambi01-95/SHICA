@@ -1,8 +1,12 @@
 state s{
     entry(){
-        print("entry")
+        int a = 10
+        int v = gpioInitialise()
+        if(a<0){
+            print("init error")
+        }
     }
-    event(int a,int b){
-        print(a)
+    triReadGPIO(int p){
+        print(p & (1<<27))
     }
 }

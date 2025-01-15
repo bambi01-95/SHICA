@@ -15,7 +15,8 @@ void setting_gpiolib(){
 
 
     // //Primitive Function
-    // /*          (name, lib_num, func_num, return_type, size_of_args_type_array,  args_type )  */
+    // /*       (name,              lib_num, func_num,                return_, sizeOfArgs,  args_type,,, )  */
+    newPrimitive(gpioInitialise,    GPIOLIB, GPIO_INITIALISE_P,       _Integer,   0);
     newPrimitive(gpioSetPullUpDown, GPIOLIB, GPIO_SET_PULL_UP_DOWN_P, Undefined, 2, _Integer, _Integer);
     newPrimitive(gpioDelay,         GPIOLIB, GPIO_DELAY_P,            Undefined, 1, _Integer);
     newPrimitive(gpioWrite,         GPIOLIB, GPIO_WRITE_P,            Undefined, 2, _Integer, _Integer);

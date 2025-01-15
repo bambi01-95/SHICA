@@ -634,7 +634,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 break;
             }
             default:{
-                if(isEntry==0){
                     oop ass = assoc(id,Global_VNT);
                     if(ass!=nil){
                         if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
@@ -661,7 +660,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         compOT(value,ass->Assoc.kind);
                         emitII(DEFINE,ass->Assoc.index); 
                     }
-                }
+                
             //FIXME with (2025/01/04): sttローカルがうまく実行できたなら下記を消す  
                 //else{ in the entry(){...}
                 //     oop ass = assoc(id,Global_VNT);
