@@ -87,7 +87,7 @@ void fatal(char *msg, ...)
 {
     va_list ap;
     va_start(ap, msg);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\n d-.-b ERROR:");
     vfprintf(stderr, msg, ap);
     fprintf(stderr, "\n");
     va_end(ap);

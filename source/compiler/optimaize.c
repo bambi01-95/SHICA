@@ -628,7 +628,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             }
         //STATE
             case State:{
+            #if DEBUG
                 DEBUG_LOG("notcoming\n");
+            #endif
                 compile(program,value,vnt,t);
                 get(id,Symbol,value) = value;
                 break;
@@ -845,7 +847,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
 	case Call:{
         oop id = exp->Call.function;
-        printlnObject(exp,1);
         oop function = get(id,Symbol,value);
 	    switch (getType(function)){
             case Function:{
@@ -896,7 +897,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 }
                 break;
             }
-            default:printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,TYPENAME[getType(function)]);
+            default:printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
 	    }
         
 	    break;
@@ -907,7 +908,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         argsPair = rePair(argsPair,nil);
         while(argsPair!=nil){
             oop arg = get(argsPair,Pair,a);
-            printlnObject(arg,1);
             int argType = child_type(arg,vnt);
             compOT(arg,argType);
             switch(argType){
@@ -1087,8 +1087,14 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop *statements = get(exp, Block,statements);
 	    int  size       = get(exp, Block,size);
 	    for (int i = 0;  i < size;  ++i){
+#if DEBUG
+            SHICA_PRINTF("          > Block %d\n",i+1);
+#endif
             compOT(statements[i],type);
-        }    
+        }
+#if DEBUG
+        SHICA_PRINTF("\n");
+#endif
 	    break;
     }
 
@@ -1102,8 +1108,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop stateName = get(exp,State,id);
         oop *events = get(exp,State,events);
         stateNameG = stateName;//for aop (case TRANS)
-
-
+#if DEBUG
+        SHICA_PRINTF("  > stateName %s\n\n",get(stateName,Symbol,name));
+#endif
         struct CoreData *core = (struct CoreData *)malloc(sizeof(struct CoreData));
         core->size = 0;
         core->id = entry_sym;
@@ -1134,6 +1141,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     oop id    = get(events[i], Event, id);
                     oop para  = get(events[i], Event, parameters);
                     oop block = get(events[i], Event, body);
+#if DEBUG
+                    SHICA_PRINTF("      > Event %s\n",get(id,Symbol,name));
+#endif
 
                     struct CoreData* coreData = inseartCoreData(core,id);
                     struct ThreadData *threadData = (struct ThreadData *)malloc(sizeof(struct ThreadData));
@@ -1149,6 +1159,10 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     }
                     else{
                         oop eve   = get(id,Symbol, value);
+                        if(getType(eve)!=EventFunc){
+                            fatal("%s is not EventFunc\n",get(id,Symbol,name));
+                            exit(1);
+                        }
                         int args_s =  eve->EventFunc.size_of_args_type_array;
                         char *args =  eve->EventFunc.args_type_array;
 
@@ -1157,7 +1171,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
 
                         if(args_s==0 && para!=nil){
-                            DEBUG_ERROR("%s line %d over parameter\n",__FILE__,__LINE__);
+                            fatal("%s line %d over parameter\n",__FILE__,__LINE__);
                         }
                         for(int j=0;j<args_s;j++){
                             if(para==nil){fprintf(stderr,"event fuction args less parameter\n");exit(1);}
@@ -1339,7 +1353,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         
         //<AOPの呼び出し>/<AOP call>
         if(get(stateNameG,Symbol,aspect)!=nil){
-            DEBUG_LOG("AOP AFTER\n");
             oop aspect = get(stateNameG,Symbol,aspect);
             int size = get(aspect,Array,size);
             oop *jointps = get(aspect,Array,elements);
@@ -1352,12 +1365,11 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                         int pos = get(jointp,Jointp,position);
                         int cpc = program->Array.number;
                         emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
-                        DEBUG_LOG("%d\n",pos - program->Array.number == pos - cpc -(OPESIZE + INTSIZE*2));
+                        // DEBUG_LOG("%d\n",pos - program->Array.number == pos - cpc -(OPESIZE + INTSIZE*2));
                         break;
                     }
                 }
             }
-            DEBUG_LOG("AOP AFTER END\n");
         }
         
 

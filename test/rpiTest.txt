@@ -1,0 +1,5 @@
+state s{
+    triReadGPIO(int pins:(pins >> 27)&1){
+        print("pin x is HIGH")
+    }
+}

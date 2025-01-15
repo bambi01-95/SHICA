@@ -1,18 +1,42 @@
-state s1{
-    entry(){
-        print("s1")
-        state s2
-    }
+state init{
+	entry(){
+		int v = gpioInitialise()
+        if(v<0){
+            print("Error")
+            gpioDelay(20000)
+            state init
+        }
+        gpioSetMode(17,1) //LED, output
+		gpioSetMode(27,0) //Button, input
+		gpioSetMode(22,0) //Communication, input
+		state led_off
+	}
 }
 
-state s2{
-    entry(){
-        print("s2")
-    }
-    event(int a,int b){
-        if(a>2){
-            state s1
-        }
-        print(a)
-    }
+state led_off{
+	entry(){
+		print("ledOFF")
+	}
+	//Button
+	triReadGPIO(int p:(p&(1<<27))==0){
+		gpioSetMode(22,1)
+		gpioWrite(22,1)
+		state led_on
+	}
+}
+
+state led_on{
+	entry(){
+        print("ledON")
+        gpioWrite(17,1)
+        gpioSetMode(22,0)
+	}
+	//Button
+	triReadGPIO(int p:(p&(1<<27))==0){
+		state led_off
+	}
+	//Communication
+	triReadGPIO(int p:(p&(1<<22))==0){
+		state led_off
+	}
 }
