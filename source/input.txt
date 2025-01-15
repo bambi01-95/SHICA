@@ -18,6 +18,7 @@ state init{
 state led_off{
 	entry(){
 		print("ledOFF")
+        gpioWrite(17,0)
         gpioDelay(100000)
 	}
 	//Button
