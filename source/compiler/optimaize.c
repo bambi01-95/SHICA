@@ -1108,6 +1108,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         core->size = 0;
         core->id = entry_sym;
         core->next = 0;
+        core->threadData = (struct ThreadData **)malloc(sizeof(struct ThreadData *)*size);
 
         char Entry_bool = 0; //for ...
         unsigned char stt_val_c = 0;  //for state variable 
@@ -1123,7 +1124,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     break;
                 }
                 case Event:{
-                    
                         emitII(JUMP,0);
                     int jump_i = program->Array.size;
                     int jump = program->Array.number;
@@ -1137,7 +1137,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
                     struct CoreData* coreData = inseartCoreData(core,id);
                     struct ThreadData *threadData = (struct ThreadData *)malloc(sizeof(struct ThreadData));
-
                     if(id==entry_sym){
                         if(i-stt_val_c==0){//IF entry() is defined at first element of state
                             Entry_bool = 1;
