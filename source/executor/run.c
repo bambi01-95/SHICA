@@ -180,6 +180,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                         int pc_i = thread->Thread.pc++;//location of thread[i]'s pc
                                         getSetInt(pos,pc_i);
                                         pc = pos + pc_i;
+                                    #if DEBUG
+                                        SHICA_PRINTF("Trans to %d\n",pc);
+                                    #endif
                                         isTrans = 1;
                                         int gm_size = GM->Thread.stack->Array.size;
                                     //CHECK ME: ここでGMのスタックをクリアするか？
@@ -261,9 +264,31 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 #endif
                 code->Thread.pc = pc + int_value;
                 Array_push(code->Thread.stack,new_Basepoint(0));
-                for(;;){
+                
+                for(int isStop=0;isStop!=1;){
                     FLAG flag = sub_execute(code,GM);
-                    if(flag == F_EOE)break;
+                    switch(flag){
+                        case F_EOE:isStop = 1;break;
+                        case F_TRANS:{
+                            if(evalEventArgsThread->Thread.stack->Array.capacity>0){
+                                gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
+                                evalEventArgsThread->Thread.stack = newArray(10);
+                            }
+                            int pc_i = code->Thread.pc++;//location of thread[i]'s pc
+                            getSetInt(pos,pc_i);
+                            s_pc = pos + pc_i;
+                        #if DEBUG
+                            SHICA_PRINTF("Trans to %d\n",s_pc);
+                        #endif
+                            int gm_size = GM->Thread.stack->Array.size;
+                        //CHECK ME: ここでGMのスタックをクリアするか？
+                            for(int i = gm_size;i>GM->Thread.rbp;i--){
+                                Array_pop(GM->Thread.stack);
+                            }
+                            isStop = 1;
+                            break;
+                        }
+                    }
                 }
 #if MSGC
                 GC_POP(code);
@@ -432,9 +457,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 #endif
                 int r = api();
-                printf("line %d r: %d\n",__LINE__,r);
                 int l = api();
-                printf("l: %d\n",l);
                 Array_push(mstack,newBoolean(l <  r));
                 continue;
             }
@@ -1053,7 +1076,7 @@ oop printByteCode(){
         SHICA_PRINTF("%3d ",pc);
         getInst(pc);
         switch(inst){
-            case TRANS:  getInt(pc);SHICA_PRINTF("TRANS     %3d\n",int_value);continue;
+            case TRANS:  getInt(pc);SHICA_PRINTF("TRANS     %3d (to %3d)\n",int_value,pc + int_value);continue;
             case i_load: getInt(pc);SHICA_PRINTF("i_load    %3d\n",int_value);continue;
             case l_load: getLong(pc);SHICA_PRINTF("l_load    %3lld\n",long_value);continue;
             case f_load: getFloat(pc);SHICA_PRINTF("f_load    %3f\n",float_value);continue;
@@ -1201,7 +1224,7 @@ oop printByteCode(){
             case ENTRY:{
                 SHICA_PRINTF("ENTRY     ");
                 getInt(pc);int index = int_value;
-                SHICA_PRINTF("%3d\n",index);//T
+                SHICA_PRINTF("%3d (to %3d)\n",index,pc + index);//T
                 continue;
             }
             case SETQ:{

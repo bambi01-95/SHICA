@@ -56,7 +56,7 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
 #if SBC
         memoryRead("code.stt");
 #endif
-#if DEBUG
+#if !RPI
         printf("\n \x1b[31m print byte code after memory read ******************\x1b[0m\n\n");
         printByteCode();
         printf("\n \x1b[31m implement main()******************\x1b[0m\n\n");

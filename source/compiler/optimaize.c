@@ -1242,10 +1242,8 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         
 
         if(Entry_bool==1){//entry()の実行
-            DEBUG_LOG("Program->Array.number %d\n",core->threadData[0]->eventLoc);
             int cpc = program->Array.number;
             emitII(ENTRY,core->threadData[0]->eventLoc - cpc - (OPESIZE + INTSIZE));
-            DEBUG_LOG("Program->Array.number %d\n",program->Array.number - cpc);
         }
 
         struct CoreData *tmp = core;
