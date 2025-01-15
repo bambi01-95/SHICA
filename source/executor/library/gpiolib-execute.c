@@ -137,8 +137,6 @@ void gpiolib_terminate(oop process,oop GM){
     return;
 }
 
-
-
 void lib_gpiolib(oop process,oop GM){
     getInt(mpc);int lib_num = int_value;
     switch(lib_num){
@@ -154,7 +152,7 @@ void lib_gpiolib(oop process,oop GM){
             DEBUG_ERROR("this is not happen, lib_gpiolib\n");
             exit(1);
 #else
-            SHICA_PRINTF("Call_Primitive %d\n",lib_num);
+            SHICA_PRINTF("Call_Primitive_GPIO %d\n",lib_num);
             exit(1);
 #endif
         }
