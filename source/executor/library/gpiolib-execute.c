@@ -140,7 +140,7 @@ void lib_gpiolib(oop process,oop GM){
         case GPIO_READ_P:gpiolib_read(process,GM);return;
         case GPIO_SET_PULL_UP_DOWN_P:gpiolib_setPullUpDown(process,GM);return;
         case GPIO_DELAY_P:gpiolib_delay(process,GM);return;
-        case GPIO_TERMINATE_P:gpio_terminate(process,GM);return;
+        case GPIO_TERMINATE_P:gpiolib_terminate(process,GM);return;
         default:{
 #if DEBUG
             DEBUG_ERROR("this is not happen, lib_gpiolib\n");
