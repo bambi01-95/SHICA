@@ -18,6 +18,10 @@ run:
 pi:
 	gcc -o vm executor.c -lpigpio -lpthread
 
+gitShare:
+	git add .
+	git commit -m "update"
+	git push
 
 gitUpdata:
 	git fetch origin
@@ -26,7 +30,7 @@ gitUpdata:
 daygit:
 	git add .
 	git commit -m "dalily commit"
-	git push origin main
+	git push
 
 gitKillUpdata:
 	git reset --hard
