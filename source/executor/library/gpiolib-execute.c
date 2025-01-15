@@ -6,6 +6,7 @@
 #include "../object.c"
 #include "../../common/liblist/gpiolib.h"
 
+#include <pigpio.h>
 
 #if SBC //event()
 oop eve_gpio_read(oop core){
@@ -52,13 +53,15 @@ oop eve_gpio_read(oop core){
     return core;
 }
 #else
-oop eve_test(oop core){
+oop eve_gpio_read(oop core){
     SHICA_PRINTF("eve_test\n");
     return core;
 }
 #endif
 
 
+
+//Normal Function
 
 oop Event_gpiolib(int eve_num,oop stack,int numThread){
     //cheack: protect stack, but it is already protected
@@ -81,5 +84,74 @@ oop Event_gpiolib(int eve_num,oop stack,int numThread){
     return core;
 }
 
+void gpiolib_setMode(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int pin = api();
+    int mode =api();
+    gpioSetMode(pin,mode);
+    return;
+}
+
+void gpiolib_write(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int pin = api();
+    int value =api();
+    gpioWrite(pin,value);
+    return;
+}
+
+void gpiolib_read(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int pin = api();
+    int value = gpioRead(pin);
+    Array_push(mstack,_newInteger(value));
+    return;
+}
+
+void gpiolib_setPullUpDown(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int pin = api();
+    int pud =api();
+    gpioSetPullUpDown(pin,pud);
+    return;
+}
+
+//Need to change, its affect to other process
+void gpiolib_delay(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int value = api();
+    gpioDelay(value);
+    return;
+}
+
+void gpiolib_terminate(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    gpioTerminate();
+    return;
+}
+
+
+
+void lib_gpiolib(oop process,oop GM){
+    getInt(mpc);int lib_num = int_value;
+    switch(lib_num){
+        case GPIO_SET_MODE_P:gpiolib_setMode(process,GM);return;
+        case GPIO_WRITE_P:gpiolib_write(process,GM);return;
+        case GPIO_READ_P:gpio_read(process,GM);return;
+        case GPIO_SET_PULL_UP_DOWN_P:gpio_setPullUpDown(process,GM);return;
+        case GPIO_DELAY_P:gpiolib_delay(process,GM);return;
+        case GPIO_TERMINATE_P:gpio_terminate(process,GM);return;
+        default:{
+#if DEBUG
+            DEBUG_ERROR("this is not happen, lib_gpiolib\n");
+            exit(1);
+#else
+            SHICA_PRINTF("Call_Primitive %d\n",lib_num);
+            exit(1);
+#endif
+        }
+    }
+    return;
+}
 #endif //GPIOLIB_H
 #endif //RPI

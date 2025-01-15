@@ -8,7 +8,7 @@ FILE* SOURCE_FILE;
 #endif
 
 #include "./executor/object.c"
-#include "./executor/library/lib.c"
+// #include "./executor/library/lib.c"
 #include "./common/memory.c"
 #include "./common/inst.c"
 #include "./executor/run.c"

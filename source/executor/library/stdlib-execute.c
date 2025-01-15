@@ -293,4 +293,72 @@ oop Event_stdlib(int eve_num,oop stack,int numThread){
     return core;
 }
 
+// ライブラリ関数
+void stdlib_print(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int value = api();
+    SHICA_PRINTF("%d\n",value);
+    return;
+}
+
+void stdlib_itoc(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    char value = (char)api();
+    oop c = _newChar(value);
+    Array_push(mstack,c);
+    return; 
+}
+
+void stdlib_exit(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    int value = api();
+    exit(value);
+    return;
+}
+
+void stdlib_appendchar(oop process,oop GM){
+    getInt(mpc);int size_args = int_value;
+    char* str = aps();
+    char c = apc();
+    size_t length = strlen(str);
+#if MSGC
+    char* newStr = (char*)gc_alloc((length + 2) * sizeof(char)); // 新しい文字列のメモリを確保
+#else
+    char* newStr = (char*)malloc((length + 2) * sizeof(char)); // 新しい文字列のメモリを確保
+#endif
+    if (newStr != NULL){
+        strcpy(newStr, str); // 元の文字列をコピー
+        newStr[length] = c;  // 追加する文字をセット
+        newStr[length + 1] = '\0'; // ヌル終端を追加
+    }
+    Array_push(mstack,newString(newStr));
+    return;
+}
+
+
+void lib_stdlib(oop process,oop GM){
+    //is it need gc_push
+    getInt(mpc);int func_num = int_value;
+    switch(func_num){
+        case OUTPUT_P:{
+            stdlib_print(process,GM);
+            break;
+        }
+        case ITOC_P:{
+            stdlib_itoc(process,GM);
+            break;
+        }
+        case EXIT_P:{
+            stdlib_exit(process,GM);
+            break;
+        }
+        case APPENDCHAR_P:{
+            stdlib_appendchar(process,GM);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 #endif

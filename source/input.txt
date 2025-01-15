@@ -1,15 +1,5 @@
 state s{
     event(int a,int b){
-        print("or")
-        print(1|1)
-        print(1|0)
-        print(0|0)
-        print("and")
-        print(1&1)
-        print(1&0)
-        print(0&0)
-        print("shift")
-        print(1<<1)
-        print(2>>1)
+        print("pin x is HIGH",(b >> 27)&1==1)
     }
 }

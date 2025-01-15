@@ -9,7 +9,8 @@
 #include "../common/liblist/library.h"
 #include "../common/liblist/stdlib.h"
 #include "../common/memory.c"
-#include "./library/stdlib-execute.c"
+
+
 
 
 
@@ -26,22 +27,8 @@ oop Event_userlib(int eve_num,oop stack){
 }
 
 // EVENT...
-oop setCore(int lib_num,int eve_num,oop stack,int numThread){
-    switch(lib_num){
-        case STDLIB:{
-            return Event_stdlib(eve_num,stack,numThread);
-        }
-        case USERLIB:{
-            return 0;
-        }
-        default:{
-            SHICA_PRINTF("ERROR: Event lib[%d] eve[%d]\n",lib_num, eve_num);
-            exit(1);
-        }
-    }
-    SHICA_PRINTF("Event_Func(): not happen..\n");
-    return 0;
-}
+oop setCore(int lib_num,int eve_num,oop stack,int numThread);
+
 
 char inst      = 0;
 char char_value    = 0;
@@ -326,6 +313,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 
 
 
+
 #define mpc    process->Thread.pc
 #define mrbp   process->Thread.rbp
 #define mstack process->Thread.stack
@@ -337,90 +325,32 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 #define aps()     Array_pop(mstack)->_String.value
 #define apc()    _Char_value(Array_pop(mstack))
 
+#include "./library/lib.c"
 
-// ライブラリ関数
-void stdlib_print(oop process,oop GM){
-    getInt(mpc);int size_args = int_value;
-    int value = api();
-    SHICA_PRINTF("%d\n",value);
-    return;
-}
-
-void stdlib_itoc(oop process,oop GM){
-    getInt(mpc);int size_args = int_value;
-    char value = (char)api();
-    oop c = _newChar(value);
-    Array_push(mstack,c);
-    return; 
-}
-
-void stdlib_exit(oop process,oop GM){
-    getInt(mpc);int size_args = int_value;
-    int value = api();
-    exit(value);
-    return;
-}
-
-void stdlib_appendchar(oop process,oop GM){
-    getInt(mpc);int size_args = int_value;
-    char* str = aps();
-    char c = apc();
-    size_t length = strlen(str);
-#if MSGC
-    char* newStr = (char*)gc_alloc((length + 2) * sizeof(char)); // 新しい文字列のメモリを確保
-#else
-    char* newStr = (char*)malloc((length + 2) * sizeof(char)); // 新しい文字列のメモリを確保
-#endif
-    if (newStr != NULL){
-        strcpy(newStr, str); // 元の文字列をコピー
-        newStr[length] = c;  // 追加する文字をセット
-        newStr[length + 1] = '\0'; // ヌル終端を追加
-    }
-    Array_push(mstack,newString(newStr));
-    return;
-}
-
-
-void lib_stdlib(oop process,oop GM){
-    //is it need gc_push
-    getInt(mpc);int func_num = int_value;
-    switch(func_num){
-        case OUTPUT_P:{
-            stdlib_print(process,GM);
-            break;
-        }
-        case ITOC_P:{
-            stdlib_itoc(process,GM);
-            break;
-        }
-        case EXIT_P:{
-            stdlib_exit(process,GM);
-            break;
-        }
-        case APPENDCHAR_P:{
-            stdlib_appendchar(process,GM);
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-
-oop Call_Primitive(oop process,oop GM){
-    getInt(mpc);int lib_num = int_value;
+oop setCore(int lib_num,int eve_num,oop stack,int numThread){
     switch(lib_num){
         case STDLIB:{
-            lib_stdlib(process,GM);
-            break;
+            return Event_stdlib(eve_num,stack,numThread);
         }
+        case USERLIB:{
+            return 0;
+        }
+#if RPI
+        case GPIOLIB:{
+            return Event_gpiolib(eve_num,stack,numThread);
+        }
+#endif
         default:{
-            SHICA_PRINTF("Call_Primitive %d\n",lib_num);
+            SHICA_PRINTF("ERROR: Event lib[%d] eve[%d]\n",lib_num, eve_num);
             exit(1);
         }
     }
-    return nil;
+    SHICA_PRINTF("Event_Func(): not happen..\n");
+    return 0;
 }
+
+
+
 ////////////////////////////////////////////////
 
 
