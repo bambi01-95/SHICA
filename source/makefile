@@ -22,3 +22,6 @@ daygit:
 	git add .
 	git commit -m "dalily commit"
 	git push origin main
+
+pi:
+	gcc -o vm executor.c -lpigpio -lpthread

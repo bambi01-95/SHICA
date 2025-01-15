@@ -357,6 +357,7 @@ void lib_stdlib(oop process,oop GM){
             break;
         }
         default:
+            SHICA_FPRINTF(stderr,"this is not happen lib_stdlib func[%d]\n",func_num);
             break;
     }
 }
