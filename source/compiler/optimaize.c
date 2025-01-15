@@ -1140,6 +1140,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
                     if(id==entry_sym){
                         if(i-stt_val_c==0){//IF entry() is defined at first element of state
+                            DEBUG_LOG("program->Array.number %d\n",program->Array.number);
                             Entry_bool = 1;
                             isEntry = 1;
                         }
@@ -1242,7 +1243,10 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         
 
         if(Entry_bool==1){//entry()の実行
-            emitII(ENTRY,core->threadData[0]->eventLoc - (stt_loc));
+            DEBUG_LOG("Program->Array.number %d\n",core->threadData[0]->eventLoc);
+            int cpc = program->Array.number;
+            emitII(ENTRY,core->threadData[0]->eventLoc - cpc - (OPESIZE + INTSIZE));
+            DEBUG_LOG("Program->Array.number %d\n",program->Array.number - cpc);
         }
 
         struct CoreData *tmp = core;

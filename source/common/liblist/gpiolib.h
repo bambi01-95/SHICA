@@ -7,6 +7,7 @@ extern enum GPIOLIB_E{
 } GPIOLIB_E;
 
 extern enum GPIOLIB_P{
+    GPIO_INITIALISE_P,
     GPIO_SET_MODE_P,
     GPIO_WRITE_P,
     GPIO_READ_P,
