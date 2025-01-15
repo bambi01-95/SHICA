@@ -1,4 +1,4 @@
-vmleg: 
+leg: 
 	./compiler/parser/leg -o ./compiler/parser/parser.c  ./compiler/parser/parser.leg
 
 com:

@@ -3,7 +3,10 @@
 
 #include "../../common/liblist/library.h"
 #include "./stdlib-execute.c"
+
+#if RPI
 #include "./gpiolib-execute.c"
+#endif
 
 oop Call_Primitive(oop process,oop GM){
     getInt(mpc);int lib_num = int_value;

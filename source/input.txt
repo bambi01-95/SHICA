@@ -1,5 +1,5 @@
 state s{
-    event(int a,int b){
-        print("pin x is HIGH",(b >> 27)&1==1)
+    triReadGPIO(int pins:(pins >> 27)&1){
+        print("pin x is HIGH")
     }
 }

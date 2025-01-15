@@ -178,7 +178,7 @@ args	= LPAR a:mkNil
 	  )?
  	  RPAR				{ $$ = a }
 
-value	= LPAR lhs:add   RPAR		{ $$ = lhs }
+value	= LPAR lhs:exp   RPAR		{ $$ = lhs }
         | QUOTE  character    QUOTE -  
         | DQUOTE string DQUOTE  -
         | float_  

@@ -44,5 +44,14 @@ oop _newPrimitive(oop name,char lib_num,char func_num,char* args_type_array,char
 
 //ADD LIB if you make
 #include "stdlib-compile.c"
+#include "gpiolib-compile.c"
+
 //#include ".h"
+void setting_lib(){
+    setting_stdlib();
+#if RPI
+    setting_gpiolib();
+#endif
+    return;
+}
 #endif

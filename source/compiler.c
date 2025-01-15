@@ -44,7 +44,7 @@ int main(int argc, char const *argv[])
             return 1;
         }
 
-        setting_stdlib();
+        setting_lib();
         entry_sym = intern("entry");
         
 

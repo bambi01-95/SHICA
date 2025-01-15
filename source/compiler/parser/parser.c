@@ -2792,7 +2792,7 @@ YY_RULE(int) yy_INCRE(yycontext *yy)
 YY_RULE(int) yy_value(yycontext *yy)
 {  int yypos0= yy->__pos, yythunkpos0= yy->__thunkpos;  yyDo(yy, yyPush, 2, 0);
   yyprintf((stderr, "%s\n", "value"));
-  {  int yypos59= yy->__pos, yythunkpos59= yy->__thunkpos;  if (!yy_LPAR(yy)) goto l60;  if (!yy_add(yy)) goto l60;  yyDo(yy, yySet, -2, 0);  if (!yy_RPAR(yy)) goto l60;  yyDo(yy, yy_1_value, yy->__begin, yy->__end);  goto l59;
+  {  int yypos59= yy->__pos, yythunkpos59= yy->__thunkpos;  if (!yy_LPAR(yy)) goto l60;  if (!yy_exp(yy)) goto l60;  yyDo(yy, yySet, -2, 0);  if (!yy_RPAR(yy)) goto l60;  yyDo(yy, yy_1_value, yy->__begin, yy->__end);  goto l59;
   l60:;	  yy->__pos= yypos59; yy->__thunkpos= yythunkpos59;  if (!yy_QUOTE(yy)) goto l61;  if (!yy_character(yy)) goto l61;  if (!yy_QUOTE(yy)) goto l61;  if (!yy__(yy)) goto l61;  goto l59;
   l61:;	  yy->__pos= yypos59; yy->__thunkpos= yythunkpos59;  if (!yy_DQUOTE(yy)) goto l62;  if (!yy_string(yy)) goto l62;  if (!yy_DQUOTE(yy)) goto l62;  if (!yy__(yy)) goto l62;  goto l59;
   l62:;	  yy->__pos= yypos59; yy->__thunkpos= yythunkpos59;  if (!yy_float_(yy)) goto l63;  goto l59;
