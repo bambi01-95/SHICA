@@ -14,7 +14,12 @@ vm:
 run:
 	./vm
 
-git:
+
+pi:
+	gcc -o vm executor.c -lpigpio -lpthread
+
+
+gitUpdata:
 	git fetch origin
 	git pull origin main
 
@@ -23,5 +28,6 @@ daygit:
 	git commit -m "dalily commit"
 	git push origin main
 
-pi:
-	gcc -o vm executor.c -lpigpio -lpthread
+gitKillUpdata:
+	git fetch origin
+	git reset --hard origin/main

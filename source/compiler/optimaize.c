@@ -845,6 +845,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
 	case Call:{
         oop id = exp->Call.function;
+        printlnObject(exp,1);
         oop function = get(id,Symbol,value);
 	    switch (getType(function)){
             case Function:{
@@ -1139,7 +1140,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
                     if(id==entry_sym){
                         if(i-stt_val_c==0){//IF entry() is defined at first element of state
-                            DEBUG_LOG("program->Array.number %d\n",program->Array.number);
                             Entry_bool = 1;
                             isEntry = 1;
                         }

@@ -7,9 +7,9 @@
 void setting_stdlib(){
     //Primitive Function
     /*          (name, lib_num, func_num, return_type, size_of_args_type_array,  args_type )  */
-    newPrimitive(output, STDLIB, OUTPUT_P,Undefined ,1,_Integer);
-    newPrimitive(itoc  , STDLIB, ITOC_P  ,_Char     ,1,_Integer);
-    newPrimitive(exit,   STDLIB, EXIT_P  ,Undefined ,1,_Integer);
+    newPrimitive(output,      STDLIB, OUTPUT_P,Undefined     ,1,_Integer);
+    newPrimitive(itoc  ,      STDLIB, ITOC_P  ,_Char         ,1,_Integer);
+    newPrimitive(stop,        STDLIB, EXIT_P  ,Undefined     ,1,_Integer);
     newPrimitive(appendchar,  STDLIB, APPENDCHAR_P  , String ,2,_Char,String);
     //Event Function
                 /*funcname,  libnum, funcnum, num_args, args_type, num_of_pin,　pin_value */
