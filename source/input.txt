@@ -27,8 +27,8 @@ state led_off{
 	//Button
 	triReadGPIO(int p:(p&(1<<27))==0){
 		print("Button")
-		gpioSetMode(22,1)
-		gpioWrite(22,1)
+		// gpioSetMode(22,1)
+		// gpioWrite(22,1)
 		state led_on
 	}
 	//Communication
