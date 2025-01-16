@@ -13,7 +13,7 @@ state init{
 		gpioWrite(22,1)
 		gpioDelay(1000000)
 		gpioSetMode(22,0) //Communication, input
-        gpioSetPullUpDown(22,2) //Communication, pull down
+        gpioSetPullUpDown(22,1) //Communication, pull down
 		state led_off
 	}
 }
