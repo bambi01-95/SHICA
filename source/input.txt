@@ -19,7 +19,6 @@ state led_off{
 	entry(){
 		print("ledOFF")
         gpioWrite(17,0)
-        gpioDelay(100000)
 	}
 	//Button
 	triReadGPIO(int p:(p&(1<<27))==0){
@@ -31,10 +30,10 @@ state led_off{
 
 state led_on{
 	entry(){
+        gpioDelay(100000)
         print("ledON")
         gpioWrite(17,1)
         gpioSetMode(22,0)
-        gpioDelay(100000)
 	}
 	//Button
 	triReadGPIO(int p:(p&(1<<27))==0){
