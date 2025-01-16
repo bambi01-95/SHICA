@@ -9,8 +9,6 @@ state init{
         gpioSetMode(17,1) //LED, output
 		gpioSetMode(27,0) //Button, input
         gpioSetPullUpDown(27,2) //Button, pull down
-		gpioSetMode(22,1)
-		gpioWrite(22,1)
 		gpioDelay(1000000)
 		gpioSetMode(22,0) //Communication, input
         gpioSetPullUpDown(22,1) //Communication, pull down
@@ -27,13 +25,14 @@ state led_off{
 	//Button
 	triReadGPIO(int p:(p&(1<<27))==0){
 		print("Button")
-		// gpioSetMode(22,1)
-		// gpioWrite(22,1)
+		gpioSetMode(22,1)
+		gpioWrite(22,1)
 		state led_on
 	}
 	//Communication
 	triReadGPIO(int p:((p>>22)&1)==1){
 		print("Communication")
+		gpioDelay(100000)
 	}
 }
 
