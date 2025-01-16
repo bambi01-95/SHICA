@@ -34,7 +34,6 @@ state led_off{
 	//Communication
 	triReadGPIO(int p:((p>>22)&1)==1){
 		print("Communication")
-		state led_off
 	}
 }
 
