@@ -17,6 +17,7 @@ state init{
 
 state led_off{
 	entry(){
+		gpioDelay(100000)
 		print("ledOFF")
         gpioWrite(17,0)
 	}
@@ -26,6 +27,11 @@ state led_off{
 		gpioSetMode(22,1)
 		gpioWrite(22,1)
 		state led_on
+	}
+	//Communication
+	triReadGPIO(int p:(p&(1<<22))==0){
+		print("Communication")
+		state led_off
 	}
 }
 
