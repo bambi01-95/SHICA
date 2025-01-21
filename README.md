@@ -1,3 +1,7 @@
+# SHICA
+## Event Oriented Programming Language for Malti Agent System
+
+
 v1.0.0 First Release: multi action and eval args cond
 v1.0.1 Optimaze eval event args
 
