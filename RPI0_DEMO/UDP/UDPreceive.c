@@ -1,57 +1,59 @@
-#include <stdio.h> //printf(), perror()
-#include <sys/socket.h> //socket()
-#include <sys/ioctl.h> //ioctl()
-#include <netinet/in.h> //htons(), inet_addr()
-#include <string.h> //memset()
-#include <unistd.h> //close()
-#include <stdlib.h> //atof()
-const int PortNumber = 60000;
-const int BufLength = 2048;
-int main(int argc, char** argv)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define BROADCAST_PORT 60000
+#define BUF_SIZE 256
+
+int main(int argc, char *argv[])
 {
-    struct sockaddr_in addr , from_addr;
-    int sock_df;
-    socklen_t from_addr_size;    
-    //ソケット作成
-    sock_df = socket(AF_INET, SOCK_DGRAM, 0);
-    //ソケット作成失敗
-    if(sock_df < 0)
-    {
-        perror("Couldn't make a socket");
+    int sockfd;
+    struct sockaddr_in recv_addr, sender_addr;
+    socklen_t sender_addr_len = sizeof(sender_addr);
+    char buf[BUF_SIZE];
+
+    // 1. ソケットを作成 (UDP)
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket");
         return -1;
     }
-    //通信の設定
-    addr.sin_family = AF_INET; //IPv4を指定
-    addr.sin_port = htons(PortNumber); //ポート番号。ここでは60000を指定
-    addr.sin_addr.s_addr = INADDR_ANY; //クライアントを指定せず，全て受け付ける
-    //addrとソケットの紐付け
-    int bind_status;
-    bind_status = bind(sock_df, (struct sockaddr *)&addr, sizeof(addr) );
-    if( bind_status < 0)
-    {
+
+    // 2. 受信用アドレス設定
+    memset(&recv_addr, 0, sizeof(recv_addr));
+    recv_addr.sin_family = AF_INET;
+    recv_addr.sin_port = htons(BROADCAST_PORT);
+    recv_addr.sin_addr.s_addr = INADDR_ANY; // すべてのアドレスで待ち受け
+
+    // 3. bind でポートへバインド
+    if (bind(sockfd, (struct sockaddr *)&recv_addr, sizeof(recv_addr)) < 0) {
         perror("bind");
+        close(sockfd);
         return -1;
     }
-    printf("bind success\n");
-    //受信バッファ
-    char buf[BufLength];
-    memset(buf, 0, sizeof(buf)); //初期化
-    while(1)
-    {
-        int recv_status;
+
+    printf("Listening on port %d for broadcast...\n", BROADCAST_PORT);
+
+    while (1) {
+        // 4. 受信 (ブロッキング)
+        memset(buf, 0, BUF_SIZE);
+        int ret = recvfrom(sockfd, buf, BUF_SIZE - 1, 0,
+                           (struct sockaddr *)&sender_addr,
+                           &sender_addr_len);
+        if (ret < 0) {
+            perror("recvfrom");
+            break;
+        }
         
-        //受信
-        recv_status = recvfrom(sock_df, buf, BufLength + 1, 0, (struct sockaddr *)&from_addr, &from_addr_size);
-        if ( recv_status < 0)continue;
-        buf[BufLength - 1]= '\0'; //もしbufに\0が含まれていなかったときでも正常にprintできるように
-        printf("receive data:%s\n", buf);
-        //バッファbufの先頭8バイトが送られてきた数値である。
-        //そこで、bufの先頭のアドレスをdoubleのアドレスとして読むことで、数値として読み出せる。
-        double *valp = (double *)&buf;
-        printf("value:%f\n", *valp);
-        
+        // 5. 受信データの表示
+        buf[ret] = '\0'; // 文字列終端
+        printf("Received: %s\n", buf);
+        printf("From IP: %s\n", inet_ntoa(sender_addr.sin_addr));
     }
-    //ソケットをクローズ
-    close(sock_df);
+
+    close(sockfd);
     return 0;
 }
