@@ -6,8 +6,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#if 1
+#define BROADCAST_ADDR "172.28.79.255"
+#else
+#define BROADCAST_ADDR "192.168.1.255"
+#endif
 #define BROADCAST_PORT 60000
-#define BROADCAST_ADDR "192.168.1.255" // サブネットに合わせて設定
 #define BUF_SIZE 256
 
 int main(int argc, char *argv[])
@@ -17,13 +21,13 @@ int main(int argc, char *argv[])
     int yes = 1;
 
     // 1. ソケットを作成 (UDP)
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { // SOCK_DGRAM: UDP ソケット AF_INET: IPv4
         perror("socket");
         return -1;
     }
 
     // 2. SO_BROADCAST オプションを有効にする
-    if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &yes, sizeof(yes)) < 0) {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &yes, sizeof(yes)) < 0) { // SOL_SOCKET: ソケットレベルのオプション設定
         perror("setsockopt(SO_BROADCAST)");
         close(sockfd);
         return -1;

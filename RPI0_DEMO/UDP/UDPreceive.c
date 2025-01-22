@@ -38,16 +38,21 @@ int main(int argc, char *argv[])
     printf("Listening on port %d for broadcast...\n", BROADCAST_PORT);
 
     while (1) {
-        // 4. 受信 (ブロッキング)
         memset(buf, 0, BUF_SIZE);
+        // 4. 受信 (ブロッキング)
         int ret = recvfrom(sockfd, buf, BUF_SIZE - 1, 0,
                            (struct sockaddr *)&sender_addr,
                            &sender_addr_len);
+
+        // 4 受信 (非ブロッキング)
+        int ret = recvfrom(sockfd, buf, BUF_SIZE - 1, MSG_DONTWAIT,
+                           (struct sockaddr *)&sender_addr,
+                           &sender_addr_len);
+
         if (ret < 0) {
             perror("recvfrom");
             break;
         }
-        
         // 5. 受信データの表示
         buf[ret] = '\0'; // 文字列終端
         printf("Received: %s\n", buf);
