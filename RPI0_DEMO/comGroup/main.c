@@ -163,10 +163,10 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
             char nextReaderId = 0;
             char list = agent->reader.sizeOfMember;
             while(list){//find next reader
+                nextReaderId++;
                 if((list & 0x01) == 1){
                     break;
                 }
-                nextReaderId++;
                 list >>= 1;
             }
             printf("nextReaderId is %d\n",nextReaderId);
