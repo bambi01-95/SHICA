@@ -382,6 +382,7 @@ int main(int argc, char *argv[])
                     while(time(NULL) - start < 10){
                         agent = triWifiReceive(agent,&socketInfo);
                     }
+                    agnet = leaveGroupRequest(agent,&socketInfo);
                     printf("Leave Group\n");
                     return 0;
                 }
@@ -410,8 +411,9 @@ int main(int argc, char *argv[])
                     while(time(NULL) - start < 10){
                         agent = groupManage(agent,&socketInfo);
                     }
-                    leaveGroupRequest(agent,&socketInfo);
-                    break;
+                    agent = leaveGroupRequest(agent,&socketInfo);
+                    printf("Leave Group\n");
+                    return 0;
                 }
             }
         }
