@@ -262,7 +262,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                             } else {
                                 printf("Replied to %s: TO_BE_MEMBER\n", sender_ip);
                             }
-                            printMember(buffer[DATA_SIZE_OF_MEMBER]);
+                            // printMember(buffer[DATA_SIZE_OF_MEMBER]);
                         }
                         break;
                     }
