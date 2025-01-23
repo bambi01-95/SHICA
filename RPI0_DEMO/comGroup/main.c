@@ -16,6 +16,7 @@ void keyCheck(char *key,char *msg){
     for(int i = 0; i < 4; i++){
         if(key[i] != msg[i]){
             printf("key[%d] is %c\n",i,key[i]);
+            printf("msg[%d] is %c\n",i,msg[i]);
         }
     }
 }
@@ -208,6 +209,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                 break;
             }
         }else{
+            printAgentData(agent);
                 if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
                 }
@@ -307,6 +309,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                     }
                 }
             }else{
+            printAgentData(agent);
                 if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
                 }
@@ -343,7 +346,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                     newAgent->base.myID = 0;
                     newAgent->base.groupID = buffer[DATA_GROUP_ID];
                     newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);
-                    newAgent->reader.groupKey = agent->reader.groupKey;
+                    newAgent->reader.groupKey = strdup(agent->reader.groupKey);
 
                     buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
                     buffer[DATA_MY_ID]        = agent->base.myID;
@@ -361,6 +364,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                 }
             }
         }else{
+            printAgentData(agent);
             if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
             }
