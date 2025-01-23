@@ -12,24 +12,42 @@
 #include <fcntl.h>
 #include <fcntl.h>
 #include <errno.h>
-
-
-#include "agent.c"
+#include <netdb.h> // 追加: getnameinfo と NI_NUMERICHOST のため
+#include <net/if.h> // IFF_LOOPBACKのため
+#include <ifaddrs.h>
 
 #define DEBIF if(0)
 
-#ifndef BROADCAST_PORT
-#define BROADCAST_PORT 60000
-#endif
 
-#ifndef BROADCAST_ADDR
-#define BROADCAST_ADDR "172.28.79.255"
-#endif
 
-#ifndef BUF_SIZE
-#define BUF_SIZE          16
-#endif
+// 自身のネットワークインターフェースIPアドレスを取得する関数
+int get_network_ip(char *ip_buffer, size_t buffer_size) {
+    struct ifaddrs *ifaddr, *ifa;
+    int family;
 
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        return -1;
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) continue;
+
+        family = ifa->ifa_addr->sa_family;
+        if (family == AF_INET && !(ifa->ifa_flags & IFF_LOOPBACK)) { // ループバック以外のIPv4アドレス
+            int result = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
+                                     ip_buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
+            if (result == 0) {
+                break; // 最初の有効なネットワークインターフェースを取得
+            } else {
+                fprintf(stderr, "getnameinfo failed: %s\n", gai_strerror(result));
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return 0;
+}
 
 void set_nonblocking(int sockfd) {
     int flags = fcntl(sockfd, F_GETFL, 0);

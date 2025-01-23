@@ -79,6 +79,10 @@ int main() {
 
             // 受信したアドレスに "world" を送信
             ssize_t sent = sendto(send_sockfd, "world", 5, 0, (struct sockaddr *)&sender_addr, addr_len);
+            // 自分自身の送信データを無視
+            if (strcmp(sender_ip, own_ip) == 0) {
+                continue;
+            }
             if (sent < 0) {
                 perror("sendto");
             } else {

@@ -11,31 +11,17 @@
 #include <time.h>
 #include <stdarg.h>
 
+
+
+
 #ifndef BROADCAST_PORT
 #define BROADCAST_PORT 60000
 #endif
 
-#ifndef BROADCAST_ADDR
+#ifdef BROADCAST_ADDR
+#undef BROADCAST_ADDR
+#endif
 #define BROADCAST_ADDR "172.28.79.255"
-#endif
-
-#ifndef BUF_SIZE
-#define BUF_SIZE          16
-#endif
-
-#define DEBUG 1
-void _DEBUG_LOG(int line, const char *fmt, ...) {
-    printf("line  %3d: ",line);
-    va_list args;
-    va_start(args, fmt);
-    vprintf(fmt, args);
-    va_end(args);
-    putchar('\n'); 
-}
-#define DEBUG_LOG(...) _DEBUG_LOG(__LINE__,##__VA_ARGS__)
-
-#include "agent.c"
-#include "broadcast.c"
 
 typedef enum RequestType{
     REQUEST_UNDEFINED,
@@ -48,60 +34,167 @@ typedef enum RequestType{
     REQUEST_MOVE,
 }request_t;
 
-typedef enum RequestDataIndex{
-    DATA_REQUEST_TYPE,
-    DATA_GROUP_ID,
-    DATA_MY_ID,
-    DATA_REQUEST_MEMEBER_ID,
-    DATA_SIZE_OF_MEMBER,
-    DATA_GROUP_KEY,
-}RequestDataIndex;
+
+#define DATA_REQUEST_TYPE        0x00
+#define DATA_GROUP_ID            0x01
+#define DATA_MY_ID               0x02
+#define DATA_REQUEST_MEMEBER_ID  0x03
+#define DATA_SIZE_OF_MEMBER      0x04
+#define DATA_GROUP_KEY           0x05
+
+#define SIZE_OF_DATA_GROUP_KEY   0x04
 
 
-agent_p joinGroupRrequet(int soocket,struct sockaddr_in *broadcast_addr,char *requestMsg){
+#ifdef BUF_SIZE
+#undef BUF_SIZE
+#endif
+#define BUF_SIZE                16
+
+#include "broadcast.c"
+struct SocketInfo{
+    int recv_sockfd, send_sockfd;
+    struct sockaddr_in recv_addr, broadcast_addr, sender_addr;
+    socklen_t addr_len;
+    char own_ip[INET_ADDRSTRLEN];
+};
+
+
+#include "agent.c"
+
+#define DEBUG 1
+void _DEBUG_LOG(int line, const char *fmt, ...) {
+    printf("line  %3d: ",line);
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+    putchar('\n'); 
+}
+#define DEBUG_LOG(...) _DEBUG_LOG(__LINE__,##__VA_ARGS__)
+
+
+
+
+agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
 #define TIMEOUT 2
-    agent_p agent = NULL;
-    //send request message 
-    int ret = send_broadcast_nonblocking(soocket,broadcast_addr,requestMsg,strlen(requestMsg));
-    time_t start = time(NULL);
     char buf[BUF_SIZE];
-    memset(buf, 0, BUF_SIZE); // 受信バッファの初期化
+    memset(buf, 0, BUF_SIZE);
+    memcpy(buf,requestbuf,BUF_SIZE);
 
+    // グループ参加リクエストの送信
+    int ret = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buf, BUF_SIZE);
+    if (ret < 0) {
+        perror("send_broadcast_nonblocking");
+        return NULL;
+    }
+
+    // グループ参加リクエストの受信
+    time_t start = time(NULL);
     while(time(NULL) - start < TIMEOUT){
-        int ret = receive_broadcast_nonblocking(soocket,buf,BUF_SIZE);
-        if (ret < 0) {
-            continue;
-        }
-        printf("Receive Data\n");
-        if (buf[1] == requestMsg[1] || memcmp(buf + DATA_GROUP_KEY, requestMsg + DATA_GROUP_KEY, 4) == 0) {
-            switch(buf[0]){
-                case REQUEST_TO_BE_MEMBER:{
-                    agent = createAgent(AgentMember);
-                    agent->base.groupID = buf[1];
-                    agent->base.myID    = buf[2];
-                    agent->reader.sizeOfMember = buf[5];
-                    agent->reader.groupKey = strdup(requestMsg + DATA_GROUP_KEY);
-                    printf("JOIN Group My ID: %d\n", agent->base.myID);
-                    return agent;
+        ssize_t ret = recvfrom(socketInfo->recv_sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
+        if (ret > 0) {
+            buf[ret] = '\0'; // Null終端
+            char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
+            // 自分自身の送信データを無視
+            if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
+                continue;
+            }
+            printf("Received from %s: %s\n", sender_ip, buf);
+            if(buf[DATA_GROUP_ID] == requestbuf[DATA_GROUP_ID] && memcmp(buf + DATA_GROUP_KEY, requestbuf + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
+                switch(buf[DATA_REQUEST_TYPE]){
+                    case REQUEST_TO_BE_MEMBER:{
+                        agent_p agent = createAgent(AgentMember);
+                        agent->base.myID = buf[DATA_MY_ID];
+                        agent->base.groupID = buf[DATA_GROUP_ID];
+                        agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY);
+                        memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY);
+                        return agent;
+                    }
+                    case REQUEST_REJECT:{
+                        return NULL;
+                    }
                 }
-                case REQUEST_REJECT:{
-                    printf("Join Request Rejected\n");
-                    return agent;
-                }
+                break;
             }
         }
     }
-
-    agent = createAgent(AgentReader);
-    agent->base.groupID = requestMsg[1];
+    // タイムアウト
+    agent_p agent = createAgent(AgentReader);
     agent->base.myID = 0;
+    agent->base.groupID = requestbuf[DATA_GROUP_ID];
     agent->reader.sizeOfMember = 1;
-    agent->reader.groupKey = strdup(requestMsg + DATA_GROUP_KEY);
-    printf("MAKE Group My ID: %d\n", agent->base.myID);  
+    agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY);
+    memcpy(agent->reader.groupKey,requestbuf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY);
     return agent;
 #undef TIMEOUT
 }
 
+agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
+
+#define TIMEOUT 2
+    char buffer[BUF_SIZE];
+    memset(buffer, 0, BUF_SIZE);
+    switch(agent->base.type){
+        case AgentMember:{
+            buffer[DATA_REQUEST_TYPE] = REQUEST_LEAVE;
+            buffer[DATA_GROUP_ID] = agent->base.groupID;
+            buffer[DATA_MY_ID]    = agent->base.myID;
+            buffer[DATA_REQUEST_MEMEBER_ID] = 0; //to reader
+            buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
+            memcpy(buffer + DATA_GROUP_KEY, agent->reader.groupKey, SIZE_OF_DATA_GROUP_KEY);
+            break;
+        }
+        case AgentReader:{
+            buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_READER;
+            buffer[DATA_GROUP_ID] = agent->base.groupID;
+            buffer[DATA_MY_ID]    = agent->base.myID;
+            char nextReaderId = 0;
+            char list = agent->reader.sizeOfMember;
+            while(list){
+                if((list & 0x01) == 0){
+                    break;
+                }
+                nextReaderId++;
+                list >>= 1;
+            }
+            buffer[DATA_REQUEST_MEMEBER_ID] = nextReaderId; //to reader
+            buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
+            memcpy(buffer + DATA_GROUP_KEY, agent->reader.groupKey, SIZE_OF_DATA_GROUP_KEY);
+            break;
+        }
+    }
+
+    // グループ脱退リクエストの送信
+    int ret = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
+    if (ret < 0) {
+        perror("send_broadcast_nonblocking");
+        return NULL;
+    }
+
+    // グループ脱退リクエストの受信
+    time_t start = time(NULL);
+    while(time(NULL) - start < TIMEOUT){
+        ssize_t ret = recvfrom(socketInfo->recv_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
+        if (ret > 0) {
+            buffer[ret] = '\0'; // Null終端
+            char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
+            // 自分自身の送信データを無視
+            if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
+                continue;
+            }
+            printf("Received from %s: %s\n", sender_ip, buffer);
+            if(buffer[DATA_GROUP_ID] == agent->base.groupID && memcmp(buffer + DATA_GROUP_KEY, agent->reader.groupKey, SIZE_OF_DATA_GROUP_KEY) == 0){
+                switch(buffer[DATA_REQUEST_TYPE]){
+                    case REQUEST_SUCCESS:{
+                        return NULL;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    return agent;
+}
 
 void printMember(char sizeOfMember){
     for (char i = 7; i >= 0; i--) {
@@ -115,64 +208,111 @@ void printMember(char sizeOfMember){
 }
 
 
-agent_p groupManage(agent_p agent,struct sockaddr_in *broadcast_addr,int sockfd) {
-    // グループIDとグループキーの取得
-    int groupID = agent->base.groupID;
-    char *groupKey = agent->reader.groupKey;
-    char sizeOfMember = agent->reader.sizeOfMember;
+agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
+        // メッセージ受信
+        char buffer[BUF_SIZE];
+        ssize_t ret = recvfrom(socketInfo->recv_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
+        if (ret > 0) {
+            buffer[ret] = '\0'; // Null終端
+            char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
+            // 自分自身の送信データを無視
+            if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
+                return agent;
+            }
+            printf("Received from %s: %s\n", sender_ip, buffer);
 
-    // 受信バッファの初期化
-    char buf[BUF_SIZE];
-    memset(buf, 0, BUF_SIZE);
 
-    // データ受信
-    int ret = receive_broadcast_nonblocking(sockfd, buf, BUF_SIZE);
-    if (ret < 0) {
-        return agent;
-    }
+            if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
+                switch(buffer[DATA_REQUEST_TYPE]){
+                    case REQUEST_JOIN:{
+                        int list = agent->reader.sizeOfMember;
+                        int newId = 0;
+                        while(list){
+                            if((list & 0x01) == 0){
+                                break;
+                            }
+                            newId++;
+                            list >>= 1;
+                        }
+                        if(newId == 8){
+                            //send REJECT  
+                            buffer[DATA_REQUEST_TYPE] = REQUEST_REJECT;
+                            ssize_t sent = sendto(socketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&socketInfo->sender_addr, socketInfo->addr_len);
+                            if (sent < 0) {
+                                perror("sendto");
+                            } else {
+                                printf("Replied to %s: REJECT\n", sender_ip);
+                            }
+                        }
+                        else{
+                            //send TO_BE_MEMBER
+                            buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_MEMBER;
+                            buffer[DATA_MY_ID] = agent->base.myID;
+                            buffer[DATA_REQUEST_MEMEBER_ID] = (1 << newId);
+                            buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember | (1 << newId);
+                            ssize_t sent = sendto(socketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&socketInfo->sender_addr, socketInfo->addr_len);
+                            if (sent < 0) {
+                                perror("sendto");
+                            } else {
+                                printf("Replied to %s: TO_BE_MEMBER\n", sender_ip);
+                            }
+                        }
+                        break;
+                    }
 
-    // データの解析
-    if (buf[1] == groupID && memcmp(buf + DATA_GROUP_KEY, groupKey, 4) == 0) {
-        switch(buf[0]){
-            case REQUEST_JOIN:{
-                if(sizeOfMember == MAX_GROUP){
-                    buf[0] = REQUEST_REJECT;
-                    buf[1] = groupID;
-                    buf[2] = 0;
-                    buf[3] = 0; // Request Member ID
-                    buf[4] = 0; // Size of Member
-                    memcpy(buf + DATA_GROUP_KEY, groupKey, 4);
-                    send_broadcast_nonblocking(sockfd,broadcast_addr, buf, BUF_SIZE);
-                    break;
-                }
-                char newID = 0;
-                for (newID = 0; newID < 8; newID++) {
-                    if ((sizeOfMember & (1U << newID)) == 0) { 
-                        printMember(sizeOfMember);
-                        agent->reader.sizeOfMember |= 1U << newID;
-                        sizeOfMember = agent->reader.sizeOfMember;
-                        printMember(sizeOfMember);
+                    case REQUEST_LEAVE:{
+                        agent->reader.sizeOfMember &= ~(1 << buffer[DATA_MY_ID]); 
+                        //send SUCCESS
+                        buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
+                        buffer[DATA_MY_ID] = agent->base.myID;
+                        ssize_t sent = sendto(socketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&socketInfo->sender_addr, socketInfo->addr_len);
+                        if (sent < 0) {
+                            perror("sendto");
+                        } else {
+                            printf("Replied to %s: SUCCESS\n", sender_ip);
+                        }
                         break;
                     }
                 }
-                buf[0] = REQUEST_TO_BE_MEMBER;
-                buf[1] = groupID;
-                printf("New ID: %d\n", newID);
-                buf[2] = newID;
-                buf[3] = (1U << newID);
-                buf[4] = sizeOfMember;
-                ret = send_broadcast_nonblocking(sockfd, broadcast_addr, buf, BUF_SIZE);
-                if (ret < 0) {
-                    perror("send_broadcast_nonblocking");
-                }else{
-                    printf("Broadcast sent successfully\n");
-                }
-                break;
             }
-            case REQUEST_LEAVE:{
-                agent->reader.sizeOfMember &= ~(1U << buf[2]);
-                sizeOfMember = agent->reader.sizeOfMember;
-                break;
+        }
+        usleep(100000); // 100ms待機してループを回す
+        return agent;
+}
+
+
+
+
+agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
+    char buffer[BUF_SIZE];
+    ssize_t ret = recvfrom(SocketInfo->recv_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&SocketInfo->sender_addr, &SocketInfo->addr_len);
+    if (ret > 0) {
+        buffer[ret] = '\0'; // Null終端
+        char *sender_ip = inet_ntoa(SocketInfo->sender_addr.sin_addr);
+        // 自分自身の送信データを無視
+        if (strcmp(sender_ip, SocketInfo->own_ip) == 0) {
+            return agent;
+        }
+        printf("Received from %s: %s\n", sender_ip, buffer);
+        if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
+            switch(buffer[DATA_REQUEST_TYPE]){
+                case REQUEST_TO_BE_READER:{
+                    agent_p newAgent = createAgent(AgentReader);
+                    newAgent->base.myID = 0;
+                    newAgent->base.groupID = buffer[DATA_GROUP_ID];
+                    newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);
+                    newAgent->reader.groupKey = agent->reader.groupKey;
+
+                    buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
+                    buffer[DATA_MY_ID]        = agent->base.myID;
+                    ssize_t sent = sendto(SocketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&SocketInfo->sender_addr, SocketInfo->addr_len);
+                    if (sent < 0) {
+                        perror("sendto");
+                    } else {
+                        printf("Replied to %s: SUCCESS\n", sender_ip);
+                    }
+                    return newAgent;
+                }
             }
         }
     }
@@ -180,60 +320,140 @@ agent_p groupManage(agent_p agent,struct sockaddr_in *broadcast_addr,int sockfd)
 }
 
 
+
 int main(int argc, char *argv[])
 {
-    int sockfd;
-    struct sockaddr_in broadcast_addr, recv_addr;
-
-    // 送信ソケット作成とノンブロッキング化
-    if (create_broadcast_socket(&sockfd, &broadcast_addr) == 0) {
-        set_nonblocking(sockfd);
-    }
-
-    int groudID = 111;
-    char *gKey = "KUAS";
-    union Agent *agent = NULL;
-
-    char requestMsg[BUF_SIZE] = {
-        REQUEST_JOIN, // Request
-        groudID, // Group ID
-        0, // My ID
-        0, // Request Member ID
-        0, // Size of Member
-        gKey[0], gKey[1], gKey[2], gKey[3] // Key
-    };
-
-    while(argc > 1){
-        if(strcmp(argv[1],"-r") == 0){
-            agent = joinGroupRrequet(sockfd,&broadcast_addr,requestMsg);
-            break;
+    int Flag = 0;
+    if(argc == 2){
+        if(strcmp(argv[1],"-d") == 0){
+            Flag = 1;
         }
-        argc--;
-        argv++;
     }
-    if(agent == NULL){
-        printf("Agent is NULL\n");
+
+    struct SocketInfo socketInfo;
+    char buffer[BUF_SIZE];
+
+    socketInfo.addr_len = sizeof(socketInfo.sender_addr);
+
+    // 自身のネットワークIPアドレスを取得
+    if (get_network_ip(socketInfo.own_ip, sizeof(socketInfo.own_ip)) != 0) {
+        fprintf(stderr, "Failed to get own IP address\n");
+        return -1;
+    }
+    printf("Own IP: %s\n", socketInfo.own_ip);
+
+    // 受信ソケット作成とノンブロッキング化
+    if (create_receive_socket(&socketInfo.recv_sockfd, &socketInfo.recv_addr) == 0) {
+        set_nonblocking(socketInfo.recv_sockfd);
+    } else {
         return -1;
     }
 
-    switch(agent->base.type){
-        case AgentMember:
-            printf("Agent Type: Member\n");
-            break;
-        case AgentReader:
-            printf("Agent Type: Reader\n");
-            // 受信ソケット作成とノンブロッキング化
-            if (create_receive_socket(&sockfd, &recv_addr) == 0) {
-                set_nonblocking(sockfd);
-            }
-            while(agent->base.type == AgentReader){
-                agent = groupManage(agent,&recv_addr,sockfd);
-            }
-            break;
-        default:
-            printf("Agent Type: Undefined\n");
-            break;
+    // 送信ソケット作成とブロードキャストアドレス設定
+    if (create_broadcast_socket(&socketInfo.send_sockfd, &socketInfo.broadcast_addr) != 0) {
+        close(socketInfo.recv_sockfd);
+        return -1;
     }
+
+    agent_p agent = NULL;
+    char requestMsg[BUF_SIZE];
+    memset(requestMsg, 0, BUF_SIZE);
+    requestMsg[DATA_REQUEST_TYPE] = REQUEST_JOIN;
+    requestMsg[DATA_GROUP_ID] = 1;
+    requestMsg[DATA_MY_ID] = 0;
+    requestMsg[DATA_SIZE_OF_MEMBER] = 1;
+    memcpy(requestMsg + DATA_GROUP_KEY, "abcd", 4);
+
+
+    agent = joinGroupRrequet(&socketInfo,requestMsg);
+
+    if(agent == NULL){
+        close(socketInfo.recv_sockfd);
+        close(socketInfo.send_sockfd);
+        DEBUG_LOG("Failed to join group\n");
+        return -1;
+    }
+    time_t start = time(NULL);
+    if(Flag){
+        while(1){
+            switch(agent->base.type){
+                case AgentMember:{
+                    DEBUG_LOG("AgentMember");
+                    while(time(NULL) - start < 10){
+                        agent = triWifiReceive(agent,&socketInfo);
+                    }
+                    printf("Leave Group\n");
+                    return 0;
+                }
+                case AgentReader:{
+                    DEBUG_LOG("AgentReader");
+                    while(agent->base.type == AgentReader){
+                        agent = groupManage(agent,&socketInfo);
+                    }
+                    break;
+                }
+            }
+        }
+    }else{
+        while(1){
+            switch(agent->base.type){
+                case AgentMember:{
+                    DEBUG_LOG("AgentMember");
+                    while(agent->base.type == AgentMember){
+                        agent = triWifiReceive(agent,&socketInfo);
+                    }
+                    printf("will be reader\n");
+                    break;
+                }
+                case AgentReader:{
+                    DEBUG_LOG("AgentReader");
+                    while(time(NULL) - start < 10){
+                        agent = groupManage(agent,&socketInfo);
+                    }
+                    leaveGroupRequest(agent,&socketInfo);
+                    break;
+                }
+            }
+        }
+    }
+
+    return 0;
+    while (1) {
+        // メッセージ受信
+        ssize_t ret = recvfrom(socketInfo.recv_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&socketInfo.sender_addr, &socketInfo.addr_len);
+        if (ret > 0) {
+            buffer[ret] = '\0'; // Null終端
+            char *sender_ip = inet_ntoa(socketInfo.sender_addr.sin_addr);
+
+            // 自分自身の送信データを無視
+            if (strcmp(sender_ip, socketInfo.own_ip) == 0) {
+                continue;
+            }
+
+            printf("Received from %s: %s\n", sender_ip, buffer);
+
+            // 受信したアドレスに "world" を送信
+            ssize_t sent = sendto(socketInfo.send_sockfd, "world", 5, 0, (struct sockaddr *)&socketInfo.sender_addr, socketInfo.addr_len);
+            if (sent < 0) {
+                perror("sendto");
+            } else {
+                printf("Replied to %s: world\n", sender_ip);
+            }
+
+            // "join" をブロードキャストで送信
+            ssize_t broadcast_sent = send_broadcast_nonblocking(socketInfo.send_sockfd, &socketInfo.broadcast_addr, "join", 4);
+            if (broadcast_sent < 0) {
+                printf("Failed to broadcast join\n");
+            } else {
+                printf("Broadcasted: join\n");
+            }
+        }
+
+        usleep(100000); // 100ms待機してループを回す
+    }
+
+    close(socketInfo.recv_sockfd);
+    close(socketInfo.send_sockfd);
 
     return 0;
 }
