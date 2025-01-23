@@ -113,7 +113,7 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
                 switch(buf[DATA_REQUEST_TYPE]){
                     case REQUEST_TO_BE_MEMBER:{
                         agent_p agent = createAgent(AgentMember);
-                        agent->base.myID = buf[DATA_MY_ID];
+                        agent->base.myID    = buf[DATA_MY_ID];
                         agent->base.groupID = buf[DATA_GROUP_ID];
                         agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
                         memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
@@ -276,7 +276,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                             //send TO_BE_MEMBER
                             agent->reader.sizeOfMember |= (1 << newId);
                             buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_MEMBER;
-                            buffer[DATA_MY_ID] = agent->base.myID;
+                            buffer[DATA_MY_ID]        = newId;
                             buffer[DATA_REQUEST_MEMEBER_ID] = (1 << newId);
                             buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember | (1 << newId);
                             int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
@@ -342,22 +342,24 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
         if((agent->base.groupID == buffer[DATA_GROUP_ID]) && (memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0)){
             switch(buffer[DATA_REQUEST_TYPE]){
                 case REQUEST_TO_BE_READER:{
-                    DEBUG_LOG("REQUEST_TO_BE_READER\n");
-                    agent_p newAgent = createAgent(AgentReader);
-                    newAgent->base.myID = 0;
-                    newAgent->base.groupID = buffer[DATA_GROUP_ID];
-                    newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);
-                    newAgent->reader.groupKey = strdup(agent->reader.groupKey);
+                    if(((buffer[DATA_REQUEST_MEMEBER_ID] >> agent->base.myID)&1) == 1){
+                        DEBUG_LOG("REQUEST_TO_BE_READER\n");
+                        agent_p newAgent = createAgent(AgentReader);
+                        newAgent->base.myID = 0;
+                        newAgent->base.groupID = buffer[DATA_GROUP_ID];
+                        newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);
+                        newAgent->reader.groupKey = strdup(agent->reader.groupKey);
 
-                    buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
-                    buffer[DATA_MY_ID]        = agent->base.myID;
-                    int sent = send_broadcast_nonblocking(SocketInfo->send_sockfd, &SocketInfo->broadcast_addr, buffer, BUF_SIZE);
-                    if (sent < 0) {
-                        perror("sendto");
-                    } else {
-                        printf("Replied to %s: SUCCESS\n", sender_ip);
+                        buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
+                        buffer[DATA_MY_ID]        = agent->base.myID;
+                        int sent = send_broadcast_nonblocking(SocketInfo->send_sockfd, &SocketInfo->broadcast_addr, buffer, BUF_SIZE);
+                        if (sent < 0) {
+                            perror("sendto");
+                        } else {
+                            printf("Replied to %s: SUCCESS\n", sender_ip);
+                        }
+                        return newAgent;
                     }
-                    return newAgent;
                 }
                 default:{
                     DEBUG_LOG("UNSPUPPORTED REQUEST %d\n",buffer[DATA_REQUEST_TYPE]);
