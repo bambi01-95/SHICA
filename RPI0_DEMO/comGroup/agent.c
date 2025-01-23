@@ -51,4 +51,26 @@ agent_p _createAgent(agent_t type,int size){
 }
 #define createAgent(TYPE) _createAgent(TYPE,sizeof(struct TYPE))
 
+void printAgentData(agent_p agent){
+    switch(agent->base.type){
+        case AgentMember:{
+            printf("AgentMember\n");
+            printf("myID:%d\n",agent->base.myID);
+            printf("groupID:%d\n",agent->base.groupID);
+            printf("groupKey:%s\n",agent->member.groupKey);
+            break;
+        }
+        case AgentReader:{
+            printf("AgentReader\n");
+            printf("myID:%d\n",agent->base.myID);
+            printf("groupID:%d\n",agent->base.groupID);
+            printf("sizeOfMember:%d\n",agent->reader.sizeOfMember);
+            break;
+        }
+        case AgentVisitor:{
+            printf("AgentVisitor\n");
+            break;
+        }
+    }
+}
 #endif

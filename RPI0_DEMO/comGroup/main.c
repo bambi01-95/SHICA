@@ -144,8 +144,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
             buffer[DATA_GROUP_ID] = agent->base.groupID;
             buffer[DATA_MY_ID]    = agent->base.myID;
             buffer[DATA_REQUEST_MEMEBER_ID] = 0; //to reader
-            buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
-            memcpy(buffer + DATA_GROUP_KEY, agent->reader.groupKey, SIZE_OF_DATA_GROUP_KEY);
+            memcpy(buffer + DATA_GROUP_KEY, agent->member.groupKey, SIZE_OF_DATA_GROUP_KEY);
             break;
         }
         case AgentReader:{
@@ -403,7 +402,7 @@ int main(int argc, char *argv[])
 
 
     agent = joinGroupRrequet(&socketInfo,requestMsg);
-
+    printAgentData(agent);
     if(agent == NULL){
         close(socketInfo.recv_sockfd);
         close(socketInfo.send_sockfd);
