@@ -193,6 +193,10 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                     case REQUEST_SUCCESS:{
                         return NULL;
                     }
+                    default:{
+                        DEBUG_LOG("UNSPUPPORTED REQUEST %d\n",buffer[DATA_REQUEST_TYPE]);
+                        break;
+                    }
                 }
                 break;
             }
@@ -287,8 +291,8 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                     }
                 }
             }else{
-                DEBUG_LOG("UNSPUPPORTED GROUP %d\n",buffer[DATA_GROUP_ID]);
-                DEBUG_LOG("UNSPUPPORTED GROUP KEY %s\n",buffer + DATA_GROUP_KEY);
+                DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
+                DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->reader.groupKey);
             }
         }
         usleep(100000); // 100ms待機してループを回す
@@ -335,8 +339,8 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                 }
             }
         }else{
-            DEBUG_LOG("UNSPUPPORTED GROUP %d\n",buffer[DATA_GROUP_ID]);
-            DEBUG_LOG("UNSPUPPORTED GROUP KEY %s\n",buffer + DATA_GROUP_KEY);
+                DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
+                DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->member.groupKey);
         }
     }
     return agent;
