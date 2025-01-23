@@ -97,6 +97,7 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
             char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
             // 自分自身の送信データを無視
             if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
+                printf("same ip\n");
                 continue;
             }
             printf("Received from %s: %s\n", sender_ip, buf);
