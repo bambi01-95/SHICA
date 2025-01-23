@@ -133,7 +133,7 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
     agent_p agent = createAgent(AgentReader);
     agent->base.myID = 0;
     agent->base.groupID = requestbuf[DATA_GROUP_ID];
-    agent->reader.sizeOfMember = 1;
+    agent->reader.sizeOfMember = (1U);
     agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
     memcpy(agent->reader.groupKey,requestbuf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
     return agent;

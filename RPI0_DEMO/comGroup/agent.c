@@ -14,6 +14,9 @@ typedef enum AgentType{
 }agent_t;
 
 typedef union Agent *agent_p;
+
+
+
 struct AgentBase{
     agent_t type;
     char myID;
@@ -50,6 +53,16 @@ agent_p _createAgent(agent_t type,int size){
     return agent;
 }
 #define createAgent(TYPE) _createAgent(TYPE,sizeof(struct TYPE))
+
+agent_p _check(agent_p node, enum Type type, char *file, int line)
+{
+    if (getType(node) != type) {
+        printf("%s line %d: expected type %d got type %d\n", file, line, type, node->base.type);
+        exit(1);
+    }
+    return node;
+}
+#define getA(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
 
 void printAgentData(agent_p agent){
     switch(agent->base.type){
