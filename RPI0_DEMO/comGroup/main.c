@@ -238,7 +238,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                         if(newId == 8){
                             //send REJECT  
                             buffer[DATA_REQUEST_TYPE] = REQUEST_REJECT;
-                            ssize_t sent = sendto(socketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&socketInfo->sender_addr, socketInfo->addr_len);
+                            int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
                             if (sent < 0) {
                                 perror("sendto");
                             } else {
@@ -251,7 +251,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                             buffer[DATA_MY_ID] = agent->base.myID;
                             buffer[DATA_REQUEST_MEMEBER_ID] = (1 << newId);
                             buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember | (1 << newId);
-                            ssize_t sent = sendto(socketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&socketInfo->sender_addr, socketInfo->addr_len);
+                            int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
                             if (sent < 0) {
                                 perror("sendto");
                             } else {
