@@ -162,8 +162,8 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
             buffer[DATA_MY_ID]    = agent->base.myID;
             char nextReaderId = 0;
             char list = agent->reader.sizeOfMember;
-            while(list){
-                if((list & 0x01) == 0){
+            while(list){//find next reader
+                if((list & 0x01) == 1){
                     break;
                 }
                 nextReaderId++;
