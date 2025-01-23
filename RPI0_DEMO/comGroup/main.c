@@ -170,6 +170,10 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                 }
                 list >>= 1;
             }
+            if(list == 0){
+                DEBUG_LOG("No Member\n");
+                return NULL;
+            }
             printf("current Member is %d\n",agent->reader.sizeOfMember);
             printf("nextReaderId is %d\n",nextReaderId);
             buffer[DATA_REQUEST_MEMEBER_ID] = nextReaderId; //to reader
