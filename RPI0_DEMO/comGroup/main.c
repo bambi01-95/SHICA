@@ -107,8 +107,8 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
                         agent_p agent = createAgent(AgentMember);
                         agent->base.myID = buf[DATA_MY_ID];
                         agent->base.groupID = buf[DATA_GROUP_ID];
-                        agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY);
-                        memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY);
+                        agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+                        memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
                         DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
                         return agent;
                     }
@@ -126,8 +126,8 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
     agent->base.myID = 0;
     agent->base.groupID = requestbuf[DATA_GROUP_ID];
     agent->reader.sizeOfMember = 1;
-    agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY);
-    memcpy(agent->reader.groupKey,requestbuf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY);
+    agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+    memcpy(agent->reader.groupKey,requestbuf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
     return agent;
 #undef TIMEOUT
 }
@@ -200,7 +200,15 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                 }
                 break;
             }
-        }
+        }else{
+                if(agent->base.groupID != buffer[DATA_GROUP_ID]){
+                DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
+                }
+                buffer[DATA_GROUP_KEY + SIZE_OF_DATA_GROUP_KEY] = '\0';
+                if(memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) != 0){
+                DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->reader.groupKey);
+                }
+            }
     }
     return agent;
 }
