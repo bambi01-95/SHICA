@@ -7,9 +7,11 @@
 
 
 #include <netdb.h> // 追加: getnameinfo と NI_NUMERICHOST のため
+#include <net/if.h> // IFF_LOOPBACKのため
 #include "broadcast.c"
-// 自身のIPアドレスを取得する関数
-int get_own_ip(char *ip_buffer, size_t buffer_size) {
+
+// 自身のネットワークインターフェースIPアドレスを取得する関数
+int get_network_ip(char *ip_buffer, size_t buffer_size) {
     struct ifaddrs *ifaddr, *ifa;
     int family;
 
@@ -22,10 +24,14 @@ int get_own_ip(char *ip_buffer, size_t buffer_size) {
         if (ifa->ifa_addr == NULL) continue;
 
         family = ifa->ifa_addr->sa_family;
-        if (family == AF_INET) { // IPv4のみを対象
-            getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
-                        ip_buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
-            break; // 最初のIPv4アドレスを取得
+        if (family == AF_INET && !(ifa->ifa_flags & IFF_LOOPBACK)) { // ループバック以外のIPv4アドレス
+            int result = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
+                                     ip_buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
+            if (result == 0) {
+                break; // 最初の有効なネットワークインターフェースを取得
+            } else {
+                fprintf(stderr, "getnameinfo failed: %s\n", gai_strerror(result));
+            }
         }
     }
 
@@ -40,8 +46,8 @@ int main() {
     char own_ip[INET_ADDRSTRLEN];
     socklen_t addr_len = sizeof(sender_addr);
 
-    // 自身のIPアドレスを取得
-    if (get_own_ip(own_ip, sizeof(own_ip)) != 0) {
+    // 自身のネットワークIPアドレスを取得
+    if (get_network_ip(own_ip, sizeof(own_ip)) != 0) {
         fprintf(stderr, "Failed to get own IP address\n");
         return -1;
     }
@@ -77,12 +83,12 @@ int main() {
             buffer[ret] = '\0'; // Null終端
             char *sender_ip = inet_ntoa(sender_addr.sin_addr);
 
-            // 自分自身のデータを無視
+            // 自分自身の送信データを無視
             if (strcmp(sender_ip, own_ip) == 0) {
                 continue;
             }
+
             printf("Received from %s: %s\n", sender_ip, buffer);
-            break;
         }
 
         usleep(100000); // 100ms待機
@@ -91,3 +97,4 @@ int main() {
     close(sockfd);
     return 0;
 }
+
