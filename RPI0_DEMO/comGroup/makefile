@@ -8,3 +8,9 @@ all:
 
 clean:
 	rm main
+
+
+gitKillUpdata:
+	git reset --hard
+	git fetch origin
+	git reset --hard origin/main

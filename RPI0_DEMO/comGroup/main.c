@@ -21,7 +21,7 @@
 #ifdef BROADCAST_ADDR
 #undef BROADCAST_ADDR
 #endif
-#define BROADCAST_ADDR "172.28.79.255"
+#define BROADCAST_ADDR "192.168.1.255"
 
 typedef enum RequestType{
     REQUEST_UNDEFINED,
