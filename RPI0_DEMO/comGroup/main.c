@@ -361,6 +361,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                         } else {
                             printf("Replied to %s: SUCCESS\n", sender_ip);
                         }
+                        return newAgent;
                     }
                     return agent;
                 }
