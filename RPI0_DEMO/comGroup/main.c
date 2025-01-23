@@ -31,18 +31,18 @@ void keyCheck(char *key,char *msg){
 #endif
 #define BROADCAST_ADDR "192.168.1.255"
 
-typedef enum RequestType{
-    REQUEST_UNDEFINED,
-    REQUEST_JOIN,
-    REQUEST_LEAVE,
-    REQUEST_TO_BE_MEMBER,
-    REQUEST_TO_BE_READER,
-    REQUEST_SUCCESS,
-    REQUEST_REJECT,
-    REQUEST_MOVE,
-}request_t;
+// request type
+#define  REQUEST_UNDEFINED      0x00
+#define  REQUEST_JOIN           0x01
+#define  REQUEST_LEAVE          0x02
+#define  REQUEST_TO_BE_MEMBER   0x03
+#define  REQUEST_TO_BE_READER   0x04
+#define  REQUEST_SUCCESS        0x05
+#define  REQUEST_REJECT         0x06
+#define  REQUEST_MOVE           0x07
 
 
+// broadcast data index
 #define DATA_REQUEST_TYPE        0x00
 #define DATA_GROUP_ID            0x01
 #define DATA_MY_ID               0x02
@@ -50,6 +50,7 @@ typedef enum RequestType{
 #define DATA_SIZE_OF_MEMBER      0x04
 #define DATA_GROUP_KEY           0x05
 
+// group key size
 #define SIZE_OF_DATA_GROUP_KEY   0x04
 
 
@@ -169,6 +170,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                 }
                 list >>= 1;
             }
+            printf("%d\n",agent->reader.sizeOfMember);
             printf("nextReaderId is %d\n",nextReaderId);
             buffer[DATA_REQUEST_MEMEBER_ID] = nextReaderId; //to reader
             buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
@@ -343,7 +345,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
         if((agent->base.groupID == buffer[DATA_GROUP_ID]) && (memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0)){
             switch(buffer[DATA_REQUEST_TYPE]){
                 case REQUEST_TO_BE_READER:{
-                    if(((buffer[DATA_REQUEST_MEMEBER_ID] >> agent->base.myID)&1) == 1){
+                    if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){
                         DEBUG_LOG("REQUEST_TO_BE_READER\n");
                         agent_p newAgent = createAgent(AgentReader);
                         newAgent->base.myID = 0;
@@ -359,8 +361,8 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                         } else {
                             printf("Replied to %s: SUCCESS\n", sender_ip);
                         }
-                        return newAgent;
                     }
+                    return agent;
                 }
                 default:{
                     DEBUG_LOG("UNSPUPPORTED REQUEST %d\n",buffer[DATA_REQUEST_TYPE]);
