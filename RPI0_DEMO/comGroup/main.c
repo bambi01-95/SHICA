@@ -139,6 +139,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
     memset(buffer, 0, BUF_SIZE);
     switch(agent->base.type){
         case AgentMember:{
+            DEBUG_LOG("REQUEST_LEAVE\n");
             buffer[DATA_REQUEST_TYPE] = REQUEST_LEAVE;
             buffer[DATA_GROUP_ID] = agent->base.groupID;
             buffer[DATA_MY_ID]    = agent->base.myID;
@@ -148,6 +149,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
             break;
         }
         case AgentReader:{
+            DEBUG_LOG("REQUEST_TO_BE_READER\n");
             buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_READER;
             buffer[DATA_GROUP_ID] = agent->base.groupID;
             buffer[DATA_MY_ID]    = agent->base.myID;
@@ -228,7 +230,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
             if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
                 switch(buffer[DATA_REQUEST_TYPE]){
                     case REQUEST_JOIN:{
-                        DEBUG_LOG("REQUEST_JOIN\n");
+                        DEBUG_LOG("REQUEST_JOIN");
                         int list = agent->reader.sizeOfMember;
                         int newId = 0;
                         while(list){
@@ -276,6 +278,10 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                         } else {
                             printf("Replied to %s: SUCCESS\n", sender_ip);
                         }
+                        break;
+                    }
+                    default{
+                        DEBUG_LOG("UNSPUPPORTED REQUEST %d\n",buffer[DATA_REQUEST_TYPE]);
                         break;
                     }
                 }
