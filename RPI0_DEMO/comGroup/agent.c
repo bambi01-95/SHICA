@@ -54,9 +54,9 @@ agent_p _createAgent(agent_t type,int size){
 }
 #define createAgent(TYPE) _createAgent(TYPE,sizeof(struct TYPE))
 
-agent_p _check(agent_p node, enum Type type, char *file, int line)
+agent_p _check(agent_p node,enum AgentType type, char *file, int line)
 {
-    if (getType(node) != type) {
+    if (node->base.type != type) {
         printf("%s line %d: expected type %d got type %d\n", file, line, type, node->base.type);
         exit(1);
     }
