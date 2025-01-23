@@ -1,13 +1,11 @@
+#include "broadcast.c"
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <netdb.h> // 追加: getnameinfo と NI_NUMERICHOST のため
+#include <netdb.h>  // getnameinfoとNI_NUMERICHOSTのため
 #include <net/if.h> // IFF_LOOPBACKのため
-#include "broadcast.c"
-
-
 
 // 自身のネットワークインターフェースIPアドレスを取得する関数
 int get_network_ip(char *ip_buffer, size_t buffer_size) {
@@ -59,10 +57,8 @@ int main() {
         return -1;
     }
 
-    // 送信ソケット作成とノンブロッキング化
-    if (create_broadcast_socket(&send_sockfd, &broadcast_addr) == 0) {
-        set_nonblocking(send_sockfd);
-    } else {
+    // 送信ソケット作成とブロードキャストアドレス設定
+    if (create_broadcast_socket(&send_sockfd, &broadcast_addr) != 0) {
         close(recv_sockfd);
         return -1;
     }
@@ -81,8 +77,21 @@ int main() {
 
             printf("Received from %s: %s\n", sender_ip, buffer);
 
-            // 受信後に「world」を送信
-            send_broadcast_nonblocking(send_sockfd, &broadcast_addr, "world", 5);
+            // 受信したアドレスに "world" を送信
+            ssize_t sent = sendto(send_sockfd, "world", 5, 0, (struct sockaddr *)&sender_addr, addr_len);
+            if (sent < 0) {
+                perror("sendto");
+            } else {
+                printf("Replied to %s: world\n", sender_ip);
+            }
+
+            // "join" をブロードキャストで送信
+            ssize_t broadcast_sent = send_broadcast_nonblocking(send_sockfd, &broadcast_addr, "join", 4);
+            if (broadcast_sent < 0) {
+                printf("Failed to broadcast join\n");
+            } else {
+                printf("Broadcasted: join\n");
+            }
         }
 
         usleep(100000); // 100ms待機してループを回す
