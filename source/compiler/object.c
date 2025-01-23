@@ -83,8 +83,9 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
     } \
 })
 
-void fatal(char *msg, ...)
-{
+void _fatal(char*s, int line,char *msg, ...)
+{   
+    printf("%s line %d:\n",s,line);
     va_list ap;
     va_start(ap, msg);
     fprintf(stderr, "\n d-.-b ERROR:");
@@ -93,6 +94,7 @@ void fatal(char *msg, ...)
     va_end(ap);
     exit(1);
 }
+#define fatal(...) _fatal(__FILE__,__LINE__,__VA_ARGS__)
 
 #define out(A) printf("line %4d: %s\n",__LINE__,A)
 #define line() printf("         line %4d: ",__LINE__)
@@ -549,7 +551,6 @@ oop _newCharChar(char number)
 
 oop _newStrChar(char* number)
 {
-    assert(strlen(number)==2);
     char value  = number[0];
     return (oop)(((intptr_t)value << TAGBITS) | TAGCHA);
 }

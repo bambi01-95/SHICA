@@ -87,6 +87,24 @@ enum instrac Binop_oprand(enum Type type,enum binop binop,int line){
             }
             break;
         }
+        case _Char:{
+            switch(binop){
+                case AND: fatal("line %d oprand error: logic and cannot apply Char type\n",line);
+                case OR:  fatal("line %d oprand error: logic or cannot apply Char type\n",line);
+                case EQ: return c_EQ; 
+                case NE: return c_NE; 
+                case LT: return c_LT; 
+                case LE: return c_LE; 
+                case GE: return c_GE;                  
+                case GT: return c_GT; 
+                case ADD:return c_ADD;
+                case SUB:return c_SUB;
+                case MUL:return c_MUL;
+                case DIV:return c_DIV;
+                case MOD: fatal("line %d oprand error: MOD cannot apply Char type\n",line);
+                default: printf("this cannot happen Binop_oprand Char\n");
+            }
+        }
         case String:{            //now
             switch(binop){
                 case AND: fatal("line %d oprand error: logic and cannot apply String type\n",line);
@@ -105,10 +123,6 @@ enum instrac Binop_oprand(enum Type type,enum binop binop,int line){
                 default: printf("this cannot happen Binop_oprand Double\n");
             }
             break;
-        }
-        case _Char:{
-            fprintf(stderr,"not yet\n");
-            exit(1);
         }
         default:{
             fprintf(stderr,"%s has not been applied to calculations\n",TYPENAME[type]);
@@ -209,12 +223,13 @@ oop rePair(oop p,oop tail){
 void manage(oop program,enum Type type){
     int size  = 0;
     switch(type){
+        case _Char: break;
         case _Integer:
         case _Float:  program->Array.number += 3;break;
         case _Long:
         case _Double: program->Array.number += 7;break;
         default:
-            fatal("manage error: unsupported type\n");
+            fatal("manage error: unsupported type %d\n",type);
     }
     return;
 }
@@ -312,7 +327,6 @@ int child_type(oop exp,oop vnt){
             }
             default:break;
         }
-
         int r = child_type(get(exp,Binop,rhs),vnt);
         switch(l){
             case _Integer:
@@ -523,6 +537,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 	    switch (get(exp, Unyop,op)){
             case NEG:{
                 switch(type){
+                    case _Char:    emitIO(c_load,_newChar(-1),_Char)  ;emitI(c_MUL);break;
                     case _Integer: emitII(i_load,-1)           ;emitI(i_MUL);break;
                     case _Long:    emitIO(l_load,_newLong(-1)  ,_Long)  ;emitI(l_MUL);break;
                     case _Float:   emitIO(f_load,_newFloat(-1) ,_Float) ;emitI(f_MUL);break;

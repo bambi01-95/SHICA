@@ -9,10 +9,13 @@
 void setting_communicate(){
     //Event Function
                 /*funcname,  libnum, funcnum, num_args, args_type, num_of_pin,　pin_value */
-    newEventFunc(COMMUNICATE_WiFi_RECEIVE_E, COMMUNICATE, 0, 0, 0, 0, 0);
+    newEventFunc(wifiReceived,COMMUNICATELIB, COMMUNICATE_WiFi_RECEIVE_E, 3, list(_Integer,_Integer,_Integer), 1, list(Undefined));
+
     //Primitive
                 /*funcname,  libnum, funcnum, return_type, num_args, args_type */
-    newPrimitive(COMMUNICATE_WiFi_SEND_P, COMMUNICATE, 0, Undefined, 0, 0);
-    newPrimitive(COMMUNICATE_WiFi_BUILD_GROUP_P, COMMUNICATE, 1, Undefined, 0, 0);
+    newPrimitive(wifiSendVal, COMMUNICATELIB, COMMUNICATE_WiFi_SEND_P, Undefined, 2, _Integer, _Integer);
+    newPrimitive(wifiBldGroup, COMMUNICATELIB, COMMUNICATE_WiFi_BUILD_GROUP_P, Undefined, 2, _Integer,String);
     return;
 }
+
+#endif

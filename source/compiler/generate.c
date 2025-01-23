@@ -128,6 +128,17 @@ oop CodeWrite(oop program){
             case d_MUL:  continue;
             case d_DIV:  continue;
 
+            case c_EQ: continue;
+            case c_NE: continue;
+            case c_LT: continue;
+            case c_LE: continue;
+            case c_GE: continue;
+            case c_GT: continue;
+            case c_ADD: continue;
+            case c_SUB: continue;
+            case c_MUL: continue;
+            case c_DIV: continue;
+
             case s_EQ:   continue; 
             case s_NE:   continue; 
             case s_LT:   continue; 

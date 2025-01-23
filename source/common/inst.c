@@ -71,6 +71,17 @@ d_SUB,
 d_MUL,
 d_DIV,
 
+c_EQ,
+c_NE,
+c_LT,
+c_LE,
+c_GE,
+c_GT,
+c_ADD,
+c_SUB,
+c_MUL,
+c_DIV,
+
 s_EQ,
 s_NE,
 s_LT,
@@ -193,6 +204,19 @@ char* INSTNAME[s_PRINT + 1] = {
 "d_SUB",
 "d_MUL",
 "d_DIV",
+
+"c_EQ",
+"c_NE",
+"c_LT",
+"c_LE",
+"c_GE",
+"c_GT",
+"c_ADD",
+"c_SUB",
+"c_MUL",
+"c_DIV",
+
+
 
 "s_EQ",
 "s_NE",

@@ -208,6 +208,17 @@ oop printCode(oop program){
             case d_SUB:  printf("d_SUB\n");continue;
             case d_MUL:  printf("d_MUL\n");continue;
             case d_DIV:  printf("d_DIV\n");continue;
+            case c_EQ:   printf("c_EQ\n");continue;
+            case c_NE:   printf("c_NE\n");continue;
+            case c_LT:   printf("c_LT\n");continue;
+            case c_LE:   printf("c_LE\n");continue;
+            case c_GE:   printf("c_GE\n");continue;
+            case c_GT:   printf("c_GT\n");continue;
+            case c_ADD:  printf("c_ADD\n");continue;
+            case c_SUB:  printf("c_SUB\n");continue;
+            case c_MUL:  printf("c_MUL\n");continue;
+            case c_DIV:  printf("c_DIV\n");continue;
+            
             case s_EQ:   printf("d_EQ\n");continue; 
             case s_NE:   printf("d_NE\n");continue; 
             case s_LT:   printf("d_LT\n");continue; 

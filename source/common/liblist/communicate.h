@@ -2,13 +2,13 @@
 #ifndef COMMUNICATE_H
 #define COMMUNICATE_H
 
-extern enum GPIOLIB_E{
+extern enum COMMUNICATE_E{
     COMMUNICATE_WiFi_RECEIVE_E,
-} GPIOLIB_E;
+} COMMUNICATE_E;
 
-extern enum GPIOLIB_P{
+extern enum COMMUNICATE_P{
     COMMUNICATE_WiFi_SEND_P,
     COMMUNICATE_WiFi_BUILD_GROUP_P,
-} GPIOLIB_P;
+} COMMUNICATE_P;
 
 #endif
