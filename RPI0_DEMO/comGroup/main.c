@@ -100,7 +100,7 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
                 DEBUG_LOG("same ip\n");
                 continue;
             }
-            printf("Received from %s: %s\n", sender_ip, buf);
+            printf("\nReceived from %s: %s\n", sender_ip, buf);
             if(buf[DATA_GROUP_ID] == requestbuf[DATA_GROUP_ID] && memcmp(buf + DATA_GROUP_KEY, requestbuf + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
                 switch(buf[DATA_REQUEST_TYPE]){
                     case REQUEST_TO_BE_MEMBER:{
@@ -109,7 +109,7 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
                         agent->base.groupID = buf[DATA_GROUP_ID];
                         agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY);
                         memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY);
-                        DEBUG_LOG("Join Group Success\n");
+                        DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
                         return agent;
                     }
                     case REQUEST_REJECT:{
@@ -187,7 +187,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
             if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
                 continue;
             }
-            printf("Received from %s: %s\n", sender_ip, buffer);
+            printf("\nReceived from %s: %s\n", sender_ip, buffer);
             if(buffer[DATA_GROUP_ID] == agent->base.groupID && memcmp(buffer + DATA_GROUP_KEY, agent->reader.groupKey, SIZE_OF_DATA_GROUP_KEY) == 0){
                 switch(buffer[DATA_REQUEST_TYPE]){
                     case REQUEST_SUCCESS:{
@@ -224,7 +224,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
             if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
                 return agent;
             }
-            printf("Received from %s: %s\n", sender_ip, buffer);
+            printf("\nReceived from %s: %s\n", sender_ip, buffer);
 
 
             if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
@@ -262,6 +262,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                             } else {
                                 printf("Replied to %s: TO_BE_MEMBER\n", sender_ip);
                             }
+                            printMember(buffer[DATA_SIZE_OF_MEMBER]);
                         }
                         break;
                     }
@@ -285,6 +286,9 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                         break;
                     }
                 }
+            }else{
+                DEBUG_LOG("UNSPUPPORTED GROUP %d\n",buffer[DATA_GROUP_ID]);
+                DEBUG_LOG("UNSPUPPORTED GROUP KEY %s\n",buffer + DATA_GROUP_KEY);
             }
         }
         usleep(100000); // 100ms待機してループを回す
@@ -325,7 +329,14 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                     }
                     return newAgent;
                 }
+                default:{
+                    DEBUG_LOG("UNSPUPPORTED REQUEST %d\n",buffer[DATA_REQUEST_TYPE]);
+                    break;
+                }
             }
+        }else{
+            DEBUG_LOG("UNSPUPPORTED GROUP %d\n",buffer[DATA_GROUP_ID]);
+            DEBUG_LOG("UNSPUPPORTED GROUP KEY %s\n",buffer + DATA_GROUP_KEY);
         }
     }
     return agent;
