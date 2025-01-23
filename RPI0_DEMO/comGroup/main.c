@@ -274,6 +274,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                         }
                         else{
                             //send TO_BE_MEMBER
+                            agent->reader.sizeOfMember |= (1 << newId);
                             buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_MEMBER;
                             buffer[DATA_MY_ID] = agent->base.myID;
                             buffer[DATA_REQUEST_MEMEBER_ID] = (1 << newId);
@@ -282,7 +283,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                             if (sent < 0) {
                                 perror("sendto");
                             } else {
-                                printf("Replied to %s: TO_BE_MEMBER\n", sender_ip);
+                                printf("Replied to %s: TO_BE_MEMBER given ID %d\n", sender_ip,newId);
                             }
                             // printMember(buffer[DATA_SIZE_OF_MEMBER]);
                         }
