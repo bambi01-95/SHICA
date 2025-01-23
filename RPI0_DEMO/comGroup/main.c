@@ -294,6 +294,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                 if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
                 }
+                buffer[DATA_GROUP_KEY + SIZE_OF_DATA_GROUP_KEY] = '\0';
                 if(memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) != 0){
                 DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->reader.groupKey);
                 }
@@ -346,6 +347,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
             if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
             }
+            buffer[DATA_GROUP_KEY + SIZE_OF_DATA_GROUP_KEY] = '\0';
             if(memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) != 0){
                 DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->member.groupKey);
             }
