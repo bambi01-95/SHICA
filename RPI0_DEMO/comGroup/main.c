@@ -339,7 +339,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                     if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){
                         DEBUG_LOG("REQUEST_TO_BE_READER\n");
                         agent_p newAgent = createAgent(AgentReader);
-                        newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);//remove my id
+                        newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << (agent->base.myID-1));//remove my id
                         newAgent->base.myID = 0;
                         newAgent->base.groupID = buffer[DATA_GROUP_ID];
                         printf("current Member is %d\n",newAgent->reader.sizeOfMember);
