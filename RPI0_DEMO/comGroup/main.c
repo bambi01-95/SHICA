@@ -278,6 +278,8 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                         else{
                             //send TO_BE_MEMBER
                             agent->reader.sizeOfMember |= (1 << newId);
+                            printf("current Member is ");
+                            printMember(agent->reader.sizeOfMember);
                             buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_MEMBER;
                             buffer[DATA_MY_ID]        = newId;
                             buffer[DATA_REQUEST_MEMEBER_ID] = (1 << newId);
@@ -350,7 +352,9 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                         agent_p newAgent = createAgent(AgentReader);
                         newAgent->base.myID = 0;
                         newAgent->base.groupID = buffer[DATA_GROUP_ID];
-                        newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);
+                        newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);//remove my id
+                        printf("current Member is ");
+                        printMember(newAgent->reader.sizeOfMember);
                         newAgent->reader.groupKey = strdup(agent->reader.groupKey);
 
                         buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
