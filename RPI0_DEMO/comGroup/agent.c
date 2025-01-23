@@ -22,8 +22,8 @@ struct AgentBase{
 
 struct AgentReader{
     struct AgentBase base;
-    char sizeOfMember;
     char *groupKey;
+    char sizeOfMember;
 };
 
 struct AgentMember{

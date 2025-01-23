@@ -207,8 +207,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                     }
                 }
                 break;
-            }
-        }else{
+            }else{
             printAgentData(agent);
                 if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
@@ -219,6 +218,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                 keyCheck(agent->reader.groupKey,buffer + DATA_GROUP_KEY);
                 }
             }
+        }
     }
     return agent;
 }
