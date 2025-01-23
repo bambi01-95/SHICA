@@ -162,15 +162,15 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
             buffer[DATA_GROUP_ID] = agent->base.groupID;
             buffer[DATA_MY_ID]    = agent->base.myID;
             char nextReaderId = 0;
-            char list = agent->reader.sizeOfMember;
+            unsigned char list = agent->reader.sizeOfMember;
             while(list){//find next reader
                 nextReaderId++;
-                if((list & 0x01) == 1){
+                if((list & 1U) == 1){
                     break;
                 }
                 list >>= 1;
             }
-            printf("%d\n",agent->reader.sizeOfMember);
+            printf("current Member is %d\n",agent->reader.sizeOfMember);
             printf("nextReaderId is %d\n",nextReaderId);
             buffer[DATA_REQUEST_MEMEBER_ID] = nextReaderId; //to reader
             buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
@@ -338,10 +338,10 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                 case REQUEST_TO_BE_READER:{
                     if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){
                         DEBUG_LOG("REQUEST_TO_BE_READER\n");
+                        newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);//remove my id
                         agent_p newAgent = createAgent(AgentReader);
                         newAgent->base.myID = 0;
                         newAgent->base.groupID = buffer[DATA_GROUP_ID];
-                        newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);//remove my id
                         printf("current Member is %d\n",newAgent->reader.sizeOfMember);
                         newAgent->reader.groupKey = strdup(agent->reader.groupKey);
 
