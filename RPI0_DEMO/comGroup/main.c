@@ -97,7 +97,7 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
             char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
             // 自分自身の送信データを無視
             if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
-                printf("same ip\n");
+                DEBUG_LOG("same ip\n");
                 continue;
             }
             printf("Received from %s: %s\n", sender_ip, buf);
@@ -109,9 +109,11 @@ agent_p joinGroupRrequet(struct SocketInfo *socketInfo, char *requestbuf){
                         agent->base.groupID = buf[DATA_GROUP_ID];
                         agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY);
                         memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY);
+                        DEBUG_LOG("Join Group Success\n");
                         return agent;
                     }
                     case REQUEST_REJECT:{
+                        DEBUG_LOG("Join Group Reject\n");
                         return NULL;
                     }
                 }
@@ -226,6 +228,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
             if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
                 switch(buffer[DATA_REQUEST_TYPE]){
                     case REQUEST_JOIN:{
+                        DEBUG_LOG("REQUEST_JOIN\n");
                         int list = agent->reader.sizeOfMember;
                         int newId = 0;
                         while(list){
@@ -262,11 +265,12 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                     }
 
                     case REQUEST_LEAVE:{
+                        DEBUG_LOG("REQUEST_LEAVE\n");
                         agent->reader.sizeOfMember &= ~(1 << buffer[DATA_MY_ID]); 
                         //send SUCCESS
                         buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
                         buffer[DATA_MY_ID] = agent->base.myID;
-                        ssize_t sent = sendto(socketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&socketInfo->sender_addr, socketInfo->addr_len);
+                        int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
                         if (sent < 0) {
                             perror("sendto");
                         } else {
@@ -298,6 +302,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
         if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
             switch(buffer[DATA_REQUEST_TYPE]){
                 case REQUEST_TO_BE_READER:{
+                    DEBUG_LOG("REQUEST_TO_BE_READER\n");
                     agent_p newAgent = createAgent(AgentReader);
                     newAgent->base.myID = 0;
                     newAgent->base.groupID = buffer[DATA_GROUP_ID];
@@ -306,7 +311,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
 
                     buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
                     buffer[DATA_MY_ID]        = agent->base.myID;
-                    ssize_t sent = sendto(SocketInfo->send_sockfd, buffer, BUF_SIZE, 0, (struct sockaddr *)&SocketInfo->sender_addr, SocketInfo->addr_len);
+                    int sent = send_broadcast_nonblocking(SocketInfo->send_sockfd, &SocketInfo->broadcast_addr, buffer, BUF_SIZE);
                     if (sent < 0) {
                         perror("sendto");
                     } else {
@@ -379,7 +384,7 @@ int main(int argc, char *argv[])
         while(1){
             switch(agent->base.type){
                 case AgentMember:{
-                    DEBUG_LOG("AgentMember");
+                    DEBUG_LOG("\nAgentMember\n");
                     while(time(NULL) - start < 10){
                         agent = triWifiReceive(agent,&socketInfo);
                     }
@@ -388,7 +393,7 @@ int main(int argc, char *argv[])
                     return 0;
                 }
                 case AgentReader:{
-                    DEBUG_LOG("AgentReader");
+                    DEBUG_LOG("\nAgentReader\n");
                     while(agent->base.type == AgentReader){
                         agent = groupManage(agent,&socketInfo);
                     }
@@ -400,7 +405,7 @@ int main(int argc, char *argv[])
         while(1){
             switch(agent->base.type){
                 case AgentMember:{
-                    DEBUG_LOG("AgentMember");
+                    DEBUG_LOG("\nAgentMember\n");
                     while(agent->base.type == AgentMember){
                         agent = triWifiReceive(agent,&socketInfo);
                     }
@@ -408,7 +413,7 @@ int main(int argc, char *argv[])
                     break;
                 }
                 case AgentReader:{
-                    DEBUG_LOG("AgentReader");
+                    DEBUG_LOG("\nAgentReader\n");
                     while(time(NULL) - start < 10){
                         agent = groupManage(agent,&socketInfo);
                     }
