@@ -280,7 +280,7 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                         }
                         break;
                     }
-                    default{
+                    default:{
                         DEBUG_LOG("UNSPUPPORTED REQUEST %d\n",buffer[DATA_REQUEST_TYPE]);
                         break;
                     }
