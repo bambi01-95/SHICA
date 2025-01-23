@@ -169,6 +169,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
                 nextReaderId++;
                 list >>= 1;
             }
+            printf("nextReaderId is %d\n",nextReaderId);
             buffer[DATA_REQUEST_MEMEBER_ID] = nextReaderId; //to reader
             buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
             memcpy(buffer + DATA_GROUP_KEY, agent->reader.groupKey, SIZE_OF_DATA_GROUP_KEY);
