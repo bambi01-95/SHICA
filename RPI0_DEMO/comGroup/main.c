@@ -291,8 +291,12 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                     }
                 }
             }else{
+                if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
+                }
+                if(memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) != 0){
                 DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->reader.groupKey);
+                }
             }
         }
         usleep(100000); // 100ms待機してループを回す
@@ -313,7 +317,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
             return agent;
         }
         printf("Received from %s: %s\n", sender_ip, buffer);
-        if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
+        if((agent->base.groupID == buffer[DATA_GROUP_ID]) && (memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0)){
             switch(buffer[DATA_REQUEST_TYPE]){
                 case REQUEST_TO_BE_READER:{
                     DEBUG_LOG("REQUEST_TO_BE_READER\n");
@@ -339,8 +343,12 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                 }
             }
         }else{
+            if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
+            }
+            if(memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) != 0){
                 DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->member.groupKey);
+            }
         }
     }
     return agent;
