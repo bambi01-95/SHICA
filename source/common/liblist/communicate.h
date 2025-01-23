@@ -1,0 +1,14 @@
+
+#ifndef COMMUNICATE_H
+#define COMMUNICATE_H
+
+extern enum GPIOLIB_E{
+    COMMUNICATE_WiFi_RECEIVE_E,
+} GPIOLIB_E;
+
+extern enum GPIOLIB_P{
+    COMMUNICATE_WiFi_SEND_P,
+    COMMUNICATE_WiFi_BUILD_GROUP_P,
+} GPIOLIB_P;
+
+#endif

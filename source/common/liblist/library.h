@@ -3,6 +3,7 @@
 
 extern enum LIB{
     STDLIB,
+    COMMUNICATELIB,
     USERLIB,
 #if RPI
     GPIOLIB,

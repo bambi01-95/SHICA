@@ -1,0 +1,36 @@
+
+int MYID = 0;
+
+state default{
+    entry(){
+        MYID = wifiGroupJoin()
+        gpioSetMode(17,1) //LED, output
+		gpioSetMode(27,0) //Button, input
+        gpioSetPullUpDown(27,2) //Button, pull down
+        state off
+    }
+}
+
+state off{
+    entry(){
+        gpioSet(27,0)
+    }
+	triReadGPIO(int p:(p&(1<<27))==0){
+		state led_on
+	}
+    triWiFiRecive(int id){
+        state on
+    }
+}
+
+state on{
+    entry(){
+        gpioSet(27,1)
+    }
+	triReadGPIO(int p:(p&(1<<27))==0){
+		state led_on
+	}
+    triWiFiRecive(int id:id==ALL){
+        state off
+    }
+}

@@ -19,6 +19,10 @@ oop Call_Primitive(oop process,oop GM){
             SHICA_PRINTF("this is not supportted\n");
             break;
         }
+        case COMMUNICATELIB:{
+            lib_communicate(process,GM);
+            break;
+        }
 #if RPI
         case GPIOLIB:{
             lib_gpiolib(process,GM);

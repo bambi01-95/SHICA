@@ -357,6 +357,9 @@ oop setCore(int lib_num,int eve_num,oop stack,int numThread){
         case STDLIB:{
             return Event_stdlib(eve_num,stack,numThread);
         }
+        case COMMUNICATELIB:{
+            return Event_communicate(eve_num,stack,numThread);
+        }
         case USERLIB:{
             return 0;
         }
