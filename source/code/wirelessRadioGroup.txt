@@ -3,7 +3,7 @@ int MYID = 0;
 
 state default{
     entry(){
-        MYID = wifiGroupJoin()
+        MYID = wifiGroupJoin("ipaddr",60000)
         gpioSetMode(17,1) //LED, output
 		gpioSetMode(27,0) //Button, input
         gpioSetPullUpDown(27,2) //Button, pull down
