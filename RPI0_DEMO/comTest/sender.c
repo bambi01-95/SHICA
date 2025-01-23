@@ -1,9 +1,51 @@
 #include "broadcast.c"
+#include <ifaddrs.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+
+
+#include <netdb.h> // 追加: getnameinfo と NI_NUMERICHOST のため
+#include "broadcast.c"
+// 自身のIPアドレスを取得する関数
+int get_own_ip(char *ip_buffer, size_t buffer_size) {
+    struct ifaddrs *ifaddr, *ifa;
+    int family;
+
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        return -1;
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) continue;
+
+        family = ifa->ifa_addr->sa_family;
+        if (family == AF_INET) { // IPv4のみを対象
+            getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
+                        ip_buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
+            break; // 最初のIPv4アドレスを取得
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return 0;
+}
 
 int main() {
     int sockfd;
-    struct sockaddr_in broadcast_addr, recv_addr;
+    struct sockaddr_in broadcast_addr, recv_addr, sender_addr;
     char buffer[BUF_SIZE];
+    char own_ip[INET_ADDRSTRLEN];
+    socklen_t addr_len = sizeof(sender_addr);
+
+    // 自身のIPアドレスを取得
+    if (get_own_ip(own_ip, sizeof(own_ip)) != 0) {
+        fprintf(stderr, "Failed to get own IP address\n");
+        return -1;
+    }
+    printf("Own IP: %s\n", own_ip);
 
     // 送信ソケット作成とノンブロッキング化
     if (create_broadcast_socket(&sockfd, &broadcast_addr) == 0) {
@@ -29,11 +71,23 @@ int main() {
     send_broadcast_nonblocking(sockfd, &broadcast_addr, "Hello", 5);
 
     // メッセージ受信
-    if (receive_broadcast_nonblocking(sockfd, buffer, sizeof(buffer)) == 0) {
-        printf("Received: %s\n", buffer);
+    while (1) {
+        ssize_t ret = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&sender_addr, &addr_len);
+        if (ret > 0) {
+            buffer[ret] = '\0'; // Null終端
+            char *sender_ip = inet_ntoa(sender_addr.sin_addr);
+
+            // 自分自身のデータを無視
+            if (strcmp(sender_ip, own_ip) == 0) {
+                continue;
+            }
+            printf("Received from %s: %s\n", sender_ip, buffer);
+            break;
+        }
+
+        usleep(100000); // 100ms待機
     }
 
     close(sockfd);
     return 0;
 }
-
