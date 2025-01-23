@@ -190,6 +190,7 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
             if(buffer[DATA_GROUP_ID] == agent->base.groupID && memcmp(buffer + DATA_GROUP_KEY, agent->reader.groupKey, SIZE_OF_DATA_GROUP_KEY) == 0){
                 switch(buffer[DATA_REQUEST_TYPE]){
                     case REQUEST_SUCCESS:{
+                        DEBUG_LOG("Leave Group Success\n");
                         return NULL;
                     }
                     default:{

@@ -64,6 +64,7 @@ void printAgentData(agent_p agent){
             printf("AgentReader\n");
             printf("myID:%d\n",agent->base.myID);
             printf("groupID:%d\n",agent->base.groupID);
+            printf("groupKey:%s\n",agent->reader.groupKey);
             printf("sizeOfMember:%d\n",agent->reader.sizeOfMember);
             break;
         }
