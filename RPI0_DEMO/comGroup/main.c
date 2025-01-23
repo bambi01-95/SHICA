@@ -226,16 +226,6 @@ agent_p leaveGroupRequest(agent_p agent,struct SocketInfo *socketInfo){
     return agent;
 }
 
-void printMember(unsigned char sizeOfMember){
-    for (char i = 7; i >= 0; i--) {
-        if ((sizeOfMember & (1U << i)) != 0) {
-            putchar('1');
-        }else{
-            putchar('0');
-        }
-    }
-    printf("\n");
-}
 
 
 agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
@@ -277,10 +267,8 @@ agent_p groupManage(agent_p agent,struct SocketInfo *socketInfo){
                         }
                         else{
                             //send TO_BE_MEMBER
-                            agent->reader.sizeOfMember |= (1 << newId);
-                            printf("current Member is ");
-                            unsigned char sizeOfMember = agent->reader.sizeOfMember;
-                            printMember(sizeOfMember);
+                            agent->reader.sizeOfMember |= (1U << newId);
+                            printf("current Member is %d\n",agent->reader.sizeOfMember);
                             buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_MEMBER;
                             buffer[DATA_MY_ID]        = newId;
                             buffer[DATA_REQUEST_MEMEBER_ID] = (1 << newId);
@@ -354,9 +342,7 @@ agent_p triWifiReceive(agent_p agent, struct SocketInfo *SocketInfo){
                         newAgent->base.myID = 0;
                         newAgent->base.groupID = buffer[DATA_GROUP_ID];
                         newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << agent->base.myID);//remove my id
-                        printf("current Member is ");
-                        unsigned char sizeOfMember = newAgent->reader.sizeOfMember;
-                        printMember(sizeOfMember);
+                        printf("current Member is %d\n",newAgent->reader.sizeOfMember);
                         newAgent->reader.groupKey = strdup(agent->reader.groupKey);
 
                         buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
