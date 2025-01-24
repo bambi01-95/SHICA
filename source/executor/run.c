@@ -359,7 +359,6 @@ oop setCore(int lib_num,int eve_num,oop stack,int numThread){
             return Event_stdlib(eve_num,stack,numThread);
         }
         case COMMUNICATELIB:{
-            DEBUG_LOG("COMMUNICATELIB SETTING\n");
             return Event_communicate(eve_num,stack,numThread);
         }
         case USERLIB:{
