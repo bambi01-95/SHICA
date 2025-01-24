@@ -73,7 +73,7 @@ oop eve_wifi_receive(oop core){
 #if DEBUG
             DEBUG_LOG("\nReceived from %s: %s\n", sender_ip, buffer);
 #else
-            SHICA_PRINTF("\nReceived from %s: %s\n", sender_ip, buffer); 
+            SHICA_PRINTF("\nReceived from %s", sender_ip); 
 #endif
 
             if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(getAgentGroupKey(agent), buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
@@ -173,7 +173,7 @@ oop eve_wifi_receive(oop core){
                             #if DEBUG
                             DEBUG_LOG("REQUEST_TRIGER\n");
                             #else
-                            SHICA_PRINTF("REQUEST_TRIGER\n");
+                            SHICA_PRINTF("REQUEST_TRIGER");
                             #endif
                             //CHECK ME: with wifi_send_p
                             // Success Message
@@ -201,8 +201,7 @@ oop eve_wifi_receive(oop core){
                 }
                 Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_DATA]));
                 isOnce = 1;
-            }else
-            {
+            }else{
                 evalEventArgsThread->Thread.stack->Array.size = 4;
             }
             evalEventArgsThread->Thread.pc = thread->Thread.base + thread->Thread.condRelPos;
@@ -299,7 +298,9 @@ void communicate_wifi_send(oop process,oop GM){
     getInt(mpc);int size_args = int_value;
     int sendToId = api();
     int value = api();
-    SHICA_PRINTF("sendToId:%d value:%d\n",sendToId,value);
+#if DEBUG
+    DEBUG_LOG("sendToId:%d value:%d\n",sendToId,value);
+#endif
     if(MY_AGENT_INFO == 0){
         SHICA_PRINTF("MY_AGENT_INFO is not set\n");
         return;
