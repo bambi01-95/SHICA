@@ -24,6 +24,11 @@ state off{
 		wifiSendVal(-1,1)
 		state on
 	}
+	wifiReceived(int from,int id:(id==1),int data){
+		if(data==1){
+			print("for me")
+		}
+	}
 }
 
 state on{
