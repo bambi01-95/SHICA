@@ -3,7 +3,7 @@
 
 #include "../../common/liblist/library.h"
 #include "./stdlib-execute.c"
-
+#include "./communicate-execute.c"
 #if RPI
 #include "./gpiolib-execute.c"
 #endif
