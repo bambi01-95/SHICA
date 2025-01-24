@@ -143,7 +143,9 @@ oop eve_wifi_receive(oop core){
                     case REQUEST_TO_BE_READER:{
                         if(agent->base.type == AgentMember){
                             if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){//checking for me or not
+                                #if DEBUG
                                 DEBUG_LOG("REQUEST_TO_BE_READER\n");
+                                #endif
                                 agent_p newAgent = createAgent(AgentReader);
                                 newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << (agent->base.myID-1));//remove my id
                                 newAgent->base.myID = 0;
@@ -166,7 +168,9 @@ oop eve_wifi_receive(oop core){
                     }
                     case REQUEST_TRIGER:{
                         if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){
+                            #if DEBUG
                             DEBUG_LOG("REQUEST_TRIGER\n");
+                            #endif
                             //CHECK ME: with wifi_send_p
                             // Success Message
 
@@ -233,14 +237,16 @@ oop eve_wifi_receive(oop core){
                         }
                     }
                     default:{
-
+                        #if DEBUG
                         DEBUG_LOG("UNSPUPPORTED REQUEST %d\n",buffer[DATA_REQUEST_TYPE]);
+                        #endif
                         break;
                     }
 
                 }
             }else{
                 printAgentData(agent);
+                #if DEBUG
                 if(agent->base.groupID != buffer[DATA_GROUP_ID]){
                 DEBUG_LOG("UNSPUPPORTED GROUP %d (!= %d)\n",buffer[DATA_GROUP_ID],agent->base.groupID);
                 }
@@ -248,6 +254,7 @@ oop eve_wifi_receive(oop core){
                 if(memcmp(agent->reader.groupKey, buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) != 0){
                 DEBUG_LOG("UNSPUPPORTED GROUP KEY %s (!=%s)\n",buffer + DATA_GROUP_KEY,agent->reader.groupKey);
                 }
+                #endif
             }
         }
 #else
@@ -397,6 +404,7 @@ void communicate_wifi_build_group(oop process,oop GM){
     // グループ参加リクエストの送信
     int ret = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buf, BUF_SIZE);
     if (ret < 0) {
+        printf("send_broadcast_nonblocking\n");
         agent_p agent = createAgent(AgentReader);
         agent->base.myID = 0;
         agent->base.groupID = groupID;
@@ -478,9 +486,7 @@ void lib_communicate(oop process,oop GM){
             return;
         }
         case COMMUNICATE_WiFi_BUILD_GROUP_P:{
-            DEBUG_LOG("build group\n");
             communicate_wifi_build_group(process,GM);
-            DEBUG_LOG("build group end\n");
             return;
         }
         default:{
