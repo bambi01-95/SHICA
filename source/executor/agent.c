@@ -72,10 +72,12 @@ char *getAgentGroupKey(agent_p agent){
         case AgentReader:{
             return agent->reader.groupKey;
         }
-        case AgentVisitor:{
-            return NULL;
+        case AgentVisitor:
+        default:{
+            printf("%s line %d UNKNOWN\n",__FILE__,__LINE__);
         }
     }
+    return 0;
 }
 
 void setAgentGroupKey(agent_p agent,char *groupKey){
@@ -90,6 +92,9 @@ void setAgentGroupKey(agent_p agent,char *groupKey){
         }
         case AgentVisitor:{
             break;
+        }
+        default:{
+            printf("%s line %d UNKNOWN\n",__FILE__,__LINE__);
         }
     }
 }
@@ -115,6 +120,9 @@ void printAgentData(agent_p agent){
         case AgentVisitor:{
             printf("AgentVisitor\n");
             break;
+        }
+        default:{
+            printf("%s line %d UNKNOWN\n",__FILE__,__LINE__);
         }
     }
 }

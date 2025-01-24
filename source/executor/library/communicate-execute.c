@@ -66,7 +66,7 @@ oop eve_wifi_receive(oop core){
         char buffer[BUF_SIZE];
         printf("receiving\n");
         ssize_t ret = recvfrom(socketInfo->recv_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
-        printf("ret is %d\n",ret);
+        printf("ret is %ld\n",ret);
         if (ret > 0) {
             buffer[ret] = '\0'; // Null終端
             char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
@@ -184,6 +184,7 @@ oop eve_wifi_receive(oop core){
     /* trigger data */
     int isOnce = 0;
     evalEventArgsThread->Thread.stack->Array.size = 1;//1:basepoint
+    unsigned char value = buffer[DATA_REQUEST_MEMEBER_ID];
     for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
         int isFalse = 0;
         oop thread = core->Core.threads[thread_i];
@@ -191,9 +192,9 @@ oop eve_wifi_receive(oop core){
         if(thread->Thread.condRelPos != 0){
             if(isOnce == 0){
                 Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_MY_ID]));
-                if(buffer[DATA_REQUEST_MEMEBER_ID] == ALL_MEMBER_ID){
+                if(value== ALL_MEMBER_ID){
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
-                }else if(buffer[DATA_REQUEST_MEMEBER_ID] == ((1U) << agent->base.myID -1)){
+                }else if(value == ((1U) << (agent->base.myID -1))){
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
                 }else{
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
@@ -223,9 +224,9 @@ oop eve_wifi_receive(oop core){
             gc_pushRoot((void*)&core);//CHECKME: is it need?
             oop data = newArray(2);
             Array_push(data,_newInteger(buffer[DATA_MY_ID]));
-                if(buffer[DATA_REQUEST_MEMEBER_ID] == ALL_MEMBER_ID){
+                if(value == ALL_MEMBER_ID){
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
-                }else if(buffer[DATA_REQUEST_MEMEBER_ID] == ((1U) << agent->base.myID -1)){
+                }else if(value == ((1U) << agent->base.myID -1)){
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
                 }else{
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
