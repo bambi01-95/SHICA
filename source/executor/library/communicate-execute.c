@@ -173,7 +173,7 @@ oop eve_wifi_receive(oop core){
                             #if DEBUG
                             DEBUG_LOG("REQUEST_TRIGER\n");
                             #else
-                            SHICA_PRINTF("REQUEST_TRIGER");
+                            SHICA_PRINTF(" REQUEST_TRIGER");
                             #endif
                             //CHECK ME: with wifi_send_p
                             // Success Message
@@ -219,6 +219,7 @@ oop eve_wifi_receive(oop core){
         
         //<条件が満たされたときの処理>/<Processing when the condition is met>
         if(!isFalse){
+            printf("trigger!!!\n");//remove
             //protect t:thread
             gc_pushRoot((void*)&core);//CHECKME: is it need?
             oop data = newArray(2);
@@ -233,6 +234,8 @@ oop eve_wifi_receive(oop core){
             Array_push(data,_newInteger(buffer[DATA_DATA]));
             gc_popRoots(1);
             enqueue(thread->Thread.queue,data);
+        }else{
+            printf("not trigger\n");//remove
         }
     }
 
