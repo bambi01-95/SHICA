@@ -403,6 +403,7 @@ void communicate_wifi_build_group(oop process,oop GM){
     
     // グループ参加リクエストの送信
     int ret = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buf, BUF_SIZE);
+    printf("send_broadcast_nonblocking\n");
     if (ret < 0) {
         printf("send_broadcast_nonblocking\n");
         agent_p agent = createAgent(AgentReader);
@@ -446,6 +447,7 @@ void communicate_wifi_build_group(oop process,oop GM){
 #if DEBUG
                         DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
 #endif
+                        printf("Join Group Success: my id is %d\n",agent->base.myID);
                         MY_AGENT_INFO->agent = agent;
                         return;
                     }
@@ -464,6 +466,7 @@ void communicate_wifi_build_group(oop process,oop GM){
         }
     }
     // タイムアウト
+    printf("BUILD GROUP\n");
     agent_p agent = createAgent(AgentReader);
     agent->base.myID = 0;
     agent->base.groupID = groupID;
