@@ -72,6 +72,8 @@ oop eve_wifi_receive(oop core){
             }
 #if DEBUG
             DEBUG_LOG("\nReceived from %s: %s\n", sender_ip, buffer);
+#else
+            SHICA_PRINTF("\nReceived from %s: %s\n", sender_ip, buffer); 
 #endif
 
             if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(getAgentGroupKey(agent), buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
@@ -170,6 +172,8 @@ oop eve_wifi_receive(oop core){
                         if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){
                             #if DEBUG
                             DEBUG_LOG("REQUEST_TRIGER\n");
+                            #else
+                            SHICA_PRINTF("REQUEST_TRIGER\n");
                             #endif
                             //CHECK ME: with wifi_send_p
                             // Success Message
@@ -268,9 +272,6 @@ oop eve_wifi_receive(oop core){
 
 oop Event_communicate(int eve_num,oop stack,int numThread){
     gc_pushRoot((void*)&stack);
-    printf("Event_communicate\n");
-    printf("eve_num:%d\n",eve_num);
-
     GC_PUSH(oop,core,0);
     switch(eve_num){
         case COMMUNICATE_WiFi_RECEIVE_E:{
@@ -438,7 +439,11 @@ void communicate_wifi_build_group(oop process,oop GM){
 #endif
                 continue;
             }
-            printf("\nReceived from %s: %s\n", sender_ip, buf);
+#if DEBUG
+            DEBUG_LOG("\nReceived from %s: %s\n", sender_ip, buf);
+#else
+            SHICA_PRINTF("\nReceived from %s: %s\n", sender_ip, buf);
+#endif
             if(buf[DATA_GROUP_ID] == groupID && memcmp(buf + DATA_GROUP_KEY, groupKey, SIZE_OF_DATA_GROUP_KEY) == 0){
                 switch(buf[DATA_REQUEST_TYPE]){
                     case REQUEST_TO_BE_MEMBER:{
