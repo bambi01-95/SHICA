@@ -84,7 +84,7 @@ oop eve_wifi_receive(oop core){
                             DEBUG_LOG("REQUEST_JOIN");
     #endif
                             int list = agent->reader.sizeOfMember;
-                            int newId = 0;
+                            int newId = 1;
                             while(list){
                                 if((list & 0x01) == 0){
                                     break;
@@ -92,7 +92,7 @@ oop eve_wifi_receive(oop core){
                                 newId++;
                                 list >>= 1;
                             }
-                            if(newId == 8){
+                            if(newId > MAX_MEMBER_SIZE){
                                 //send REJECT  
                                 buffer[DATA_REQUEST_TYPE] = REQUEST_REJECT;
                                 int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
@@ -104,14 +104,14 @@ oop eve_wifi_receive(oop core){
                             }
                             else{
                                 //send TO_BE_MEMBER
-                                agent->reader.sizeOfMember |= (1U << newId);
+                                agent->reader.sizeOfMember |= (1U <<(newId-1));
     #if DEBUG
                                 DEBUG_LOG("current Member is %d\n",agent->reader.sizeOfMember);
     #endif
                                 buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_MEMBER;
                                 buffer[DATA_MY_ID]        = newId;
-                                buffer[DATA_REQUEST_MEMEBER_ID] = (1 << newId);
-                                buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember | (1 << newId);
+                                buffer[DATA_REQUEST_MEMEBER_ID] = (1 << (newId-1));
+                                buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
                                 int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
                                 if (sent < 0) {
                                     perror("sendto");
@@ -480,7 +480,7 @@ void communicate_wifi_build_group(oop process,oop GM){
     // タイムアウト
     printf("BUILD GROUP\n");
     agent_p agent = createAgent(AgentReader);
-    agent->base.myID = 0;
+    agent->base.myID = 1;
     agent->base.groupID = groupID;
     agent->reader.sizeOfMember = (1U);
     agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
