@@ -56,8 +56,10 @@ struct AgentInfo{
 
 
 oop eve_wifi_receive(oop core){
+    printf("eve_wifi_receive\n");
     //corret 
 #if SBC
+    printf("SBC\n");    
         struct SocketInfo *socketInfo = MY_AGENT_INFO->socket;
         agent_p agent = MY_AGENT_INFO->agent;
         // メッセージ受信
@@ -269,7 +271,9 @@ oop eve_wifi_receive(oop core){
 
 oop Event_communicate(int eve_num,oop stack,int numThread){
     gc_pushRoot((void*)&stack);
-    //protect t:new thread
+    printf("Event_communicate\n");
+    printf("eve_num:%d\n",eve_num);
+
     GC_PUSH(oop,core,0);
     switch(eve_num){
         case COMMUNICATE_WiFi_RECEIVE_E:{
