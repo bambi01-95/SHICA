@@ -1,40 +1,10 @@
-state init{
-	entry(){
-		int v = gpioInitialise()
-        if(v<0){
-            print("Error")
-            gpioDelay(20000)
-            state init
-        }
-		wifiBldGroup("192.168.1.255",60000,12,"KUAS") //build Group
-        gpioSetMode(17,0) //LED, output
-		gpioSetMode(27,0) //Button, input
-        gpioSetPullUpDown(27,2) //Button, pull down
-		gpioDelay(1000000)
-		state off
-	}
-}
-
-state off{
-	entry(){
-		print("off")
-		gpioWrite(17,0)
-	}
-	triReadGPIO(int p:(p&(1<<27))==0){
-		wifiSendVal(-1,1)
-		state on
-	}
-}
 
 state on{
 	entry(){
 		print("on")
-		gpioWrite(17,1)
-	}
-	triReadGPIO(int p:(p&(1<<27))==0){
-		state off
+		wifiBldGroup("192.168.1.255",60000,12,"KUAS") //build Group
 	}
 	wifiReceived(int from,int id:(id==1),int data){
-		state off
+		print("Received from +data")
 	}
 }

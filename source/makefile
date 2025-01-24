@@ -11,6 +11,7 @@ all:
 vm:
 	gcc -o vm executor.c
 
+	
 run:
 	./vm
 
