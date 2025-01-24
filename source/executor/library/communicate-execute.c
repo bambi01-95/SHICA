@@ -63,6 +63,7 @@ oop eve_wifi_receive(oop core){
         // メッセージ受信
         char buffer[BUF_SIZE];
         ssize_t ret = recvfrom(socketInfo->recv_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
+        printf("ret is %d\n",ret);
         if (ret > 0) {
             buffer[ret] = '\0'; // Null終端
             char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
