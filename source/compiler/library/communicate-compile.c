@@ -14,7 +14,8 @@ void setting_communicate(){
     //Primitive
                 /*funcname,  libnum, funcnum, return_type, num_args, args_type */
     newPrimitive(wifiSendVal, COMMUNICATELIB, COMMUNICATE_WiFi_SEND_P, Undefined, 2, _Integer, _Integer);
-    newPrimitive(wifiBldGroup, COMMUNICATELIB, COMMUNICATE_WiFi_BUILD_GROUP_P, Undefined, 2, _Integer,String);
+    newPrimitive(wifiBldGroup, COMMUNICATELIB, COMMUNICATE_WiFi_BUILD_GROUP_P, Undefined, 4, String,_Integer,_Integer,String);
+    newPrimitive(wifiLeaveGroup, COMMUNICATELIB, COMMUNICATE_WiFi_LEAVE_GROUP_P, Undefined, 0);
     return;
 }
 

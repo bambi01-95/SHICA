@@ -38,10 +38,9 @@
 // }
 state init{
 	entry(){
-		wifiBldGroup("123.456.789.100",60000) //build Group
-		wifiSendVal(-1,1)
+		wifiBldGroup("172.28.68.255",60000,12,"KUAS") //build Group
 	}
 	wifiReceived(int from,int id:(id==0),int data){
-		print("Received")
+		wifiSendVal(-1,1)
 	}
 }

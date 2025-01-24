@@ -10,11 +10,11 @@
 #include "../common/liblist/stdlib.h"
 #include "../common/memory.c"
 
+#include "./agent.c"
 
 
 
-
-
+struct AgentInfo *MY_AGENT_INFO = 0;
 
 oop newBoolean(int flag) { return flag ? sys_true : sys_false; }
 
@@ -77,6 +77,7 @@ void main_execute(){
     //CHECK ME: GMとstackの違いは？使い分けは？
     GC_PUSH(oop,GM,newThread(pc,20));
     GC_PUSH(oop,stack,newArray(20));
+    gc_pushRoot((void*)&MY_AGENT_INFO);
 #else
     oop stack = newArray(20);
     oop GM    = newThread(pc,20);

@@ -1,5 +1,5 @@
 #include "./setting.h"
-
+#include "./agent.c"
 #ifndef MAXTHREADSIZE
     #define MAXTHREADSIZE 10
 #endif
@@ -103,7 +103,7 @@ typedef oop (*Func)(oop);
 
 typedef union VarData VarData;
 typedef VarData *VD;
-
+struct AgentInfo;
 
 // should be mark
 oop nil       = 0;
@@ -142,6 +142,8 @@ enum Type {
     Thread,
     Array,
     Queue,
+
+    AgentInfo,
     END,   
 };
 
@@ -160,6 +162,8 @@ enum Type {
         "Thread",
         "Array",
         "Queue",
+
+        "AgentInfo",
         "END",
     };
 #endif
@@ -323,6 +327,13 @@ void markObject(oop obj){
         case Thread:{
             gc_mark(obj->Thread.stack);
             gc_mark(obj->Thread.queue);
+            return ;
+        }
+        case AgentInfo:{
+            SHICA_PRINTF("mark AgentInfo\n");
+            SHICA_PRINTF("not commplete\n");
+            exit(0);
+            // gc_mark(obj->AgentInfo.socket);
             return ;
         }
         default:{
