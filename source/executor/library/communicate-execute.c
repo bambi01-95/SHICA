@@ -62,6 +62,7 @@ oop eve_wifi_receive(oop core){
         agent_p agent = MY_AGENT_INFO->agent;
         // メッセージ受信
         char buffer[BUF_SIZE];
+        pirntf("receiving\n");
         ssize_t ret = recvfrom(socketInfo->recv_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
         printf("ret is %d\n",ret);
         if (ret > 0) {
