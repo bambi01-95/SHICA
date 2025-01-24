@@ -56,10 +56,10 @@ struct AgentInfo{
 
 
 oop eve_wifi_receive(oop core){
-    printf("eve_wifi_receive\n");
+    SHICA_PRINTF("eve_wifi_receive\n");
     //corret 
 #if SBC
-    printf("SBC\n");    
+    SHICA_PRINTF("SBC\n");    
         struct SocketInfo *socketInfo = MY_AGENT_INFO->socket;
         agent_p agent = MY_AGENT_INFO->agent;
         // メッセージ受信
