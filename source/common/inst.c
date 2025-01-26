@@ -102,6 +102,8 @@ EOA,   /* end of advice */
 COND,  /* event's condtion arugment */
 TRANS, /*transition: state change*/
 MKCORE,  /*make core: core X:X is number of core*/
+SETCORE,  /* no communicaton */
+SETSUBCORE, /* communicaton or need to work all or some */
 MKTHREAD,/* make thread for event */
 SETTHREAD,/* set thread for event */
 STARTIMP, /* start implement core*/
@@ -238,6 +240,8 @@ char* INSTNAME[s_PRINT + 1] = {
 "COND",
 "TRANS", /*transition: state change*/
 "MKCORE",  /*make core: core X:X is number of core*/
+"SETCORE",  /* no communicaton */
+"SETSUBCORE", /* communicaton or need to work all or some */
 "MKTHREAD",/* make thread for event */
 "SETTHREAD",/* set thread for event */
 "STARTIMP",

@@ -227,12 +227,26 @@ oop printCode(oop program){
             case s_GT:   printf("d_GT\n");continue; 
             case s_ADD:  printf("d_ADD\n");continue;
             case MKCORE: printf("MKCORE    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
-            case MKTHREAD:{
-                printf("MKTHREAD ");//T
+            case SETCORE:{
+                printf("SETCORE ");//T
                 oop lib_num  = Array_get(program,pc++);
                 oop func_num = Array_get(program,pc++);
-                oop num_args = Array_get(program,pc++);
-                printf("%3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(func_num),_Integer_value(num_args));
+                oop numInitVals = Array_get(program,pc++);
+                printf("%3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(func_num),_Integer_value(numInitVals));
+                continue;
+            }
+            case SETSUBCORE:{
+                printf("SETSUBCORE ");//T
+                oop lib_num  = Array_get(program,pc++);
+                oop func_num = Array_get(program,pc++);
+                oop numInitVals = Array_get(program,pc++);
+                printf("%3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(func_num),_Integer_value(numInitVals));
+                continue;
+            }
+            case MKTHREAD:{
+                printf("MKTHREAD ");//T
+                oop numOfThreads = Array_get(program,pc++);
+                printf("%3d\n",_Integer_value(numOfThreads));
                 continue;
             }
             case SETTHREAD: {

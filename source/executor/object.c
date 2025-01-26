@@ -139,6 +139,7 @@ enum Type {
     _String,
 
     Core,
+    SubCore,
     Thread,
     Array,
     Queue,
@@ -235,6 +236,16 @@ struct Core      {
     union VarData*  vd;/*gc_mark*/
     oop *threads; /*gc_mark*/
 };
+#include "./library/communicate-execute.h"
+struct SubCore{
+    enum Type type;
+    char size;
+    Func func;
+    union VarData*  vd;/*gc_mark*/
+    oop *threads;      /*gc_mark*/
+    struct AgentInfo *agent;
+};
+
 struct Thread{ 
     enum Type type;
     oop stack; /*gc_mark*/
@@ -901,5 +912,42 @@ oop _newCore(size_t vdMemSize,int numThread)
 }
 #define newCore(VD_TYPE,numThread)	_newCore(sizeof(struct VD_TYPE),numThread)
 
+oop _newSubCore(size_t vdMemSize,int numThread)
+{
+#if MSGC
+    GC_PUSH(oop, node, newObject(SubCore));
+    // node->Core.func = 0; //after calling this function, set function
+    VD vd = gc_beAtomic(gc_alloc(vdMemSize));
+    node->Core.vd   = vd;
+    node->Core.size = 0;
+    node->Core.threads = gc_alloc(numThread * sizeof(oop));
+    GC_POP(node);
+#else
+    oop node = newObject(SubCore);
+    // node->Core.func = 0; //after calling this function, set function
+    node->Core.vd = calloc(1,vdMemSize);
+    node->Core.size = 0;
+    node->Core.threads = calloc(numThread, sizeof(oop));
+#endif
+    return node;
+}
+#define newSubCore(VD_TYPE,numThread)	_newSubCore(sizeof(struct VD_TYPE),numThread)
 
+oop _remkSubCore(oop core,size_t vdMemSize,int numThread)
+{
+#if MSGC
+    // node->Core.func = 0; //after calling this function, set function
+    VD vd = gc_beAtomic(gc_alloc(vdMemSize));
+    node->Core.vd   = vd;
+    node->Core.size = 0;
+    node->Core.threads = gc_alloc(numThread * sizeof(oop));
+#else
+    oop node = newObject(SubCore);
+    // node->Core.func = 0; //after calling this function, set function
+    node->Core.vd = calloc(1,vdMemSize);
+    node->Core.size = 0;
+    node->Core.threads = calloc(numThread, sizeof(oop));
+#endif
+    return node;
+}
 #endif //OBJECT_C

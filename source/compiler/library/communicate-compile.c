@@ -9,7 +9,7 @@
 void setting_communicate(){
     //Event Function
                 /*funcname,  libnum, funcnum, num_args, args_type, num_of_pin,　pin_value */
-    newEventFunc(wifiReceived,COMMUNICATELIB, COMMUNICATE_WiFi_RECEIVE_E, 3, list(_Integer,_Integer,_Integer), 1, list(Undefined));
+    newEventFuncCont(wifiReceived,COMMUNICATELIB, COMMUNICATE_WiFi_RECEIVE_E, 3, list(_Integer,_Integer,_Integer), 1, list(Undefined));
 
     //Primitive
                 /*funcname,  libnum, funcnum, return_type, num_args, args_type */

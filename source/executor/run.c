@@ -156,7 +156,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 mainCore[coreSize]->Core.threads[mainCore[coreSize]->Core.size++] = thread;
                 continue;
             }
-
             case STARTIMP:{
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
@@ -177,6 +176,12 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                         if(evalEventArgsThread->Thread.stack->Array.capacity>0){
                                             gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
                                             evalEventArgsThread->Thread.stack = newArray(10);
+                                        }
+                                        for(int core_ii = 0;core_ii<=coreSize;core_ii++){
+                                            if(mainCore[core_ii].type == SubCore){
+                                                //Stack the core into the stack
+                                                break;
+                                            }
                                         }
                                         int pc_i = thread->Thread.pc++;//location of thread[i]'s pc
                                         getSetInt(pos,pc_i);

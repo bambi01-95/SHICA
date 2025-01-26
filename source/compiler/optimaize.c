@@ -1299,9 +1299,14 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){
                 emitII(i_load,eveF->EventFunc.pin_num[pin_i]);
             }
+            //SETCORE LN EN IN: library number, event number, initialzed variable number
+            if(eveF->EventFunc.event_type == 0){
+                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num);
+            }else{
+                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,eveF->EventFunc.size_of_pin_num);
+            }
             //MKTHREAD LN EN TN: library number, event number, size of thread
-            emitOIII(MKTHREAD,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,core->size);
-
+            emitII(MKTHREAD,core->size);
             for(int i=0;i<core->size;i++){
                 struct ThreadData *threadData = core->threadData[i];
                 if(threadData->condRelPos!=0){

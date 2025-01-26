@@ -2,19 +2,7 @@
 #ifndef  BROADCAST_C
 #define BROADCAST_C
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <netdb.h> // 追加: getnameinfo と NI_NUMERICHOST のため
-#include <net/if.h> // IFF_LOOPBACKのため
-#include <ifaddrs.h>
+
 
 #define DEBIF if(0)
 
@@ -174,68 +162,5 @@ int receive_broadcast_nonblocking(int sockfd, char *buffer, size_t buffer_size) 
     }
 #endif
 }
-
-
-#if 0
-int main(){
-// Non-blocking UDP broadcast
-#if 1
-    int sockfd;
-    struct sockaddr_in broadcast_addr, recv_addr;
-    char buffer[BUF_SIZE];
-
-    // 送信ソケット作成とノンブロッキング化
-    if (create_broadcast_socket(&sockfd, &broadcast_addr) == 0) {
-        set_nonblocking(sockfd);
-    }
-
-    // // 受信ソケット作成とノンブロッキング化
-    // if (create_receive_socket(&sockfd, &recv_addr) == 0) {
-    //     set_nonblocking(sockfd);
-    // }
-
-    // 非同期送信
-    send_broadcast_nonblocking(sockfd, &broadcast_addr, "Hello", 5);
-
-    // 非同期受信
-    // receive_broadcast_nonblocking(sockfd, buffer, sizeof(buffer));
-
-    close(sockfd);
-    return 0;
-#endif
-// Blocking UDP broadcast
-#if 0
-    int sockfd;
-    struct sockaddr_in broadcast_addr;
-    struct sockaddr_in recv_addr;
-    char buf[BUF_SIZE];
-
-    if (create_broadcast_socket(&sockfd, &broadcast_addr) < 0) {
-        return -1;
-    }
-
-    if (create_receive_socket(&sockfd, &recv_addr) < 0) {
-        return -1;
-    }
-
-    char send_data[BUF_SIZE] = {
-        0x01, // Request
-        0x01, // Group ID
-        0x00, // My ID
-        0x00, // Request Member ID
-        0x00, // Size of Member
-        'K', 'U', 'A', 'S' // Key
-    };
-
-    send_broadcast(sockfd, &broadcast_addr, send_data, sizeof(send_data));
-
-    receive_broadcast(sockfd, buf, sizeof(buf));
-
-    close(sockfd);
-
-    return 0;
-#endif
-}
-#endif
 
 #endif // BROADCAST_C

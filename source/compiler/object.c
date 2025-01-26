@@ -292,6 +292,7 @@ struct Primitive{
 
 struct EventFunc{
     enum Type _type_;
+    char  event_type; //0: normal, 1: communicate
     char  lib_num;
     char  eve_num;
     char* args_type_array;

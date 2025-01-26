@@ -3,8 +3,9 @@
 #include "../object.c"
 #define list(...)  {__VA_ARGS__}
 
-oop _newEventFunc(oop name,char lib_num,char eve_num,char* args_type_array,char size_of_args_type_array,char * pin_num,char  size_of_pin_num){
+oop _newEventFunc(oop name,char lib_num,char eve_num,char eventType,char* args_type_array,char size_of_args_type_array,char * pin_num,char  size_of_pin_num){
     oop prim = newObject(EventFunc);
+    prim->EventFunc.lib_num   = eventType;
     prim->EventFunc.lib_num   = lib_num;
     prim->EventFunc.eve_num  = eve_num;
     prim->EventFunc.args_type_array = args_type_array;
@@ -15,15 +16,28 @@ oop _newEventFunc(oop name,char lib_num,char eve_num,char* args_type_array,char 
     return prim;
 }
 
+//not always active event: event type: 0
 #define newEventFunc(name, lib_num, eve_num, size_of_args_type_array, args_type_array,size_of_pins,pins) ({ \
     static char name##__[size_of_args_type_array] = args_type_array; \
     static char name##__p[size_of_pins] =  pins ; \
     if(name##__[0]==Undefined){ \
-        _newEventFunc(intern(#name), lib_num, eve_num,0,0,0,0);\
+        _newEventFunc(intern(#name), lib_num, eve_num,0,0,0,0,0);\
     } \
-    else if(name##__p[0] == Undefined) _newEventFunc(intern(#name), lib_num, eve_num, name##__,size_of_args_type_array,0, 0 );\
-    else _newEventFunc(intern(#name), lib_num, eve_num, name##__,size_of_args_type_array, name##__p, size_of_pins); \
+    else if(name##__p[0] == Undefined) _newEventFunc(intern(#name), lib_num, eve_num, 0, name##__,size_of_args_type_array,0, 0 );\
+    else _newEventFunc(intern(#name), lib_num, eve_num,0, name##__,size_of_args_type_array, name##__p, size_of_pins); \
 })
+
+//always active event: event type: 1
+#define newEventFuncCont(name, lib_num, eve_num, size_of_args_type_array, args_type_array,size_of_pins,pins) ({ \
+    static char name##__[size_of_args_type_array] = args_type_array; \
+    static char name##__p[size_of_pins] =  pins ; \
+    if(name##__[0]==Undefined){ \
+        _newEventFunc(intern(#name), lib_num, eve_num,1,0,0,0,0);\
+    } \
+    else if(name##__p[0] == Undefined) _newEventFunc(intern(#name), lib_num, eve_num,1, name##__,size_of_args_type_array,0, 0 );\
+    else _newEventFunc(intern(#name), lib_num, eve_num,1, name##__,size_of_args_type_array, name##__p, size_of_pins); \
+})
+
 
 // ライブラリ用のプログラミングコード
 oop _newPrimitive(oop name,char lib_num,char func_num,char* args_type_array,char size_of_args_type_array,char return_type){
