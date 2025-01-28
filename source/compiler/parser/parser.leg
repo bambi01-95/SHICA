@@ -17,6 +17,7 @@ define  = t:STATE i:id s:state                { $$ = setState(i,s)  }
 		| ADVICE   i:id b:block { $$ = newAdvice(i,b) }
 		| POINTCUT i:id j:jointps { $$ = newPointcut(i,j) }
 		| STRUCT i:id  p:child { $$ = newSetType(i,p,newline) }
+		| defEvent 
         | d:bracket 	{ result = d }
         | t:TYPE   i:id p:params s:stmtbl     { $$ = newSetVar(t,i,newFunction(p,s),newline) } 
         | t:TYPE   i:id ASSIGN x:exp		  { $$ = newSetVarG(t, i, x,newline);}
@@ -46,6 +47,10 @@ state   = LBRACE s:mkState
 	  bln RBRACE			{ $$ = s }
 
 mkState =                                   { $$ = newState() }
+
+
+defEvent = EVENT n:id ASSIGN i:id ( p:eventparams       b:block  { $$ = newSetVarEvent(n,newEvent(i,p,b),newline) }
+								  | LPAR p:mkNil - RPAR b:mkNil  { $$ = newSetVarEvent(n,newEvent(i,p,b),newline) })
 
 event   = i:id p:eventparams b:block             { $$ = newEvent(i,p,b) }
         | t:TYPE  i:id  ASSIGN  x:exp       { $$ = newSetVarL(t, i, x,newline);}
@@ -280,6 +285,7 @@ CONTINUE = "continue"
 BREAK    = "break"
 RETURN   = "return"
 STRUCT   = "struct"   !alnum - 
+EVENT    = "event"    !alnum -
 
 ADVICE   = "advice"   !alnum -
 POINTCUT = "pointcut" !alnum -

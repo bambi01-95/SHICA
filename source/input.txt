@@ -1,9 +1,11 @@
-int a = 3
+event sec = timerSec()
+
+
 state initTestCode{
 	entry(){
-		init timerSec(a)
+		init sec(3)
 	}
-	timerSec(int t){
+	sec(int t){
 		print(t)
 	}
 }

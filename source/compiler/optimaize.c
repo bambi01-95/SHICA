@@ -774,7 +774,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         else if((ass=assoc(id,Local_VNT))!=nil){
             if(ass->Assoc.kind!=type)
                 fatal("line %d type error: requared %s type but %s type, local variable %s",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.kind],id->Symbol.name);
-            emitII(GET_L,ass->Assoc.index);
+            emitII(GET_L,ass->Assoc.index); 
         }
         else if((ass = assoc(id,vnt))!=nil){
             if(ass->Assoc.kind!=type)
@@ -782,7 +782,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             emitII(GET,ass->Assoc.index);
         }
         else{     //sym is not define
-                fatal("line %d variable error: Undefine variable, %s\n",exp->GetVar.line,id->Symbol.name);
+            fatal("line %d variable error: Undefine variable, %s\n",exp->GetVar.line,id->Symbol.name);
         }
         break;
     }
@@ -842,6 +842,27 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             exit(1);
         }
         break;
+    }
+
+    case SetVarEvent:{
+        oop varId = get(exp, SetVarEvent, id);
+        oop event = get(exp, SetVarEvent, rhs);
+        oop eventFuncId = get(event, Event, id);
+        oop eventFunc = get(eventFuncId,Symbol,value);
+        if(getType(eventFunc)!=EventFunc){
+            fatal("line %d: [%s] is not Event Funciton",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
+        }
+        oop params    = get(event, Event, parameters);
+        oop body      = get(event, Event, body);
+        if(params==nil && body==nil){
+            oop dupEventFunc = copyEventFunc(eventFunc);
+            get(varId,Symbol,value) = dupEventFunc; 
+        }else if(params==nil || body==nil){
+            fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
+        }else{
+            get(varId,Symbol,value) = newDupEvent(eventFunc,event); 
+        }
+        return 0;
     }
 
     case SetType:{
@@ -1225,6 +1246,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     //define Event Action
                     threadData->eventLoc = program->Array.number;
                     compO(block);
+#if DEBUG
+                    SHICA_PRINTF("      > end of Event %s\n\n",get(id,Symbol,name));
+#endif
                     //2 line: make a space for varialbe
                     int m_size = vnt->Array.size;
                     Array_put(program,m_loc -1, _newInteger(m_size));
@@ -1246,7 +1270,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         int stt_loc = program->Array.number;
         exp->State.index = stt_loc;
         
-
+        
 
         struct CoreData *tmp = core;
         unsigned char num_of_core = 0;
@@ -1270,11 +1294,17 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 continue;
             }
             oop eveF = get(tmp->id,Symbol,value);
+            
             //ILOAD Ii: event trigger initial value, pin, ip address, etc.
             for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){
                 // emitII(i_load,eveF->EventFunc.pin_num_type[pin_i]);
                 //CHECK ME: local var and global var
-                compile(program,eveF->EventFunc.pin_exps[pin_i],0,eveF->EventFunc.pin_num_type[pin_i]);
+                if(eveF->EventFunc.pin_exps[pin_i]==NULL){
+                    emitII(i_load,0);
+                }else{
+                    printlnObject(eveF->EventFunc.pin_exps[pin_i],2);
+                    compile(program,eveF->EventFunc.pin_exps[pin_i],vnt,eveF->EventFunc.pin_num_type[pin_i]);  
+                }
             }
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){
@@ -1325,6 +1355,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         //ローカル変数の初期化
         Local_VNT = newArray(0);
         stateName->Symbol.value = exp;
+#if DEBUG
+        SHICA_PRINTF("  > end of state\n\n");
+#endif
         break;
     }//end of case State
 

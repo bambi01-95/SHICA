@@ -21,6 +21,11 @@ typedef Object *oop;
 typedef oop (*Func)(oop);
 
 #if DEBUG
+void stop(char *file,int line){
+    fprintf(stderr,"stop %s line %d\n",file,line);
+    exit(0);
+}
+#define STOP stop(__FILE__,__LINE__);
 // DEBUG LOG Function
 void debug_log(char *file,int line,const char *format, ...) {
     va_list args;
@@ -130,6 +135,7 @@ enum Type {
 
     Pair, 
     EventParam,
+    DupEvent,
     Assoc,
     Array,
 
@@ -143,6 +149,7 @@ enum Type {
     SetVarL,
     SetArray,
     GetArray,
+    SetVarEvent,
     SetType,
     Call,  
     Run,   
@@ -189,6 +196,7 @@ char *TYPENAME[END+1] = {
 
     "Pair",
     "EventParam",
+    "DupEvent",
     "Assoc",
     "Array",
 
@@ -202,6 +210,7 @@ char *TYPENAME[END+1] = {
     "SetVarL",
     "SetArray",
     "GetArray",
+    "SetVarEvent",
     "SetType",
     "Call",
     "Run",
@@ -253,6 +262,7 @@ struct Pointcut  { enum Type _type_; oop id,pair; };
 //struct Pair    { enum Type _type_;  oop data;oop next; };
 struct Pair  	 { enum Type _type_;  oop a, b; };
 struct EventParam   { enum  Type _type_; oop type,symbol,cond;};
+struct DupEvent     { enum  Type _type_; oop eventFunc,event; };
 //struct Param   { enum Type _type_; oop type, symbol;};
 struct Assoc     { enum Type _type_;  oop symbol; enum Type kind; int index; };
 
@@ -266,6 +276,7 @@ struct GetVar  	 { enum Type _type_;  oop id;                             int li
 struct SetVar  	 { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
 struct SetVarG   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
 struct SetVarL   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
+struct SetVarEvent{ enum Type _type_;  oop id; oop rhs; int line;};
 struct SetType   { enum Type _type_;  oop id; oop child; int line;};
 struct Call 	 { enum Type _type_;  oop function, arguments;            int line;};
 struct Run       { enum Type _type_; oop state; };
@@ -384,6 +395,7 @@ union Object {
 
     struct Pair     Pair;
     struct EventParam EventParam;
+    struct DupEvent DupEvent;
     struct Function Function;
     struct Struct   Struct;
     struct Binop    Binop;
@@ -393,6 +405,7 @@ union Object {
     struct SetVar   SetVar;
     struct SetVarG SetVarG;
     struct SetVarL SetVarL;
+    struct SetVarEvent SetVarEvent;
     struct SetType  SetType;
 
     struct GetArray	 { enum Type __type_;enum Type typeset;  oop array, index; int line;}GetArray;
@@ -676,6 +689,12 @@ oop newEventParam(oop type,oop symbol,oop cond){
     obj->EventParam.cond = cond;
     return obj;
 }
+oop newDupEvent(oop eventFunc,oop event){
+    oop obj = newObject(DupEvent);
+    obj->DupEvent.eventFunc = eventFunc;
+    obj->DupEvent.event = event;
+    return obj;
+}
 
 oop newFunction(oop parameters, oop body)
 {
@@ -783,7 +802,17 @@ oop newGetArray(oop array, oop index,int line)
     return node;
 }
 
-
+oop newSetVarEvent(oop id, oop rhs,int line)
+{
+    oop node = newObject(SetVarEvent);
+    node->SetVarEvent.id  = id;
+    if(id->Symbol.value==nil){
+        fatal("line %d: [%s] is already defined variable",line,get(id,Symbol,name));
+    }
+    node->SetVarEvent.rhs = rhs;
+    node->SetVarEvent.line = line;
+    return node;
+}
 
 oop newSetType(oop id,oop child,int line)
 {
@@ -816,6 +845,19 @@ oop newEventCall(oop arguments, oop function,int line)
     }
     node->Call.arguments = arguments;
     node->Call.function  = function;
+    return node;
+}
+
+oop copyEventFunc(oop func){
+    oop node = newObject(EventFunc);
+    node->EventFunc.event_type = get(func,EventFunc,event_type);
+    node->EventFunc.lib_num    = get(func,EventFunc,lib_num);
+    node->EventFunc.eve_num    = get(func,EventFunc,eve_num);
+    node->EventFunc.size_of_args_type_array = get(func,EventFunc,size_of_args_type_array);
+    node->EventFunc.args_type_array = strdup(get(func,EventFunc,args_type_array));
+    node->EventFunc.size_of_pin_num = get(func,EventFunc,size_of_pin_num);
+    node->EventFunc.pin_num_type = strdup(get(func,EventFunc,pin_num_type));
+    node->EventFunc.pin_exps = malloc(sizeof(oop)*get(func,EventFunc,size_of_pin_num));
     return node;
 }
 
