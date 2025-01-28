@@ -905,9 +905,8 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 }
                 oop args = get(exp,Call,arguments);
                 char size = get(function,EventFunc,size_of_pin_num);
-                for(int i=0; i< size;i++){//#
-                    assert(getType(args->Pair.a)==Integer);//FIX ME: need to chage any type
-                    function->EventFunc.pin_num[i] =  atoi(args->Pair.a->Integer.number);
+                for(int i=0; i< size;i++){
+                    function->EventFunc.pin_exps[i] =  args->Pair.a;
                     args = args->Pair.b;
                 }
                 break;
@@ -1297,7 +1296,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             oop eveF = get(core->id,Symbol,value);
             //ILOAD Ii: event trigger initial value, pin, ip address, etc.
             for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){
-                emitII(i_load,eveF->EventFunc.pin_num[pin_i]);
+                // emitII(i_load,eveF->EventFunc.pin_num_type[pin_i]);
+                //CHECK ME: local var and global var
+                compile(program,eveF->EventFunc.pin_exps[pin_i],0,eveF->EventFunc.pin_num_type[pin_i]);
             }
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){

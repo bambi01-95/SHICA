@@ -8,10 +8,13 @@ oop _newEventFunc(oop name,char lib_num,char eve_num,char eventType,char* args_t
     prim->EventFunc.lib_num   = eventType;
     prim->EventFunc.lib_num   = lib_num;
     prim->EventFunc.eve_num  = eve_num;
+    char *argsType = (char *)malloc(size_of_args_type_array);
     prim->EventFunc.args_type_array = args_type_array;
     prim->EventFunc.size_of_args_type_array  = size_of_args_type_array;
-    prim->EventFunc.pin_num = pin_num;
+    
+    prim->EventFunc.pin_num_type = pin_num;
     prim->EventFunc.size_of_pin_num = size_of_pin_num;
+    prim->EventFunc.pin_exps = (pin_num == 0) ? 0 : (oop *)malloc(size_of_pin_num);
     name->Symbol.value = prim;
     return prim;
 }

@@ -297,7 +297,8 @@ struct EventFunc{
     char  eve_num;
     char* args_type_array;
     char  size_of_args_type_array;
-    char* pin_num;
+    char* pin_num_type;
+    oop   *pin_exps;
     char  size_of_pin_num;
 };
 
