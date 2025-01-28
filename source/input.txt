@@ -9,7 +9,7 @@ state init{
 		wifiBldGroup("192.168.1.255",60000,12,"KUAS") //build Group
         gpioSetMode(17,0) //LED, output
 		gpioSetMode(27,0) //Button, input
-        gpioSetPullUpDown(27,2) //Button, pull down
+        gpioSetPullUpDown(27,1) //Button, pull up
 		gpioDelay(1000000)
 		state off
 	}
