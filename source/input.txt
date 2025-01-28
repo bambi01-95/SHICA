@@ -9,7 +9,7 @@ state init{
 		wifiBldGroup("192.168.1.255",60000,12,"KUAS") //build Group
         gpioSetMode(17,0) //LED, output
 		gpioSetMode(27,0) //Button, input
-        gpioSetPullUpDown(27,1) //Button, pull up
+        gpioSetPullUpDown(27,2) //Button, pull up
 		gpioDelay(1000000)
 		state off
 	}
@@ -20,7 +20,7 @@ state off{
 		print("off")
 		gpioWrite(17,0)
 	}
-	triReadGPIO(int p:(p&(1<<27))==1){
+	triReadGPIO(int p:(p&(1<<27))==0){
 		wifiBroadcastGroup(-1,1)
 		state on
 	}
@@ -36,7 +36,7 @@ state on{
 		print("on")
 		gpioWrite(17,1)
 	}
-	triReadGPIO(int p:(p&(1<<27))==1){
+	triReadGPIO(int p:(p&(1<<27))==0){
 		state off
 	}
 	wifiGroupReceived(int from,int id,int data){
