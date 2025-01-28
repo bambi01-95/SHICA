@@ -169,7 +169,8 @@ postfix = i:id INCRE - { $$ = newUnyop(AINC, newGetVar(i,newline),newline) }
         | value 
 
 
-func    = i:id a:args		{ $$ = newCall(a, i, newline); }          
+func    = i:id a:args		{ $$ = newCall(a, i, newline); }      
+		| "init" - i:id a:args	{ $$ = newEventCall(a, i, newline); }
 
 args	= LPAR a:mkNil
 	  ( i:exp			{ a = newPair(i, a) }

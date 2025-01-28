@@ -1,7 +1,7 @@
 int a = 3
 state initTestCode{
 	entry(){
-		timerSec(a)
+		init timerSec(a)
 	}
 	timerSec(int t){
 		print(t)

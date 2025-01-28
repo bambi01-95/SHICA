@@ -798,8 +798,24 @@ oop newCall(oop arguments, oop function,int line)
 {
     oop node = newObject(Call);
     node->Call.arguments = arguments;
+    oop value = get(function,Symbol,value);
+    if(getType(value)==EventFunc){
+        fatal("line %d: EventFunc[ %s ] is not allowed to set without init symbol",line,get(function,Symbol,name));
+    }
     node->Call.function  = function;
     node->Call.line = line;
+    return node;
+}
+
+oop newEventCall(oop arguments, oop function,int line)
+{
+    oop node = newObject(Call);
+    oop value = get(function,Symbol,value);
+    if(getType(value)!=EventFunc){
+        fatal("line %d: Non EventFunc[ %s ] is not allowed to call with init symbol",line,get(function,Symbol,name));
+    }
+    node->Call.arguments = arguments;
+    node->Call.function  = function;
     return node;
 }
 

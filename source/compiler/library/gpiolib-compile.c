@@ -11,7 +11,7 @@
 void setting_gpiolib(){
     //Event Function
                 /*funcname,  libnum, funcnum, num_args, args_type, num_of_pin,　pin_value */
-    newEventFunc(triReadGPIO, GPIOLIB, GPIO_READ_E ,1,list(_Integer),1,list(Undefined));
+    setEventFunc(triReadGPIO, GPIOLIB, GPIO_READ_E ,1,list(_Integer),1,list(Undefined));
 
 
     // //Primitive Function

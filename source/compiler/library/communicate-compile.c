@@ -10,11 +10,11 @@ void setting_communicate(){
     //Event Function
                 /*funcname,  libnum, funcnum, num_args, args_type, num_of_pin,　pin_value */
     //wifiReceived(str addr, str msg)::init wifiBrReceived("addr", portNum)
-    newEventFunc(wifiReceived,COMMUNICATELIB, COMMUNICATE_WiFi_RECEIVE_E, 2, list(String,String), 2, list(String,_Integer));
+    setEventFunc(wifiReceived,COMMUNICATELIB, COMMUNICATE_WiFi_RECEIVE_E, 2, list(String,String), 2, list(String,_Integer));
     //wifiBrReceived(str addr,str msg)::init wifiBrReceived("addr", portNum)
-    newEventFunc(wifiBrReceived,COMMUNICATELIB, COMMUNICATE_WiFi_BROADCAST_RECEIVE_E, 2, list(String,String), 2, list(String,_Integer));
+    setEventFunc(wifiBrReceived,COMMUNICATELIB, COMMUNICATE_WiFi_BROADCAST_RECEIVE_E, 2, list(String,String), 2, list(String,_Integer));
     //wifiGloupReceived(str addr,int id, int str)::no init but use wifiBldGroup() function
-    newEventFunc(wifiGroupReceived,COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_RECEIVE_E, 3, list(_Integer,_Integer,_Integer), 4, list(String,_Integer,_Integer,String));
+    setEventFunc(wifiGroupReceived,COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_RECEIVE_E, 3, list(_Integer,_Integer,_Integer), 4, list(String,_Integer,_Integer,String));
     //newEventFuncCont(wifiReceived,COMMUNICATELIB, COMMUNICATE_WiFi_RECEIVE_E, 3, list(_Integer,_Integer,_Integer), 1, list(Undefined));
     
     //Primitive
