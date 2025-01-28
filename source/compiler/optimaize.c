@@ -1246,6 +1246,54 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         int stt_loc = program->Array.number;
         exp->State.index = stt_loc;
         
+
+
+        struct CoreData *tmp = core;
+        unsigned char num_of_core = 0;
+        while(tmp!=0){
+            if(tmp->id!=entry_sym){
+                num_of_core++;
+            }
+            tmp = tmp->next;
+        }
+        
+
+        emitII(MKCORE,num_of_core);
+        // emitII(THREAD,size - Entry_bool - stt_val_c);
+        stt_loc = program->Array.number;
+
+    // <3.イベント関数の呼び出し>/<Event function call>
+        tmp = core;
+        while(tmp!=0){
+            if(tmp->id==entry_sym){
+                tmp = tmp->next;
+                continue;
+            }
+            oop eveF = get(tmp->id,Symbol,value);
+            //ILOAD Ii: event trigger initial value, pin, ip address, etc.
+            for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){
+                // emitII(i_load,eveF->EventFunc.pin_num_type[pin_i]);
+                //CHECK ME: local var and global var
+                compile(program,eveF->EventFunc.pin_exps[pin_i],0,eveF->EventFunc.pin_num_type[pin_i]);
+            }
+            //SETCORE LN EN IN: library number, event number, initialzed variable number
+            if(eveF->EventFunc.event_type == 0){
+                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num);
+            }else{
+                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,eveF->EventFunc.size_of_pin_num);
+            }
+            //MKTHREAD LN EN TN: library number, event number, size of thread
+            emitII(MKTHREAD,tmp->size);
+            for(int i=0;i<tmp->size;i++){
+                struct ThreadData *threadData = tmp->threadData[i];
+                if(threadData->condRelPos!=0){
+                    emitOII(SETTHREAD, threadData->eventLoc - stt_loc, threadData->condRelPos - threadData->eventLoc );
+                }else{
+                    emitOII(SETTHREAD, threadData->eventLoc - stt_loc, 0 );
+                }
+            }
+            tmp = tmp->next;
+        }
         //<AOPの呼び出し>/<AOP call>
 
         if(get(stateName,Symbol,aspect)!=nil){
@@ -1273,51 +1321,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             emitII(ENTRY,core->threadData[0]->eventLoc - cpc - (OPESIZE + INTSIZE));
         }
 
-        struct CoreData *tmp = core;
-        unsigned char num_of_core = 0;
-        while(tmp!=0){
-            if(tmp->id!=entry_sym){
-                num_of_core++;
-            }
-            tmp = tmp->next;
-        }
-        
-
-        emitII(MKCORE,num_of_core);
-        // emitII(THREAD,size - Entry_bool - stt_val_c);
-        stt_loc = program->Array.number;
-
-    // <3.イベント関数の呼び出し>/<Event function call>
-        while(core!=0){
-            if(core->id==entry_sym){
-                core = core->next;
-                continue;
-            }
-            oop eveF = get(core->id,Symbol,value);
-            //ILOAD Ii: event trigger initial value, pin, ip address, etc.
-            for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){
-                // emitII(i_load,eveF->EventFunc.pin_num_type[pin_i]);
-                //CHECK ME: local var and global var
-                compile(program,eveF->EventFunc.pin_exps[pin_i],0,eveF->EventFunc.pin_num_type[pin_i]);
-            }
-            //SETCORE LN EN IN: library number, event number, initialzed variable number
-            if(eveF->EventFunc.event_type == 0){
-                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num);
-            }else{
-                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,eveF->EventFunc.size_of_pin_num);
-            }
-            //MKTHREAD LN EN TN: library number, event number, size of thread
-            emitII(MKTHREAD,core->size);
-            for(int i=0;i<core->size;i++){
-                struct ThreadData *threadData = core->threadData[i];
-                if(threadData->condRelPos!=0){
-                    emitOII(SETTHREAD, threadData->eventLoc - stt_loc, threadData->condRelPos - threadData->eventLoc );
-                }else{
-                    emitOII(SETTHREAD, threadData->eventLoc - stt_loc, 0 );
-                }
-            }
-            core = core->next;
-        }
         emitI(STARTIMP);
         //ローカル変数の初期化
         Local_VNT = newArray(0);

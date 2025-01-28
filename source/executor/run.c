@@ -336,7 +336,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 getInt(pc); pc += int_value;
                 continue;       
             }
-
+            case GET_G:{
+                getInt(pc);
+                Array_push(stack,Array_get(GM->Thread.stack,int_value));
+                continue;
+            }
             case HALT:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
