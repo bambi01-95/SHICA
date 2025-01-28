@@ -2,9 +2,9 @@
 #define SETTING_H
 //TEST:1 instを表示する
 
-#define TEST 1
+#define TEST 0
 //MSGC:1 独自GCを使用する
-#define MSGC 1
+#define MSGC 0
 //QUEUE_SIZE:10 キューサイズ event関数の最大Stock数
 #define MAXTHREADSIZE 10
 //SBC:1 PC or single board computerの時
@@ -24,6 +24,6 @@
 #define UNMARK 1
 
 //Device
-#define RPI 0 // 1:RaspberryPi 0:Other
+#define RPI 1 // 1:RaspberryPi 0:Other
 
 #endif
