@@ -237,7 +237,7 @@ oop eve_keyget(oop core){
 
 //STDLIB EVENT
 //FOR SETTING
-oop Event_stdlib(int eve_num,oop stack,int numThread){
+oop Event_stdlib(int eve_num,oop stack){
     //cheack: protect stack, but it is already protected
     gc_pushRoot((void*)&stack);
     //protect t:new thread
@@ -245,40 +245,40 @@ oop Event_stdlib(int eve_num,oop stack,int numThread){
     switch(eve_num){
         case TEST_E:{
 #if SBC     
-            core = newCore(VarTI,numThread);
+            core = newCore(VarTI);
             core->Core.vd->VarTI.v_t1 = time(NULL);
             core->Core.vd->VarTI.v_i1  = 0;
             core->Core.vd->VarTI.v_i2  = 1;
             core->Core.func = &eve_test;
 #else
-            core = newCore(Default,numThread);
+            core = newCore(Default);
             core->Core.vd->Default.count = 0;
             core->Core.func = &eve_test;
 #endif
             break;
         }
         case LOOP_E:{
-            core = newCore(Default,numThread);
+            core = newCore(Default);
             core->Core.vd->Default.count = 0;
             core->Core.func = &eve_loop;
             break;
         }
         case TIMERSEC_E:{
 #if SBC     
-            core = newCore(VarTI,numThread);
+            core = newCore(VarTI);
             core->Core.vd->VarTI.v_t1 = time(NULL);
             core->Core.vd->VarTI.v_i1  = 0;
             core->Core.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
             core->Core.func = &eve_timer;
 #else
-            core = newCore(Default,numThread);
+            core = newCore(Default);
             core->Core.vd->Default.count = 0;
             core->Core.func = &eve_timer;
 #endif
             break;
         }
         case KEYGET_E:{
-            core = newCore(Default,numThread);
+            core = newCore(Default);
             core->Core.func = &eve_keyget;
             //clear key buffer
             while(0!=core->Core.func(core))dequeue(core);

@@ -59,14 +59,14 @@ oop eve_gpio_read(oop core){
 }
 #endif
 
-oop Event_gpiolib(int eve_num,oop stack,int numThread){
+oop Event_gpiolib(int eve_num,oop stack){
     //cheack: protect stack, but it is already protected
     gc_pushRoot((void*)&stack);
     //protect t:new thread
     GC_PUSH(oop,core,0);
     switch(eve_num){
         case GPIO_READ_E:{
-            core = newCore(Default,numThread);
+            core = newCore(Default);
             core->Core.vd->Default.count = 0;
             core->Core.func = &eve_gpio_read;
             break;

@@ -191,6 +191,19 @@ struct VarFF{
     float v_f2;
 };
 
+struct VarS{
+    char *v_s1;
+};
+struct VarSS{
+    char *v_s1;
+    char *v_s2;
+};
+
+struct VarIS{
+    int v_i1;
+    char *v_s1;
+};
+
 #if SBC
 struct VarT{
     time_t v_t1;
@@ -208,7 +221,10 @@ union VarData{
     struct VarI  VarI;
     struct VarII VarII;
     struct VarF  VarF; 
-    struct VarFF VarFF;   
+    struct VarFF VarFF;  
+    struct VarS  VarS;
+    struct VarSS VarSS;
+    struct VarIS VarIS; 
 #if SBC 
     struct VarT  VarT; 
     struct VarTI VarTI;
@@ -243,7 +259,8 @@ struct SubCore{
     Func func;
     union VarData*  vd;/*gc_mark*/
     oop *threads;      /*gc_mark*/
-    struct AgentInfo *agent;
+    void *any;
+    struct ExternMemory *em;
 };
 
 struct Thread{ 
@@ -873,6 +890,23 @@ oop newThread(int base,int stackSize)
     return node;
 }
 
+oop *newThreads(int base,int stackSize,int numThread)
+{
+#if MSGC
+    GC_PUSH(oop*, threads, gc_alloc(numThread * sizeof(oop)));
+    for(int i = 0; i < numThread; i++){
+        threads[i] = newThread(base,stackSize);
+    }
+    GC_POP(threads);
+#else
+    oop *threads = calloc(numThread, sizeof(oop));
+    for(int i = 0; i < numThread; i++){
+        threads[i] = newThread(base,stackSize);
+    }
+#endif
+    return threads;
+}
+
 //CORE
 oop *mkCores(int size)
 {
@@ -891,7 +925,7 @@ oop *mkCores(int size)
     return cores;
 }
 
-oop _newCore(size_t vdMemSize,int numThread)
+oop _newCore(size_t vdMemSize)
 {
 #if MSGC
     GC_PUSH(oop, node, newObject(Core));
@@ -899,20 +933,18 @@ oop _newCore(size_t vdMemSize,int numThread)
     VD vd = gc_beAtomic(gc_alloc(vdMemSize));
     node->Core.vd   = vd;
     node->Core.size = 0;
-    node->Core.threads = gc_alloc(numThread * sizeof(oop));
     GC_POP(node);
 #else
     oop node = newObject(Core);
     // node->Core.func = 0; //after calling this function, set function
     node->Core.vd = calloc(1,vdMemSize);
     node->Core.size = 0;
-    node->Core.threads = calloc(numThread, sizeof(oop));
 #endif
     return node;
 }
-#define newCore(VD_TYPE,numThread)	_newCore(sizeof(struct VD_TYPE),numThread)
+#define newCore(VD_TYPE)	_newCore(sizeof(struct VD_TYPE))
 
-oop _newSubCore(size_t vdMemSize,int numThread)
+oop _newSubCore(size_t vdMemSize)
 {
 #if MSGC
     GC_PUSH(oop, node, newObject(SubCore));
@@ -920,34 +952,33 @@ oop _newSubCore(size_t vdMemSize,int numThread)
     VD vd = gc_beAtomic(gc_alloc(vdMemSize));
     node->Core.vd   = vd;
     node->Core.size = 0;
-    node->Core.threads = gc_alloc(numThread * sizeof(oop));
     GC_POP(node);
 #else
     oop node = newObject(SubCore);
     // node->Core.func = 0; //after calling this function, set function
     node->Core.vd = calloc(1,vdMemSize);
     node->Core.size = 0;
-    node->Core.threads = calloc(numThread, sizeof(oop));
 #endif
     return node;
 }
-#define newSubCore(VD_TYPE,numThread)	_newSubCore(sizeof(struct VD_TYPE),numThread)
+#define newSubCore(VD_TYPE)	_newSubCore(sizeof(struct VD_TYPE))
 
 oop _remkSubCore(oop core,size_t vdMemSize,int numThread)
 {
 #if MSGC
     // node->Core.func = 0; //after calling this function, set function
     VD vd = gc_beAtomic(gc_alloc(vdMemSize));
-    node->Core.vd   = vd;
-    node->Core.size = 0;
-    node->Core.threads = gc_alloc(numThread * sizeof(oop));
+    core->Core.vd   = vd;
+    core->Core.size = 0;
+    core->Core.threads = gc_alloc(numThread * sizeof(oop));
 #else
-    oop node = newObject(SubCore);
-    // node->Core.func = 0; //after calling this function, set function
-    node->Core.vd = calloc(1,vdMemSize);
-    node->Core.size = 0;
-    node->Core.threads = calloc(numThread, sizeof(oop));
+    // core->Core.func = 0; //after calling this function, set function
+    core->Core.vd = calloc(1,vdMemSize);
+    core->Core.size = 0;
+    core->Core.threads = calloc(numThread, sizeof(oop));
 #endif
-    return node;
+    return core;
 }
+#define remkSubCore(VD_TYPE)	_remkSubCore(sizeof(struct VD_TYPE))
+
 #endif //OBJECT_C

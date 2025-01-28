@@ -27,7 +27,7 @@ oop Event_userlib(int eve_num,oop stack){
 }
 
 // EVENT...
-oop setCore(int lib_num,int eve_num,oop stack,int numThread);
+oop setCore(int lib_num,int eve_num,oop stack);
 
 
 char inst      = 0;
@@ -123,20 +123,39 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 if(numCore == 0)continue;
                 //init setting core
                 coreLoc = pc;
-                coreSize = -1;
+                coreSize = -1;//CHECKME AND REMOVE ME: coreSize -1
                 mainCore = mkCores(numCore);
                 continue;
             }
-
-            case MKTHREAD:{//FIXME: rechange the name of this instruction => SETCORE
+            case SETCORE:{
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
 #endif
                 getSetInt(libNum,pc);
                 getSetInt(eveNum,pc);
-                getSetInt(numThread,pc);
-                oop core = setCore(libNum,eveNum,stack,numThread);
+                getSetInt(numInitVals,pc);
+                oop core = setCore(libNum,eveNum,stack);
                 mainCore[++coreSize] = core;
+                continue;
+            }
+            case SETSUBCORE:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+                getSetInt(libNum,pc);
+                getSetInt(eveNum,pc);
+                getSetInt(numInitVals,pc);//don't use
+                oop core = setCore(libNum,eveNum,stack);
+                mainCore[++coreSize] = core;
+                SHICA_FPRINTF(stderr,"this is not supported now\n");
+                continue;
+            }
+            case MKTHREAD:{//FIXME: rechange the name of this instruction => SETCORE
+#if TEST
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+                getSetInt(numThread,pc);
+                mainCore[coreSize]->Core.threads = newThreads(coreLoc,20,numThread);
                 continue;
             }
 
@@ -148,10 +167,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 getSetInt(cRelPos,pc);
 
                 oop thread = newThread(coreLoc + aRelPos,20);
-                //REMOVE
-                // while(numCond--){
-                //     thread->Thread.loc_cond[numCond] = _Integer_value(Array_pop(stack));
-                // }
+                
                 thread->Thread.condRelPos = cRelPos;
                 mainCore[coreSize]->Core.threads[mainCore[coreSize]->Core.size++] = thread;
                 continue;
@@ -178,7 +194,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                             evalEventArgsThread->Thread.stack = newArray(10);
                                         }
                                         for(int core_ii = 0;core_ii<=coreSize;core_ii++){
-                                            if(mainCore[core_ii].type == SubCore){
+                                            if(mainCore[core_ii]->type == SubCore){
                                                 //Stack the core into the stack
                                                 break;
                                             }
@@ -358,20 +374,20 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 
 #include "./library/lib.c"
 
-oop setCore(int lib_num,int eve_num,oop stack,int numThread){
+oop setCore(int lib_num,int eve_num,oop stack){
     switch(lib_num){
         case STDLIB:{
-            return Event_stdlib(eve_num,stack,numThread);
+            return Event_stdlib(eve_num,stack);
         }
         case COMMUNICATELIB:{
-            return Event_communicate(eve_num,stack,numThread);
+            return Event_communicate(eve_num,stack);
         }
         case USERLIB:{
             return 0;
         }
 #if RPI
         case GPIOLIB:{
-            return Event_gpiolib(eve_num,stack,numThread);
+            return Event_gpiolib(eve_num,stack);
         }
 #endif
         default:{
@@ -1149,12 +1165,26 @@ oop printByteCode(){
             case s_ADD:  SHICA_PRINTF("d_ADD\n");continue;
 
             case MKCORE:    getInt(pc);SHICA_PRINTF("MKCORE    %3d\n",int_value);continue;
-            case MKTHREAD:{
-                SHICA_PRINTF("MKTHREAD    ");
+            case SETCORE:{
+                SHICA_PRINTF("SETCORE    ");
                 getInt(pc);int libNum = int_value;
                 getInt(pc);int eveNum = int_value;
+                getInt(pc);int numInitVals = int_value;
+                SHICA_PRINTF("%3d  %3d  %3d\n",libNum,eveNum,numInitVals);
+                continue;
+            }         
+            case SETSUBCORE:{
+                SHICA_PRINTF("SETSUBCORE    ");
+                getInt(pc);int libNum = int_value;
+                getInt(pc);int eveNum = int_value;
+                getInt(pc);int numInitVals = int_value;
+                SHICA_PRINTF("%3d  %3d  %3d\n",libNum,eveNum,numInitVals);
+                continue;
+            }     
+            case MKTHREAD:{
+                SHICA_PRINTF("MKTHREAD    ");
                 getInt(pc);int threadNum = int_value;
-                SHICA_PRINTF("%3d  %3d  %3d\n",libNum,eveNum,threadNum);
+                SHICA_PRINTF("%3d\n",threadNum);
                 continue;
             }
             case SETTHREAD:{
@@ -1310,7 +1340,11 @@ oop printByteCode(){
                 return nil;
             }
             default:{
-                SHICA_PRINTF("%s line %d this is not happen\n",__FILE__,__LINE__);
+#if DEBUG
+                SHICA_PRINTF("  printByteCode error %s\n",INSTNAME[inst]);
+#else
+                SHICA_PRINTF("%s line %d this is not happen, inst [%d]\n",__FILE__,__LINE__,inst);
+#endif
             }
         }
     }

@@ -5,7 +5,19 @@
 
 
 #define DEBIF if(0)
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <netdb.h> // 追加: getnameinfo と NI_NUMERICHOST のため
+#include <net/if.h> // IFF_LOOPBACKのため
+#include <ifaddrs.h>
 
 
 // 自身のネットワークインターフェースIPアドレスを取得する関数

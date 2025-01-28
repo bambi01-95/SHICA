@@ -223,14 +223,81 @@ oop eve_wifi_receive(oop core){
     return core;
 }
 
+// Function to receive a message from a specific address and port
+oop  wifiReceived(oop core) {
+    char* from_addr = core->Core.vd->VarS.v_s1;
+    int port        = core->Core.vd->VarS.v_i1;
+
+    int sockfd;
+    struct sockaddr_in recv_addr, sender_addr;
+    socklen_t sender_len = sizeof(sender_addr);
+    static char buffer[1024];
+
+    // Create a socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket");
+        return NULL;
+    }
+
+    // Set non-blocking mode
+    set_nonblocking(sockfd);
+
+    // Bind to the specified port
+    memset(&recv_addr, 0, sizeof(recv_addr));
+    recv_addr.sin_family = AF_INET;
+    recv_addr.sin_port = htons(port);
+    recv_addr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(sockfd, (struct sockaddr *)&recv_addr, sizeof(recv_addr)) < 0) {
+        perror("bind");
+        close(sockfd);
+        return NULL;
+    }
+
+    // Receive the message
+    ssize_t ret = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&sender_addr, &sender_len);
+    if (ret < 0) {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            perror("recvfrom");
+        }
+        close(sockfd);
+        return NULL;
+    }
+
+    buffer[ret] = '\0'; // Null-terminate the received message
+    strcpy(from_addr, inet_ntoa(sender_addr.sin_addr)); // Save the sender's address
+
+    close(sockfd);
+    return buffer;
+}
+
+// Function to receive a broadcast message
+oop wifiBrReceived(char *from_addr, int port) {
+    return wifiReceived(from_addr, port); // Reuse the wifiReceived function
+}
 
 
-oop Event_communicate(int eve_num,oop stack,int numThread){
+oop Event_communicate(int eve_num,oop stack){
     gc_pushRoot((void*)&stack);
     GC_PUSH(oop,core,0);
     switch(eve_num){
         case COMMUNICATE_WiFi_RECEIVE_E:{
-            core = newCore(Default,numThread);
+            core = newCore(VarIS);
+            core->Core.vd->VarIS.v_s1 = 0;
+            core->Core.vd->VarIS.v_i1 = 0;
+            core->Core.func = &eve_wifi_receive;
+
+            break;
+        }
+        case COMMUNICATE_WiFi_BROADCAST_RECEIVE_E:{
+            core = newCore(VarIS);
+            core->Core.vd->VarIS.v_s1 = 0;
+            core->Core.vd->VarIS.v_i1 = 0;
+            core->Core.func = &eve_wifi_receive;
+            break;
+        }
+        case COMMUNICATE_WiFi_GROUP_RECEIVE_E:{
+            core = newCore(Default);
             core->Core.vd->Default.count = 0;
             core->Core.func = &eve_wifi_receive;
             break;
@@ -250,7 +317,7 @@ oop Event_communicate(int eve_num,oop stack,int numThread){
 
 
 
-void communicate_wifi_send(oop process,oop GM){
+void communicate_wifi_group_send(oop process,oop GM){
     getInt(mpc);int size_args = int_value;
     int sendToId = api();
     int value = api();
@@ -371,7 +438,11 @@ void communicate_wifi_build_group(oop process,oop GM){
         agent->base.myID = 0;
         agent->base.groupID = groupID;
         agent->reader.sizeOfMember = (1U);
+#if MSGC
+        agent->reader.groupKey = (char *)gc_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#else
         agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#endif
         memcpy(agent->reader.groupKey, groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
         MY_AGENT_INFO->agent = agent;
         // perror("send_broadcast_nonblocking");
@@ -407,7 +478,11 @@ void communicate_wifi_build_group(oop process,oop GM){
                         agent_p agent = createAgent(AgentMember);
                         agent->base.myID    = buf[DATA_MY_ID];
                         agent->base.groupID = buf[DATA_GROUP_ID];
+#if MSGC
+                        agent->member.groupKey = (char *)gc_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#else
                         agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#endif
                         memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
 #if DEBUG
                         DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
@@ -436,12 +511,101 @@ void communicate_wifi_build_group(oop process,oop GM){
     agent->base.myID = 1;
     agent->base.groupID = groupID;
     agent->reader.sizeOfMember = (1U);
+#if MSGC
+    agent->reader.groupKey = (char *)gc_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#else
     agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#endif
     memcpy(agent->reader.groupKey,groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
     MY_AGENT_INFO->agent = agent;
     return;
 #undef TIMEOUT
 }
+
+// Function to send a message to a specific address and port
+void communicate_wifi_send(oop process,oop GM) {
+    getInt(mpc);int size_args = int_value;
+    char* addr = aps();
+    int   port = api();
+    char* msg = aps();
+
+    int sockfd;
+    struct sockaddr_in dest_addr;
+
+    // Create a socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket");
+        return;
+    }
+
+    // Set non-blocking mode
+    set_nonblocking(sockfd);
+
+    // Set destination address
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(port);
+    inet_pton(AF_INET, addr, &dest_addr.sin_addr);
+
+    // Send the message
+    ssize_t ret = sendto(sockfd, msg, strlen(msg), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    if (ret < 0) {
+        perror("sendto");
+    } else {
+        printf("Message sent successfully\n");
+    }
+
+    // Close the socket
+    close(sockfd);
+    return;
+}
+
+// Function to broadcast a message to a specific port
+void communicate_wifi_broadcast(oop process,oop GM) {
+    getInt(mpc);int size_args = int_value;
+    char* addr = aps();
+    int   port = api();
+    char* msg = aps();
+
+    int sockfd;
+    struct sockaddr_in broadcast_addr;
+    int yes = 1;
+
+    // Create a socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket");
+        return;
+    }
+
+    // Enable broadcast mode
+    if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &yes, sizeof(yes)) < 0) {
+        perror("setsockopt");
+        close(sockfd);
+        return;
+    }
+
+    // Set non-blocking mode
+    set_nonblocking(sockfd);
+
+    // Set broadcast address
+    memset(&broadcast_addr, 0, sizeof(broadcast_addr));
+    broadcast_addr.sin_family = AF_INET;
+    broadcast_addr.sin_port = htons(port);
+    broadcast_addr.sin_addr.s_addr = inet_addr(addr);
+
+    // Send the broadcast message
+    ssize_t ret = sendto(sockfd, msg, strlen(msg), 0, (struct sockaddr *)&broadcast_addr, sizeof(broadcast_addr));
+    if (ret < 0) {
+        perror("sendto");
+    } else {
+        printf("Broadcast message sent successfully\n");
+    }
+
+    // Close the socket
+    close(sockfd);
+    return ;
+}
+
 
 void lib_communicate(oop process,oop GM){
     getInt(mpc);int func_num = int_value;
@@ -450,7 +614,21 @@ void lib_communicate(oop process,oop GM){
 #endif
     switch(func_num){
         case COMMUNICATE_WiFi_SEND_P:{
+#if DEBUG
+            DEBUG_LOG("COMMUNICATE_WiFi_SEND_P: if it is work REMOVEME\n");
+#endif
             communicate_wifi_send(process,GM);
+            return;
+        }
+        case COMMUNICATE_WiFi_BROADCAST_P:{
+#if DEBUG
+            DEBUG_LOG("COMMUNICATE_WiFi_SEND_P: if it is work REMOVEME\n");
+#endif
+            communicate_wifi_broadcast(process,GM);
+            return;
+        }
+        case COMMUNICATE_WiFi_GROUP_BROADCAST_P:{
+            communicate_wifi_group_send(process,GM);
             return;
         }
         case COMMUNICATE_WiFi_BUILD_GROUP_P:{

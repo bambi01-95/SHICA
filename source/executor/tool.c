@@ -143,11 +143,23 @@ oop printCode(oop program){
                 SHICA_PRINTF("MKCORE    %3d\n",_Integer_value(Array_get(program,pc++)));
                 continue;
             }
+            case SETCORE:{
+                int lib_num = _Integer_value(Array_get(program,pc++));
+                int func_num = _Integer_value(Array_get(program,pc++));
+                int num_init_val = _Integer_value(Array_get(program,pc++));
+                SHICA_PRINTF("SETCORE %3d  %3d  %3d\n",lib_num,func_num,num_init_val);
+                continue;
+            }
+            case SETSUBCORE:{
+                int lib_num = _Integer_value(Array_get(program,pc++));
+                int func_num = _Integer_value(Array_get(program,pc++));
+                int num_init_val = _Integer_value(Array_get(program,pc++));
+                SHICA_PRINTF("SETSUBCORE %3d  %3d  %3d\n",lib_num,func_num,num_init_val);
+                continue;
+            }
             case MKTHREAD:{
-                oop lib_num  = Array_get(program,pc++);
-                oop eve_num = Array_get(program,pc++);
                 oop numThread = Array_get(program,pc++);
-                SHICA_PRINTF("MKTHREAD %3d  %3d  %3d\n",_Integer_value(lib_num),_Integer_value(eve_num),_Integer_value(numThread));
+                SHICA_PRINTF("MKTHREAD %3d\n",_Integer_value(numThread));
                 continue;
             }
             case SETTHREAD: {

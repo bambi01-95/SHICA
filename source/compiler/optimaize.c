@@ -906,7 +906,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 oop args = get(exp,Call,arguments);
                 char size = get(function,EventFunc,size_of_pin_num);
                 for(int i=0; i< size;i++){//#
-                    assert(getType(args->Pair.a)==Integer);
+                    assert(getType(args->Pair.a)==Integer);//FIX ME: need to chage any type
                     function->EventFunc.pin_num[i] =  atoi(args->Pair.a->Integer.number);
                     args = args->Pair.b;
                 }
