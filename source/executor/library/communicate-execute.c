@@ -225,8 +225,8 @@ oop eve_wifi_receive(oop core){
 
 // Function to receive a message from a specific address and port
 oop  wifiReceived(oop core) {
-    char* from_addr = core->Core.vd->VarS.v_s1;
-    int port        = core->Core.vd->VarS.v_i1;
+    char* from_addr = core->Core.vd->VarIS.v_s1;
+    int port        = core->Core.vd->VarIS.v_i1;
 
     int sockfd;
     struct sockaddr_in recv_addr, sender_addr;
@@ -268,12 +268,13 @@ oop  wifiReceived(oop core) {
     strcpy(from_addr, inet_ntoa(sender_addr.sin_addr)); // Save the sender's address
 
     close(sockfd);
-    return buffer;
+    // return buffer;
+    return core;
 }
 
 // Function to receive a broadcast message
-oop wifiBrReceived(char *from_addr, int port) {
-    return wifiReceived(from_addr, port); // Reuse the wifiReceived function
+oop wifiBrReceived(oop core) {
+    return wifiReceived(core); // Reuse the wifiReceived function
 }
 
 
