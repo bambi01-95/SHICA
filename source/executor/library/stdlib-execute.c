@@ -93,7 +93,7 @@ oop eve_loop(oop core){
 #if SBC
 oop eve_timer(oop core){
     time_t current_time = time(NULL);
-    if(current_time - core->Core.vd->VarTI.v_i1 >= core->Core.vd->VarTI.v_i2){
+    if(current_time - core->Core.vd->VarTI.v_t1 >= core->Core.vd->VarTI.v_i2){
         core->Core.vd->VarTI.v_t1 = current_time;
         core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
 
@@ -246,6 +246,8 @@ oop Event_stdlib(int eve_num,oop stack){
         case TEST_E:{
 #if SBC     
             core = newCore(VarTI);
+            core->Core.var = newFixArray(3);
+            core->Core.var->FixArray.elements[0] = _newInteger((int)time(NULL));
             core->Core.vd->VarTI.v_t1 = time(NULL);
             core->Core.vd->VarTI.v_i1  = 0;
             core->Core.vd->VarTI.v_i2  = 1;
@@ -268,7 +270,8 @@ oop Event_stdlib(int eve_num,oop stack){
             core = newCore(VarTI);
             core->Core.vd->VarTI.v_t1 = time(NULL);
             core->Core.vd->VarTI.v_i1  = 0;
-            core->Core.vd->VarTI.v_i2  = _Integer_value(Array_pop(stack));
+            int interval = _Integer_value(Array_pop(stack));
+            core->Core.vd->VarTI.v_i2  = (interval > 0) ? interval : 1;
             core->Core.func = &eve_timer;
 #else
             core = newCore(Default);

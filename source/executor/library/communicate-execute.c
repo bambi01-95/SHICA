@@ -3,15 +3,181 @@
 #define COMMUNICATE_EXECUTE_C
 
 #include "communicate-execute.h"
+#include "../lib/exgc.c"
 
+void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, char *groupKey) {
+    // 引数チェック
+    if (ipAddr == NULL || groupKey == NULL) {
+        SHICA_FPRINTF(stderr, "Invalid argument\n");
+        SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
+        exit(1);
+    }
+#if DEBUG
+    DEBUG_LOG("ipAddr:%s portNum:%d groupID:%d groupKey:%s\n",ipAddr,portNum,groupID,groupKey);
+#endif
 
+#if MSGC
+    struct ExternMemory *em = newExternMemory(8);
+    subcore->SubCore.em = em;
+    struct SocketInfo *socketInfo = (struct SocketInfo *)gc_extern_alloc(em,sizeof(struct SocketInfo));
+#else
+    struct SocketInfo *socketInfo = (struct SocketInfo *)malloc(sizeof(struct SocketInfo));
+#endif
+    socketInfo->addr_len = sizeof(socketInfo->sender_addr);
 
+    // 自身のネットワークIPアドレスを取得
+    if (get_network_ip(socketInfo->own_ip, sizeof(socketInfo->own_ip)) != 0) {
+        SHICA_FPRINTF(stderr, "Failed to get own IP address\n");
+        SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
+        exit(1);
+        subcore->SubCore.em = 0;
+        return ;
+    }
+
+#if DEBUG
+    DEBUG_LOG("Own IP: %s\n", socketInfo->own_ip);
+#endif
+
+    // 受信ソケット作成とノンブロッキング化
+    if (create_receive_socket(&socketInfo->recv_sockfd, &socketInfo->recv_addr,portNum) == 0) {
+        set_nonblocking(socketInfo->recv_sockfd);
+    } else {
+        SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
+        exit(1);
+        subcore->SubCore.em = 0;
+        return ;
+    }
+
+    // 送信ソケット作成とブロードキャストアドレス設定
+    if (create_broadcast_socket(&socketInfo->send_sockfd, &socketInfo->broadcast_addr,ipAddr,portNum) != 0) {
+        close(socketInfo->recv_sockfd);
+        SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
+        exit(1);
+        subcore->SubCore.em = 0;
+        return ;
+    }
+
+#if MSGC
+    struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)gc_extern_alloc(em,sizeof(struct AgentInfo));
+#else
+    struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)malloc(sizeof(struct AgentInfo));
+#endif
+    MY_AGENT_INFO->socket = socketInfo;
+  
+#define TIMEOUT 2
+    char buf[BUF_SIZE];
+    memset(buf, 0, BUF_SIZE);
+    buf[DATA_REQUEST_TYPE] = REQUEST_JOIN;
+    buf[DATA_GROUP_ID] = groupID;
+    buf[DATA_MY_ID] = 0;
+    buf[DATA_REQUEST_MEMEBER_ID] = 0;
+    buf[DATA_SIZE_OF_MEMBER] = 1;
+    memcpy(buf + DATA_GROUP_KEY, groupKey, 4);
+    buf[DATA_DATA] = 0;
+    
+    // グループ参加リクエストの送信
+    int ret = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buf, BUF_SIZE);
+    printf("send_broadcast_nonblocking\n");
+    if (ret < 0) {
+        printf("send_broadcast_nonblocking\n");
+        agent_p agent = createAgent(AgentReader);
+        agent->base.myID = 0;
+        agent->base.groupID = groupID;
+        agent->reader.sizeOfMember = (1U);
+#if MSGC
+        agent->reader.groupKey = (char *)gc_extern_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#else
+        agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#endif
+        memcpy(agent->reader.groupKey, groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
+        MY_AGENT_INFO->agent = agent;//remove me after adapt em
+        subcore->SubCore.any = (void *)MY_AGENT_INFO;
+        // perror("send_broadcast_nonblocking");
+        // close(socketInfo->recv_sockfd);
+        // close(socketInfo->send_sockfd);
+        // SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
+        // exit(1);
+        // MY_AGENT_INFO = 0;
+        // return;
+    }
+    // グループ参加リクエストの受信
+    time_t start = time(NULL);
+    while(time(NULL) - start < TIMEOUT){
+        ssize_t ret = recvfrom(socketInfo->recv_sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
+        if (ret > 0) {
+            buf[ret] = '\0'; // Null終端
+            char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
+            // 自分自身の送信データを無視
+            if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
+#if DEBUG
+                DEBUG_LOG("same ip\n");
+#endif
+                continue;
+            }
+#if DEBUG
+            DEBUG_LOG("\nReceived from %s: %s\n", sender_ip, buf);
+#else
+            SHICA_PRINTF("\nReceived from %s: %s\n", sender_ip, buf);
+#endif
+            if(buf[DATA_GROUP_ID] == groupID && memcmp(buf + DATA_GROUP_KEY, groupKey, SIZE_OF_DATA_GROUP_KEY) == 0){
+                switch(buf[DATA_REQUEST_TYPE]){
+                    case REQUEST_TO_BE_MEMBER:{
+                        agent_p agent = createAgent(AgentMember);
+                        agent->base.myID    = buf[DATA_MY_ID];
+                        agent->base.groupID = buf[DATA_GROUP_ID];
+#if MSGC
+                        agent->member.groupKey = (char *)gc_extern_alloc(em,SIZE_OF_DATA_GROUP_KEY + 1);
+#else
+                        agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#endif
+                        memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
+#if DEBUG
+                        DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
+#endif
+                        printf("Join Group Success: my id is %d\n",agent->base.myID);
+                        MY_AGENT_INFO->agent = agent;//remove me after adapt em
+                        subcore->SubCore.any = (void *)MY_AGENT_INFO;
+                        return;
+                    }
+                    case REQUEST_REJECT:{
+#if DEBUG
+                        DEBUG_LOG("Join Group Reject\n");
+#endif
+                        close(socketInfo->recv_sockfd);
+                        close(socketInfo->send_sockfd);
+                        MY_AGENT_INFO = 0;//remove me after em
+                        subcore->SubCore.em = 0;
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    // タイムアウト
+    printf("BUILD GROUP\n");
+    agent_p agent = createAgent(AgentReader);
+    agent->base.myID = 1;
+    agent->base.groupID = groupID;
+    agent->reader.sizeOfMember = (1U);
+#if MSGC
+    agent->reader.groupKey = (char *)gc_extern_alloc(em,SIZE_OF_DATA_GROUP_KEY + 1);
+#else
+    agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+#endif
+    memcpy(agent->reader.groupKey,groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
+    MY_AGENT_INFO->agent = agent;//remove me after adapt em
+    subcore->SubCore.any = (void *)MY_AGENT_INFO;
+    return;
+#undef TIMEOUT
+}
 
 
 oop eve_wifi_receive(oop core){
     //corret 
-#if SBC    
-        struct SocketInfo *socketInfo = MY_AGENT_INFO->socket;
+#if SBC
+        struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)core->SubCore.any;
+        struct SocketInfo *socketInfo = MY_AGENT_INFO->socket;//remove me after adapt em
         agent_p agent = MY_AGENT_INFO->agent;
         // メッセージ受信
         char buffer[BUF_SIZE];
@@ -117,6 +283,7 @@ oop eve_wifi_receive(oop core){
                                     printf("Replied to %s: SUCCESS\n", sender_ip);
                                 }
                                 MY_AGENT_INFO->agent = newAgent;
+                                core->SubCore.any = (void *)MY_AGENT_INFO;
                             }
                         }
                         return core;
@@ -299,7 +466,13 @@ oop Event_communicate(int eve_num,oop stack){
         }
         case COMMUNICATE_WiFi_GROUP_RECEIVE_E:{
             core = newCore(Default);
-            core->Core.vd->Default.count = 0;
+            core->Core.var = newFixArray(4);
+            core->Core.var->FixArray.elements[0] = Array_pop(stack);//String  address
+            core->Core.var->FixArray.elements[1] = Array_pop(stack);//Integer port
+            core->Core.var->FixArray.elements[2] = Array_pop(stack);//Integer groupID
+            core->Core.var->FixArray.elements[3] = Array_pop(stack);//String  groupKey
+            oop d = core->Core.var;
+            init_eve_wifi_receive(core,d->FixArray.elements[0]->_String.value, d->FixArray.elements[1]->_Integer._value, d->FixArray.elements[2]->_Integer._value, d->FixArray.elements[3]->_String.value);
             core->Core.func = &eve_wifi_receive;
             break;
         }
@@ -319,12 +492,14 @@ oop Event_communicate(int eve_num,oop stack){
 
 
 void communicate_wifi_group_send(oop process,oop GM){
+    oop subcore;
     getInt(mpc);int size_args = int_value;
     int sendToId = api();
     int value = api();
 #if DEBUG
     DEBUG_LOG("sendToId:%d value:%d\n",sendToId,value);
 #endif
+    struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)GM->SubCore.any;
     if(MY_AGENT_INFO == 0){
         SHICA_PRINTF("MY_AGENT_INFO is not set\n");
         return;
@@ -363,164 +538,9 @@ void communicate_wifi_group_send(oop process,oop GM){
 }
 
 void communicate_wifi_build_group(oop process,oop GM){
-    getInt(mpc);int size_args = int_value;
-    char* ipAddr = aps();
-    int   portNum = api();
-    int   groupID = api();
-    char* groupKey = aps();
-#if DEBUG
-    DEBUG_LOG("ipAddr:%s portNum:%d groupID:%d groupKey:%s\n",ipAddr,portNum,groupID,groupKey);
-#endif
-
-#if MSGC
-    struct SocketInfo *socketInfo = (struct SocketInfo *)gc_alloc(sizeof(struct SocketInfo));
-#else
-    struct SocketInfo *socketInfo = (struct SocketInfo *)malloc(sizeof(struct SocketInfo));
-#endif
-    socketInfo->addr_len = sizeof(socketInfo->sender_addr);
-
-    // 自身のネットワークIPアドレスを取得
-    if (get_network_ip(socketInfo->own_ip, sizeof(socketInfo->own_ip)) != 0) {
-        SHICA_FPRINTF(stderr, "Failed to get own IP address\n");
-        SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
-        exit(1);
-        MY_AGENT_INFO = 0;
-        return ;
-    }
-
-#if DEBUG
-    DEBUG_LOG("Own IP: %s\n", socketInfo->own_ip);
-#endif
-
-    // 受信ソケット作成とノンブロッキング化
-    if (create_receive_socket(&socketInfo->recv_sockfd, &socketInfo->recv_addr,portNum) == 0) {
-        set_nonblocking(socketInfo->recv_sockfd);
-    } else {
-        SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
-        exit(1);
-        MY_AGENT_INFO = 0;
-        return ;
-    }
-
-    // 送信ソケット作成とブロードキャストアドレス設定
-    if (create_broadcast_socket(&socketInfo->send_sockfd, &socketInfo->broadcast_addr,ipAddr,portNum) != 0) {
-        close(socketInfo->recv_sockfd);
-        SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
-        exit(1);
-        MY_AGENT_INFO = 0;
-        return ;
-    }
-
-#if MSGC
-    MY_AGENT_INFO = (struct AgentInfo *)gc_alloc(sizeof(struct AgentInfo));
-#else
-    MY_AGENT_INFO = (struct AgentInfo *)malloc(sizeof(struct AgentInfo));
-#endif
-    MY_AGENT_INFO->type = AgentInfo;
-    MY_AGENT_INFO->socket = socketInfo;
-  
-#define TIMEOUT 2
-    char buf[BUF_SIZE];
-    memset(buf, 0, BUF_SIZE);
-    buf[DATA_REQUEST_TYPE] = REQUEST_JOIN;
-    buf[DATA_GROUP_ID] = groupID;
-    buf[DATA_MY_ID] = 0;
-    buf[DATA_REQUEST_MEMEBER_ID] = 0;
-    buf[DATA_SIZE_OF_MEMBER] = 1;
-    memcpy(buf + DATA_GROUP_KEY, groupKey, 4);
-    buf[DATA_DATA] = 0;
-    
-    // グループ参加リクエストの送信
-    int ret = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buf, BUF_SIZE);
-    printf("send_broadcast_nonblocking\n");
-    if (ret < 0) {
-        printf("send_broadcast_nonblocking\n");
-        agent_p agent = createAgent(AgentReader);
-        agent->base.myID = 0;
-        agent->base.groupID = groupID;
-        agent->reader.sizeOfMember = (1U);
-#if MSGC
-        agent->reader.groupKey = (char *)gc_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#else
-        agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#endif
-        memcpy(agent->reader.groupKey, groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
-        MY_AGENT_INFO->agent = agent;
-        // perror("send_broadcast_nonblocking");
-        // close(socketInfo->recv_sockfd);
-        // close(socketInfo->send_sockfd);
-        // SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
-        // exit(1);
-        // MY_AGENT_INFO = 0;
-        // return;
-    }
-    // グループ参加リクエストの受信
-    time_t start = time(NULL);
-    while(time(NULL) - start < TIMEOUT){
-        ssize_t ret = recvfrom(socketInfo->recv_sockfd, buf, sizeof(buf), 0, (struct sockaddr *)&socketInfo->sender_addr, &socketInfo->addr_len);
-        if (ret > 0) {
-            buf[ret] = '\0'; // Null終端
-            char *sender_ip = inet_ntoa(socketInfo->sender_addr.sin_addr);
-            // 自分自身の送信データを無視
-            if (strcmp(sender_ip, socketInfo->own_ip) == 0) {
-#if DEBUG
-                DEBUG_LOG("same ip\n");
-#endif
-                continue;
-            }
-#if DEBUG
-            DEBUG_LOG("\nReceived from %s: %s\n", sender_ip, buf);
-#else
-            SHICA_PRINTF("\nReceived from %s: %s\n", sender_ip, buf);
-#endif
-            if(buf[DATA_GROUP_ID] == groupID && memcmp(buf + DATA_GROUP_KEY, groupKey, SIZE_OF_DATA_GROUP_KEY) == 0){
-                switch(buf[DATA_REQUEST_TYPE]){
-                    case REQUEST_TO_BE_MEMBER:{
-                        agent_p agent = createAgent(AgentMember);
-                        agent->base.myID    = buf[DATA_MY_ID];
-                        agent->base.groupID = buf[DATA_GROUP_ID];
-#if MSGC
-                        agent->member.groupKey = (char *)gc_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#else
-                        agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#endif
-                        memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
-#if DEBUG
-                        DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
-#endif
-                        printf("Join Group Success: my id is %d\n",agent->base.myID);
-                        MY_AGENT_INFO->agent = agent;
-                        return;
-                    }
-                    case REQUEST_REJECT:{
-#if DEBUG
-                        DEBUG_LOG("Join Group Reject\n");
-#endif
-                        close(socketInfo->recv_sockfd);
-                        close(socketInfo->send_sockfd);
-                        MY_AGENT_INFO = 0;
-                        return;
-                    }
-                }
-                break;
-            }
-        }
-    }
-    // タイムアウト
-    printf("BUILD GROUP\n");
-    agent_p agent = createAgent(AgentReader);
-    agent->base.myID = 1;
-    agent->base.groupID = groupID;
-    agent->reader.sizeOfMember = (1U);
-#if MSGC
-    agent->reader.groupKey = (char *)gc_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#else
-    agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#endif
-    memcpy(agent->reader.groupKey,groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
-    MY_AGENT_INFO->agent = agent;
+   SHICA_FPRINTF(stderr, "now unsupported function\n");
+   exit(1);
     return;
-#undef TIMEOUT
 }
 
 // Function to send a message to a specific address and port

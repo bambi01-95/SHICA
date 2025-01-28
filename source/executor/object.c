@@ -103,7 +103,6 @@ typedef oop (*Func)(oop);
 
 typedef union VarData VarData;
 typedef VarData *VD;
-struct AgentInfo;
 
 // should be mark
 oop nil       = 0;
@@ -142,9 +141,8 @@ enum Type {
     SubCore,
     Thread,
     Array,
+    FixArray,
     Queue,
-
-    AgentInfo,
     END,   
 };
 
@@ -162,9 +160,8 @@ enum Type {
         "Core",
         "Thread",
         "Array",
+        "FixArray",
         "Queue",
-
-        "AgentInfo",
         "END",
     };
 #endif
@@ -231,6 +228,7 @@ union VarData{
 #endif
 };
 
+//using for variable of Event
 
 struct Undefined { enum Type type; };
 struct _BasePoint{ enum Type type; int adress; };
@@ -244,11 +242,12 @@ struct _String    { enum Type type;  char *value; };
 #define QUEUE_SIZE 5          /* 待ち行列に入るデータの最大数 */
 struct Queue     { enum Type type;  oop *elements/*gc_mark*/; unsigned head:4; unsigned size:4; };
 struct Array     { enum Type type;  oop *elements/*gc_mark*/; int size; int capacity;};
-
+struct FixArray{   enum Type type;  oop *elements;/*gc_mark*/ int size;};
 struct Core      {
     enum Type type;
     char size;
     Func func;
+    oop   var;
     union VarData*  vd;/*gc_mark*/
     oop *threads; /*gc_mark*/
 };
@@ -257,7 +256,7 @@ struct SubCore{
     enum Type type;
     char size;
     Func func;
-    union VarData*  vd;/*gc_mark*/
+    oop   var;
     oop *threads;      /*gc_mark*/
     void *any;
     struct ExternMemory *em;
@@ -286,7 +285,9 @@ union Object {
     struct _String    _String;
     struct Queue      Queue;
     struct Array      Array;
+    struct FixArray   FixArray;
     struct Core       Core;
+    struct SubCore    SubCore;
     struct Thread     Thread;
 };
 
@@ -344,24 +345,41 @@ void markObject(oop obj){
             }
             return ;
         }
+        case FixArray:{
+            gc_markOnly(obj->FixArray.elements);// mark original pointer
+            for(int i = 0;i<obj->FixArray.size;i++){
+                gc_mark(obj->FixArray.elements[i]);
+            }
+            return ;
+        }
         case Core:{
             gc_mark(obj->Core.vd);//atomic object
             gc_markOnly(obj->Core.threads);// mark original pointer
             for(int i=0;i<obj->Core.size;i++){
                 gc_mark(obj->Core.threads[i]);
             }
+            if(obj->Core.var != 0){
+                gc_mark(obj->Core.var);
+            }
+            return ;
+        }
+        case SubCore:{
+            gc_mark(obj->SubCore.vd);//atomic object
+            gc_markOnly(obj->SubCore.threads);// mark original pointer
+            for(int i=0;i<obj->SubCore.size;i++){
+                gc_mark(obj->SubCore.threads[i]);
+            }
+            if(obj->SubCore.var != 0){
+                gc_mark(obj->SubCore.var);
+            }
+            gc_markExternMemory(obj->SubCore.em);
+            gc_markOnly(obj->SubCore.any);
             return ;
         }
         case Thread:{
+            //gc_mark(obj->Thread.core);
             gc_mark(obj->Thread.stack);
             gc_mark(obj->Thread.queue);
-            return ;
-        }
-        case AgentInfo:{
-            SHICA_PRINTF("mark AgentInfo\n");
-            SHICA_PRINTF("not commplete\n");
-            exit(0);
-            // gc_mark(obj->AgentInfo.socket);
             return ;
         }
         default:{
@@ -783,6 +801,22 @@ oop Array_args_copy(oop from,oop to)
     return to;
 }
 #endif
+
+
+//FIXARRAY
+oop newFixArray(int size){
+#if MSGC
+    GC_PUSH(oop, obj, newObject(FixArray));
+    obj->FixArray.size     = 0;
+    obj->FixArray.elements = gc_alloc(sizeof(oop) * size);
+    GC_POP(obj);
+#else
+    oop obj = newObject(FixArray);
+    obj->FixArray.size = 0;
+    obj->FixArray.elements = calloc(size, sizeof(oop));
+#endif
+    return obj;
+}
 
 
 

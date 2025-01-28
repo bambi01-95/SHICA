@@ -17,7 +17,7 @@ struct ExternMemory{
     int capacity;
 };
 
-struct EexternMemory *newExternMemory(int size){
+struct ExternMemory *newExternMemory(int size){
     struct ExternMemory *em = gc_alloc(sizeof(struct ExternMemory));
     em->memory = gc_alloc(sizeof(void*)*size);
     em->size = size;
