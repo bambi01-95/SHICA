@@ -1465,11 +1465,12 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             }
         }
         
+        //
 
         emitII(TRANS,0);
         int L = program->Array.number;
         int L_i = program->Array.size;
-
+        //MAKEME: need to make sturct of TRANSITION
         state_Pair = newPair(newPair(id,newPair(_newInteger(L_i),_newInteger(L))),state_Pair);
         break;
     }
