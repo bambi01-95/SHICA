@@ -860,7 +860,8 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         }else if(params==nil || body==nil){
             fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
         }else{
-            get(varId,Symbol,value) = newDupEvent(eventFunc,event); 
+            printlnObject(varId,2);
+            get(varId,Symbol,value) = newDupEvent(varId,copyEventFunc(eventFunc),event); 
         }
         return 0;
     }
@@ -915,6 +916,20 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     args = args->Pair.b;
                 }
                 emitOIII(CALL_P,get(function,Primitive, lib_num),get(function,Primitive,func_num),para_s);
+                break;
+            }
+            case DupEvent:{
+                if(isEntry!=1){
+                    fprintf(stderr,"Definition Error: Event functions cannot be initialized except by the setup event function\n ");
+                    exit(1);
+                }
+                oop args = get(exp,Call,arguments);
+                oop eventFunc = get(function,DupEvent,eventFunc);
+                char size = get(eventFunc,EventFunc,size_of_pin_num);
+                for(int i=0; i< size;i++){
+                    eventFunc->EventFunc.pin_exps[i] =  args->Pair.a;
+                    args = args->Pair.b;
+                }
                 break;
             }
             case EventFunc:{
@@ -1158,12 +1173,21 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
     //<1.変数とイベントアクションの定義>/<Definition of variables and event actions> 
         for(int i=0;i<size; i++){
-            switch(getType(events[i])){
+            oop statement = events[i];
+            switch(getType(statement)){
                 case SetArray:
                 case SetVarL:{
                     stt_val_c++;
-                    compO(events[i]);
+                    compO(statement);
                     break;
+                }
+                case Call:{
+                    oop id = get(statement,Call,function);
+                    oop function = get(id,Symbol,value);
+                    if(getType(function)!=DupEvent){
+                        fatal("line %d: %s is not DupEvent\n",get(id,Symbol,name));
+                    }
+                    statement = function->DupEvent.event;
                 }
                 case Event:{
                         emitII(JUMP,0);
@@ -1172,10 +1196,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     //init stt local variable
                     vnt = newArray(0);
                     int m_loc = program->Array.size;
-
-                    oop id    = get(events[i], Event, id);
-                    oop para  = get(events[i], Event, parameters);
-                    oop block = get(events[i], Event, body);
+                    oop id    = get(statement, Event, id);
+                    oop para  = get(statement, Event, parameters);
+                    oop block = get(statement, Event, body);
 #if DEBUG
                     SHICA_PRINTF("      > Event %s\n",get(id,Symbol,name));
 #endif
@@ -1194,6 +1217,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     }
                     else{
                         oop eve   = get(id,Symbol, value);
+                        if(getType(eve)==DupEvent){
+                            eve = eve->DupEvent.eventFunc;
+                        }
                         if(getType(eve)!=EventFunc){
                             fatal("%s is not EventFunc\n",get(id,Symbol,name));
                             exit(1);
@@ -1262,7 +1288,13 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     coreData->size++;
                     break;
                 }
-                default:fatal("line %d not apper\n",__LINE__);
+                default:{
+#if DEBUG
+                    DEBUG_ERROR("line %d not apper type %s\n",__LINE__,TYPENAME[getType(statement)]);
+#else
+                    SHICA_PRINTF("line %d not apper\n",__LINE__);
+#endif
+                }
             }
         }//end of definition of state variable and event 
 
@@ -1294,6 +1326,10 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 continue;
             }
             oop eveF = get(tmp->id,Symbol,value);
+
+            if(getType(eveF)==DupEvent){
+                eveF = eveF->DupEvent.eventFunc;
+            }
             
             //ILOAD Ii: event trigger initial value, pin, ip address, etc.
             for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){

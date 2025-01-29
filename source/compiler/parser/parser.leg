@@ -55,6 +55,7 @@ defEvent = EVENT n:id ASSIGN i:id ( p:eventparams       b:block  { $$ = newSetVa
 event   = i:id p:eventparams b:block             { $$ = newEvent(i,p,b) }
         | t:TYPE  i:id  ASSIGN  x:exp       { $$ = newSetVarL(t, i, x,newline);}
         | t:TYPE  i:id b:bracket ASSIGN x:list NLINE { $$ = newSetArray(t,i,b,x,newline); }
+		| i:id a:args		{ if(getType(get(i,Symbol,value))!=DupEvent){fatal("line %d: definition error",newline);};$$ = newCall(a, i, newline); } 
 
 stmt	= PRINT a:args NLINE      { $$ =  newPrint(a); }
 	    | IF LPAR c:exp RPAR s:stmtbl

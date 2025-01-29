@@ -181,7 +181,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                             oop thread = mainCore[core_i]->Core.threads[thread_i];
                             
                             if(thread->Thread.flag == 1){
-                                printf("GM size %d\n",GM->Thread.stack->Array.size);
                                 //implement function of event
                                 FLAG flag = sub_execute(thread,GM);
                                 switch(flag){

@@ -1,11 +1,14 @@
-event sec = timerSec()
-
+event sec = timerSec(int a){
+	print(a)
+}
 
 state initTestCode{
 	entry(){
 		init sec(3)
+		init timerSec(4)
 	}
-	sec(int t){
-		print(t)
+	timerSec(int n){
+		print(n)
 	}
+	sec()
 }

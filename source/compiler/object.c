@@ -672,8 +672,12 @@ oop newList_d1(enum Type t){
     node->List_d1.Typeset = t;
     return node;
 }
-
+#if DEBUG
+#define printlnObject(node, indent) _printlnObject(node, indent, __FILE__, __LINE__)
+void _printlnObject(oop node, int indent, char *file, int line);
+#else
 void printlnObject(oop node, int indent);
+#endif
 oop newPair(oop a, oop b)
 {
     oop obj = newObject(Pair);
@@ -689,10 +693,11 @@ oop newEventParam(oop type,oop symbol,oop cond){
     obj->EventParam.cond = cond;
     return obj;
 }
-oop newDupEvent(oop eventFunc,oop event){
+oop newDupEvent(oop id, oop eventFunc,oop event){
     oop obj = newObject(DupEvent);
     obj->DupEvent.eventFunc = eventFunc;
-    obj->DupEvent.event = event;
+    event->Event.id = id;
+    obj->DupEvent.event = event; // if some erro occur at Event function, check here
     return obj;
 }
 
@@ -840,7 +845,10 @@ oop newEventCall(oop arguments, oop function,int line)
 {
     oop node = newObject(Call);
     oop value = get(function,Symbol,value);
-    if(getType(value)!=EventFunc){
+    if(getType(value)!=EventFunc && getType(value)!=DupEvent){
+#if DEBUG
+        printf("value type %s\n",TYPENAME[getType(value)]);
+#endif
         fatal("line %d: Non EventFunc[ %s ] is not allowed to call with init symbol",line,get(function,Symbol,name));
     }
     node->Call.arguments = arguments;

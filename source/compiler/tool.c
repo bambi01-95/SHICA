@@ -3,8 +3,17 @@
 
 #include "./object.c"
 #include "../common/inst.c"
-void printlnObject(oop node, int indent)
-{
+#if DEBUG
+void _printlnObject(oop node, int indent, char *file, int line){
+    if(line>0)printf("%s line %d: ",file,line);
+#else
+void printlnObject(oop node, int indent){
+#endif
+
+#if DEBUG
+#undef printlnObject
+#define printlnObject(node, indent) _printlnObject(node, indent,0, 0)
+#endif
     printf("%*s", indent*2, "");
     switch (getType(node)) {
 	case Undefined:	printf("nil\n");				break;
@@ -25,6 +34,13 @@ void printlnObject(oop node, int indent)
 	    printlnObject(get(node, Function,body), indent+1);
 	    break;
 	}
+    case DupEvent:{
+        printf("DupEvent\n");
+        oop eventFunc = get(node,DupEvent,eventFunc);
+        printf("event func[%d][%d]",get(eventFunc,EventFunc,lib_num),get(eventFunc,EventFunc,eve_num) );
+        printf("event of %s\n", get(node, DupEvent,event)->Event.id->Symbol.name);
+        break;
+    }
 	case Binop: {
 	    switch (get(node, Binop,op)) {
 		case NE:  printf("NE\n"); break;
@@ -140,7 +156,15 @@ void printlnObject(oop node, int indent)
     case _Double: printf("%lf\n",get(node,_Double,value));break;
 	default:	printf("%s\n",TYPENAME[node->_type_]);assert(!"this cannot happen print");			break;
     }
+#if DEBUG
+#undef printlnObject
+#endif
 }
+#if DEBUG
+#ifndef printlnObject
+#define printlnObject(node, indent) _printlnObject(node, indent, __FILE__, __LINE__)
+#endif
+#endif
 
 oop printCode(oop program){
     int pc = 0;
@@ -288,6 +312,7 @@ oop printCode(oop program){
             case GET:{
                 printf("Get       ");//T
                 oop symbol = Array_get(program,pc++);
+
                 printlnObject(symbol,1);//T
                 continue;
             }
