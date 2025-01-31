@@ -18,7 +18,6 @@ define  = t:STATE i:id s:state                { $$ = setState(i,s)  }
 		| POINTCUT i:id j:jointps { $$ = newPointcut(i,j) }
 		| STRUCT i:id  p:child { $$ = newSetType(i,p,newline) }
 		| defEvent 
-        | d:bracket 	{ result = d }
         | t:TYPE   i:id p:params s:stmtbl     { $$ = newSetVar(t,i,newFunction(p,s),newline) } 
         | t:TYPE   i:id ASSIGN x:exp		  { $$ = newSetVarG(t, i, x,newline);}
         | RUN      i:id                       { $$ = newRun(newGetVar(i,newline)) }

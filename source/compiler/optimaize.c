@@ -845,6 +845,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case SetVarEvent:{
+        fprintf(stderr,"this is not happen here");
         oop varId = get(exp, SetVarEvent, id);
         oop event = get(exp, SetVarEvent, rhs);
         oop eventFuncId = get(event, Event, id);

@@ -53,6 +53,9 @@ int main(int argc, char const *argv[])
         Global_VNT  = newArray(0);
         state_Pair = nil;
         
+        while(yyparse()){
+            
+        }
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
         emitII(MSET,0);
         while (yyparse()) {
