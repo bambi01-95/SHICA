@@ -34,7 +34,7 @@ oop preprocess(oop exp,oop trees){
             oop stateName = get(exp,State,id);
             oop *events = get(exp,State,events);
 
-            oop globalEvent = newArray(0);
+            oop globalEvent = nil;
             for(int i=0;i<size; i++){
                 oop statement = events[i];
                 switch(getType(statement)){
@@ -45,14 +45,20 @@ oop preprocess(oop exp,oop trees){
                         break;
                     }
                     case SetVarL:
-                    case Event:break;
+                    case Event:{
+                        oop id = get(statement,Event,id);
+                        if(getType(get(id,Symbol,value))==DupEvent){
+                            globalEvent = newPair(id,globalEvent);
+                        }
+                        break;
+                    }
                     case Call:{
                         oop id = get(statement,Call,function);
                         oop function = get(id,Symbol,value);
                         if(getType(function)!=DupEvent){
                             fatal("line %d: %s is not DupEvent\n",get(id,Symbol,name));
                         }
-                        Array_push(globalEvent,id);
+                        globalEvent = newPair(id,globalEvent);
                         break;
                     }
                     default:{
@@ -62,6 +68,7 @@ oop preprocess(oop exp,oop trees){
                     }
                 }
             }
+            globalEvent = rePair(globalEvent,nil);
             Array_push(STATE_TABLE,newPair(stateName,globalEvent));
             Array_push(trees,exp);
             break;

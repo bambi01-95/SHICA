@@ -672,18 +672,24 @@ oop newList_d1(enum Type t){
     node->List_d1.Typeset = t;
     return node;
 }
-#if DEBUG
-#define printlnObject(node, indent) _printlnObject(node, indent, __FILE__, __LINE__)
-void _printlnObject(oop node, int indent, char *file, int line);
-#else
+
 void printlnObject(oop node, int indent);
-#endif
+
 oop newPair(oop a, oop b)
 {
     oop obj = newObject(Pair);
     obj->Pair.a = a;
     obj->Pair.b = b;
     return obj;
+}
+
+oop rePair(oop p,oop tail){
+    if(getType(p)!=Pair){
+        return tail;
+    }
+    oop child = get(p,Pair,b);
+    get(p,Pair,b) = tail;
+    return rePair(child,p); 
 }
 
 oop newEventParam(oop type,oop symbol,oop cond){

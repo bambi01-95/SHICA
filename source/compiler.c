@@ -65,13 +65,13 @@ int main(int argc, char const *argv[])
         printlnObject(programTrees,2);
 #endif
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
-        emitII(MSET,0);
+        emitOI(MSET,0);
         oop *elements  = get(programTrees,Array,elements);
         int size = get(programTrees,Array,size);
         for(int i = 0; i<size; i++){
             compile(program,elements[i],nil,Undefined);
         }
-        emitI(HALT);
+        emitO(HALT);
         Array_put(program,1,_newInteger(Global_VNT->Array.size));// make a space for global value
 
         printf("\n \x1b[31m write code *********************\x1b[0m\n\n");

@@ -73,7 +73,11 @@ oop CodeWrite(oop program){
         int op = _Integer_value(inst);
         genOp(op);
         switch(op){
-            case TRANS: genInt(_Integer_value(Array_get(program,pc++)));continue;
+            case TRANS:{
+                genInt(_Integer_value(Array_get(program,pc++)));
+                genInt(_Integer_value(Array_get(program,pc++)));
+                continue;
+            }
             case i_load:genInt(_Integer_value(Array_get(program,pc++)));continue;
             case l_load:genLong(Array_get(program,pc++)->_Long.value);continue;
             case f_load: genFloat(_Float_value(Array_get(program,pc++)));continue;

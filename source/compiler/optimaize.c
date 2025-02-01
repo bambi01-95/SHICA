@@ -1,6 +1,6 @@
 #include "object.c"
 #include "../common/inst.c"
-
+#include "./preprocess.c"
 #ifndef OPTIMAIZE_C
 #define OPTIMAIZE_C
 
@@ -210,14 +210,7 @@ oop kill_assoc(oop vnt,int end){
     return nil;
 }
 
-oop rePair(oop p,oop tail){
-    if(getType(p)!=Pair){
-        return tail;
-    }
-    oop child = get(p,Pair,b);
-    get(p,Pair,b) = tail;
-    return rePair(child,p); 
-}
+
 
 
 void manage(oop program,enum Type type){
@@ -239,12 +232,13 @@ void manage(oop program,enum Type type){
 
 oop compile(oop,oop,oop,enum Type);
 #define emit(X)         Array_push(program,X)
-#define emitI(A)        emit(_newInteger(A))
-#define emitII(OP,A)    emitI(OP); emitI(A); manage(program,_Integer)
-#define emitOII(OP,A,B) emitI(OP); emitI(A); manage(program,_Integer); emitI(B); manage(program,_Integer); 
-#define emitOIII(OP,A,B,C) emitI(OP); emitI(A); manage(program,_Integer); emitI(B); manage(program,_Integer); emitI(C); manage(program,_Integer); 
-#define emitIO(OP,A,T)  emitI(OP); emit(A);  manage(program,T);
-#define emitIS(OP,A,S)  emitI(OP); emit(A);  program->Array.number+=S 
+#define emitO(A)        emit(_newInteger(A))
+#define emitI(A)        emitO(A); manage(program,_Integer)
+#define emitOI(OP,A)    emitO(OP); emitO(A); manage(program,_Integer)
+#define emitOII(OP,A,B) emitO(OP); emitO(A); manage(program,_Integer); emitO(B); manage(program,_Integer); 
+#define emitOIII(OP,A,B,C) emitO(OP); emitO(A); manage(program,_Integer); emitO(B); manage(program,_Integer); emitO(C); manage(program,_Integer); 
+#define emitIO(OP,A,T)  emitO(OP); emit(A);  manage(program,T);
+#define emitIS(OP,A,S)  emitO(OP); emit(A);  program->Array.number+=S 
 
 #define compO(O)    compile(program,O,vnt,Undefined)
 #define compOT(O,T) compile(program,O,vnt,T)
@@ -529,7 +523,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 	case Binop: {
 	    compOT(get(exp, Binop,lhs),type);
 	    compOT(get(exp, Binop,rhs),type);
-        emitI(Binop_oprand(type,get(exp,Binop,op),exp->Binop.line));
+        emitO(Binop_oprand(type,get(exp,Binop,op),exp->Binop.line));
         break;
 	}
 	case Unyop:{
@@ -537,11 +531,11 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 	    switch (get(exp, Unyop,op)){
             case NEG:{
                 switch(type){
-                    case _Char:    emitIO(c_load,_newChar(-1),_Char)  ;emitI(c_MUL);break;
-                    case _Integer: emitII(i_load,-1)           ;emitI(i_MUL);break;
-                    case _Long:    emitIO(l_load,_newLong(-1)  ,_Long)  ;emitI(l_MUL);break;
-                    case _Float:   emitIO(f_load,_newFloat(-1) ,_Float) ;emitI(f_MUL);break;
-                    case _Double:  emitIO(d_load,_newDouble(-1),_Double);emitI(d_MUL);break;
+                    case _Char:    emitIO(c_load,_newChar(-1),_Char)  ;emitO(c_MUL);break;
+                    case _Integer: emitOI(i_load,-1)           ;emitO(i_MUL);break;
+                    case _Long:    emitIO(l_load,_newLong(-1)  ,_Long)  ;emitO(l_MUL);break;
+                    case _Float:   emitIO(f_load,_newFloat(-1) ,_Float) ;emitO(f_MUL);break;
+                    case _Double:  emitIO(d_load,_newDouble(-1),_Double);emitO(d_MUL);break;
                     default:fatal("line %d type error: %s type cannnot apply convert negative value\n",exp->Unyop.line,TYPENAME[type]);
                 }
                 break;
@@ -550,11 +544,11 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 oop id = get(get(exp,Unyop,rhs),GetVar,id); 
                 struct Variable *var =  set_id_index(id,vnt);
                 switch(type){
-                    case _Integer: emitII(i_load,1)          ;emitI(i_ADD);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitI(l_ADD);break;
+                    case _Integer: emitOI(i_load,1)          ;emitO(i_ADD);break;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_ADD);break;
                     default: fatal("line %d type error: %s type cannot apply prefix increment, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
-                emitII(DEFINE+var->variable_num,var->index);emitII(GET+var->variable_num,var->index);
+                emitOI(DEFINE+var->variable_num,var->index);emitOI(GET+var->variable_num,var->index);
                 break;
             }
             
@@ -562,35 +556,35 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 oop id = get(get(exp,Unyop,rhs),GetVar,id); 
                 struct Variable *var = set_id_index(id,vnt);
                 switch(type){
-                    case _Integer: emitII(i_load,1)          ;emitI(i_SUB);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitI(l_SUB);break;
+                    case _Integer: emitOI(i_load,1)          ;emitO(i_SUB);break;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_SUB);break;
                     default: fatal("line %d type error: %s type cannot apply prefix decrement, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
-                emitII(DEFINE+var->variable_num,var->index);emitII(GET+var->variable_num,var->index);
+                emitOI(DEFINE+var->variable_num,var->index);emitOI(GET+var->variable_num,var->index);
                 break;
             }
             case AINC:{
                 oop id = get(get(exp,Unyop,rhs),GetVar,id); 
                 struct Variable * var = set_id_index(id,vnt);
-                emitII(GET+var->variable_num,var->index);
+                emitOI(GET+var->variable_num,var->index);
                 switch(type){
-                    case _Integer: emitII(i_load,         1) ;emitI(i_ADD);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long) ;emitI(l_ADD);break;
+                    case _Integer: emitOI(i_load,         1) ;emitO(i_ADD);break;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long) ;emitO(l_ADD);break;
                     default: fatal("line %d type error: %s type cannot apply postfix increment, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
-                emitII(DEFINE+var->variable_num,var->index);
+                emitOI(DEFINE+var->variable_num,var->index);
                 break;
             }
             case ADEC:{
                 oop id = get(get(exp,Unyop,rhs),GetVar,id); 
                 struct Variable * var = set_id_index(id,vnt);
-                emitII(GET+var->variable_num,var->index);
+                emitOI(GET+var->variable_num,var->index);
                 switch(type){
-                    case _Integer: emitII(i_load,         1) ;emitI(i_SUB);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitI(l_SUB);break;
+                    case _Integer: emitOI(i_load,         1) ;emitO(i_SUB);break;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_SUB);break;
                     default: fatal("line %d type error: %s type cannot apply postfix decrement, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
-                emitII(DEFINE+var->variable_num,var->index);
+                emitOI(DEFINE+var->variable_num,var->index);
                 break;
             }
 		    default:	assert(!"this cannot happen YNOP");
@@ -623,13 +617,13 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             case Function:{
                 get(value,Function,kind) = t;
                 get(id,Symbol,value) = value;
-                emitII(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
+                emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
                 vnt = newArray(0);          //Create symbol name table
                 int jump = program->Array.number;
                 int jump_i = program->Array.size;
                 //CALL num: num is this number
                 get(value,Function,position) = program->Array.number;
-            emitII(MSUB,0);                 //rbp for variable
+            emitOI(MSUB,0);                 //rbp for variable
             int msub_loc = program->Array.size;
                 oop para = get(value,Function,parameters);
                 compPara(para,exp->SetVar.line);
@@ -655,12 +649,12 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     if(ass!=nil){
                         if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
                         compOT(value,ass->Assoc.kind);
-                        emitII(DEFINE_G,ass->Assoc.index); 
+                        emitOI(DEFINE_G,ass->Assoc.index); 
                     }
                     else if((ass = assoc(id, Local_VNT))!=nil){
                         if(t!=Undefined)fatal("line %d variable error: %s is defined in Local variable\n",exp->SetVar.line,get(id,Symbol,name));
                         compOT(value,ass->Assoc.kind);
-                        emitII(DEFINE_L,ass->Assoc.index); 
+                        emitOI(DEFINE_L,ass->Assoc.index); 
                     }
                     else{
                         ass = assoc(id,vnt);
@@ -675,7 +669,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                             fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
                         }
                         compOT(value,ass->Assoc.kind);
-                        emitII(DEFINE,ass->Assoc.index); 
+                        emitOI(DEFINE,ass->Assoc.index); 
                     }
                 
             //FIXME with (2025/01/04): sttローカルがうまく実行できたなら下記を消す  
@@ -684,7 +678,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 //     if(ass!=nil){
                 //         if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
                 //         compOT(value,ass->Assoc.kind);
-                //         emitII(DEFINE_G,ass->Assoc.index); 
+                //         emitOI(DEFINE_G,ass->Assoc.index); 
                 //     }
                 //     else{
                 //         ass = assoc(id, Local_VNT);
@@ -699,7 +693,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 //             fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
                 //         }
                 //         compOT(value,ass->Assoc.kind);
-                //         emitII(DEFINE_L,ass->Assoc.index); 
+                //         emitOI(DEFINE_L,ass->Assoc.index); 
                 //     }
                 //}
             //end of remove
@@ -717,7 +711,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         if(ass!=nil){
             if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
             compOT(value,ass->Assoc.kind);
-            emitII(DEFINE_G,ass->Assoc.index); 
+            emitOI(DEFINE_G,ass->Assoc.index); 
         }
         else{
             ass = assoc(id, Local_VNT);
@@ -732,7 +726,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
             }
             compOT(value,ass->Assoc.kind);
-            emitII(DEFINE_L,ass->Assoc.index); 
+            emitOI(DEFINE_L,ass->Assoc.index); 
         }
         
         #if DEBUG
@@ -743,7 +737,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case SetVarG:{
-        emitI(GLOBAL);
+        emitO(GLOBAL);
         int t     = get(exp,SetVarG,typeset); //setting type of symbol
         oop id    = get(exp,SetVarG,id);      //get symbol
         oop value = get(exp,SetVarG,rhs);     //get value, = 10 or (int a,int b){return a + b}
@@ -758,8 +752,8 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         }
         t = ass->Assoc.kind;
         compOT(value,t);
-        emitII(DEFINE_G,ass->Assoc.index);   
-        emitI(GLOBAL_END);      
+        emitOI(DEFINE_G,ass->Assoc.index);   
+        emitO(GLOBAL_END);      
         break;
     }
 
@@ -769,17 +763,17 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         if(ass!=nil){
             if(ass->Assoc.kind != type)//The requested type and symbol do not match
                 fatal("line %d type error: requared [%s] type but [%s] type, global variable %s\n",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.kind],id->Symbol.name);
-            emitII(GET_G,ass->Assoc.index);
+            emitOI(GET_G,ass->Assoc.index);
         }
         else if((ass=assoc(id,Local_VNT))!=nil){
             if(ass->Assoc.kind!=type)
                 fatal("line %d type error: requared %s type but %s type, local variable %s",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.kind],id->Symbol.name);
-            emitII(GET_L,ass->Assoc.index); 
+            emitOI(GET_L,ass->Assoc.index); 
         }
         else if((ass = assoc(id,vnt))!=nil){
             if(ass->Assoc.kind!=type)
                 fatal("line %d type error: requared %s type but %s type, nomal variable %s",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.kind],id->Symbol.name);
-            emitII(GET,ass->Assoc.index);
+            emitOI(GET,ass->Assoc.index);
         }
         else{     //sym is not define
             fatal("line %d variable error: Undefine variable, %s\n",exp->GetVar.line,id->Symbol.name);
@@ -811,7 +805,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                             compOT(values->Block.statements[i],t);
                         }
                         compOT(index,_Integer);
-                        emitII(il_load,ass->Assoc.index);
+                        emitOI(il_load,ass->Assoc.index);
                         return exp;
                     }else{
                         user_error(1,"definition error: Undefined variable\n",get(exp,SetArray,line));
@@ -826,7 +820,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 case _Integer:{
                     compOT(values,ass->Assoc.kind);
                     compOT(index,ass->Assoc.kind);
-                    emitII(DEFINE_List,ass->Assoc.index);
+                    emitOI(DEFINE_List,ass->Assoc.index);
                     break;
                 }
                 case _Long:
@@ -963,13 +957,13 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             compOT(arg,argType);
             switch(argType){
                 case _Integer:
-                case Integer:emitI(i_PRINT);break;
-                case _Long   :emitI(l_PRINT);break;
+                case Integer:emitO(i_PRINT);break;
+                case _Long   :emitO(l_PRINT);break;
                 case _Float  :
-                case Float:   emitI(f_PRINT);break;
-                case _Double :emitI(d_PRINT);break;
-                case String  :emitI(s_PRINT);break;
-                case _Char   :emitI(c_PRINT);break;
+                case Float:   emitO(f_PRINT);break;
+                case _Double :emitO(d_PRINT);break;
+                case String  :emitO(s_PRINT);break;
+                case _Char   :emitO(c_PRINT);break;
                 defalut:{
 #if DEBUG
                     DEBUG_ERROR("type %s\n",TYPENAME[argType]);
@@ -991,7 +985,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             default:break;
         }
         compOT(get(exp, If,condition),c_type);
-        emitII(JUMPF,0);//->done or else
+        emitOI(JUMPF,0);//->done or else
         int jump1 = program->Array.number;
         int jump1_i = program->Array.size;
         int size =0;
@@ -1002,7 +996,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop stmt2 = get(exp,If,statement2);
         //else
         if(stmt2 != sys_false){
-            emitII(JUMP,0);//->done
+            emitOI(JUMP,0);//->done
             int jump2 = program->Array.number;
             int jump2_i = program->Array.size;
             
@@ -1034,7 +1028,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         // compOT(get(exp, While,condition),_Integer);
         // kill_assoc(vnt,size);
 
-        emitII(JUMPF,0);
+        emitOI(JUMPF,0);
         int L2 = program->Array.number;
         int L2_i = program->Array.size;
         
@@ -1046,7 +1040,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         
 
 
-        emitII(JUMP, 0);
+        emitOI(JUMP, 0);
         int L4 = program->Array.number;/*done*/
         int L4_i = program->Array.size;/*done*/
         Array_put(program,L2_i - 1,_newInteger(L4-L2));/* jumpf -> done */
@@ -1075,7 +1069,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         if(get(exp,For,initstate)!=nil)
             compO(get(exp,For,initstate));//for(int i = 0,...)
         
-        emitII(JUMP,0);//jump update
+        emitOI(JUMP,0);//jump update
         int L1   = program->Array.number;
         int L1_s = program->Array.size;
         if(get(exp,For,update)!=nil)
@@ -1084,13 +1078,13 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         int L2_s = program->Array.size;
         if(get(exp,For,condition)!=nil)
             compOT(get(exp,For,condition),_Integer);
-        else{emitII(i_load,1);}
-        emitII(JUMPF,0);
+        else{emitOI(i_load,1);}
+        emitOI(JUMPF,0);
         int jumpf = program->Array.number;
         int jumpf_s = program->Array.size;
 
         compOT(get(exp,For,statement),type);
-        emitII(JUMP,0);
+        emitOI(JUMP,0);
         int done    = program->Array.number;
         int done_s  = program->Array.size;
 
@@ -1117,20 +1111,20 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case Break:{
-        emitII(JUMP,0);
+        emitOI(JUMP,0);
         b_push(program->Array.size);
         b_push(program->Array.number);
         break;
     }
     case Continue:{
-        emitII(JUMP,0);
+        emitOI(JUMP,0);
         c_push(program->Array.size);
         c_push(program->Array.number);
         break;
     }
     case Return:{
         compOT(get(exp,Return,value),type);
-        emitI(RET);
+        emitO(RET);
         break;
     }
 
@@ -1203,7 +1197,7 @@ state default{
     }
 }
 */
-                        emitII(JUMP,0);
+                        emitOI(JUMP,0);
                     int jump_i = program->Array.size;
                     int jump = program->Array.number;
                     //init stt local variable
@@ -1275,11 +1269,11 @@ state default{
                                 // Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
                                 //threadData->condLocs[j] = program->Array.number;
                                 compile(program,cond,vnt,_Integer);
-                                emitI(COND);
+                                emitO(COND);
                             }
                             para = para->Pair.b;//move to next param
                         }//end of param
-                        emitI(EOC);
+                        emitO(EOC);
                     }
 
                     //define Event Action
@@ -1293,8 +1287,8 @@ state default{
                     Array_put(program,m_loc -1, _newInteger(m_size));
                     vnt = nil;
                     isEntry = 0;//entry() is not in the entry(){} block
-                        emitI(MPOP);
-                        emitI(EOE);
+                        emitO(MPOP);
+                        emitO(EOE);
                     Array_put(program,jump_i -1,_newInteger(program->Array.number - jump));// jump event 
                     isEntry = 0;
                     coreData->threadData[coreData->size] = threadData;
@@ -1327,8 +1321,8 @@ state default{
         }
         
 
-        emitII(MKCORE,num_of_core);
-        // emitII(THREAD,size - Entry_bool - stt_val_c);
+        emitOI(MKCORE,num_of_core);
+        // emitOI(THREAD,size - Entry_bool - stt_val_c);
         stt_loc = program->Array.number;
 
     // <3.イベント関数の呼び出し>/<Event function call>
@@ -1339,12 +1333,9 @@ state default{
                 tmp = tmp->next;
                 continue;
             }
-            DEBUG_LOG("  > Event %s\n",get(tmp->id,Symbol,name));
-            DEBUG_LOG("     Event type [%s]\n",TYPENAME[getType(get(tmp->id,Symbol,value))]);
             oop eveF = get(tmp->id,Symbol,value);
 
             if(getType(eveF)==DupEvent){
-                DEBUG_LOG("pin size %d\n",eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num);
                 emitOII(COPYCORE,(globalMemoryIndex++),
                     ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
@@ -1353,10 +1344,10 @@ state default{
             
             //ILOAD Ii: event trigger initial value, pin, ip address, etc.
             for(int pin_i=0;pin_i<eveF->EventFunc.size_of_pin_num;pin_i++){
-                // emitII(i_load,eveF->EventFunc.pin_num_type[pin_i]);
+                // emitOI(i_load,eveF->EventFunc.pin_num_type[pin_i]);
                 //CHECK ME: local var and global var
                 if(eveF->EventFunc.pin_exps[pin_i]==NULL){
-                    emitII(i_load,0);
+                    emitOI(i_load,0);
                 }else{
                     compile(program,eveF->EventFunc.pin_exps[pin_i],vnt,eveF->EventFunc.pin_num_type[pin_i]);  
                 }
@@ -1370,7 +1361,7 @@ state default{
             }
 
             //MKTHREAD LN EN TN: library number, event number, size of thread
-            emitII(MKTHREAD,tmp->size);
+            emitOI(MKTHREAD,tmp->size);
             for(int i=0;i<tmp->size;i++){
                 struct ThreadData *threadData = tmp->threadData[i];
                 if(threadData->condRelPos!=0){
@@ -1405,10 +1396,10 @@ state default{
 
         if(Entry_bool==1){//entry()の実行
             int cpc = program->Array.number;
-            emitII(ENTRY,core->threadData[0]->eventLoc - cpc - (OPESIZE + INTSIZE));
+            emitOI(ENTRY,core->threadData[0]->eventLoc - cpc - (OPESIZE + INTSIZE));
         }
 
-        emitI(STARTIMP);
+        emitO(STARTIMP);
         //ローカル変数の初期化
         Local_VNT = newArray(0);
         stateName->Symbol.value = exp;
@@ -1424,15 +1415,15 @@ state default{
 
         //FIXME: check get(id,Symbol,value) is empty
 
-    emitII(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
+    emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
         vnt = newArray(0);          //Create symbol name table
         int jump = program->Array.number;
         int jump_i = program->Array.size;
         get(exp,Advice,position) = program->Array.number;  //CALL num: num is this number
-    emitII(MSUB,0);                 //rbp for variable
+    emitOI(MSUB,0);                 //rbp for variable
     int msub_loc = program->Array.size;
         compOT(get(exp,Advice,body),Undefined);
-        emitI(EOA);
+        emitO(EOA);
     int vnt_size = vnt->Array.size;
     Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
         int end  = program->Array.number;
@@ -1486,11 +1477,53 @@ state default{
             }
         }
         
-        //
+        int sizeOfStateTable = get(STATE_TABLE,Array,size);
+        oop *states = get(STATE_TABLE,Array,elements);
+        oop NextStateData = nil;
+        oop CurrentStateData = nil;
+        //search state data
+        for(int i=0;i<sizeOfStateTable;i++){
+            oop _state = get(states[i],Pair,a);
+            if(_state==id){
+                printf("next id %s\n",get(states[i],Pair,a)->Symbol.name);
+                NextStateData = get(states[i],Pair,b);
+            }else if(_state==stateNameG){
+                printf("current id %s\n",get(states[i],Pair,a)->Symbol.name);
+                CurrentStateData = get(states[i],Pair,b);
+            }
+        }
+        int sizeOfNextStateEvent = 0;
+        printf("CurrentStateData\n");
+        //put state data to GM stack
+        if(NextStateData!=nil){
+            while(NextStateData!=nil){
+                printf("NextStateData\n");
+                sizeOfNextStateEvent++;
+                oop tmp = CurrentStateData;
+                oop nId = NextStateData->Pair.a;
+                int gIndex = 0;
+                while(tmp!=nil){
+                    oop cId = tmp->Pair.a;
+                    if(cId==nId){
+                        break;
+                    }
+                    gIndex++;
+                    tmp = tmp->Pair.b;
+                }
+                if(tmp==nil){
+                    emitOI(i_load,-1);
+                }
+                else{
+                    emitOI(i_load,gIndex);
+                }
+                NextStateData =  NextStateData->Pair.b;
+            }
+        }
 
-        emitII(TRANS,0);
+        emitOI(TRANS,0);
         int L = program->Array.number;
         int L_i = program->Array.size;
+        emitI(sizeOfNextStateEvent); //<-- this is a member of Trans Instreuction
         //MAKEME: need to make sturct of TRANSITION
         state_Pair = newPair(newPair(id,newPair(_newInteger(L_i),_newInteger(L))),state_Pair);
         break;

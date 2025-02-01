@@ -3,18 +3,8 @@
 
 #include "./object.c"
 #include "../common/inst.c"
-#if DEBUG
-void _printlnObject(oop node, int indent, char *file, int line){
-    if(line>0)printf("%s line %d: ",file,line);
-#else
-void printlnObject(oop node, int indent){
-#endif
 
-#if DEBUG
-#undef printlnObject
-#define printlnObject(node, indent) _printlnObject(node, indent,0, 0)
-#endif
-    printf("%*s", indent*2, "");
+void printlnObject(oop node, int indent){
     switch (getType(node)) {
 	case Undefined:	printf("nil\n");				break;
 	case Integer:	printf("%s\n", get(node, Integer,number));	break;
@@ -156,15 +146,8 @@ void printlnObject(oop node, int indent){
     case _Double: printf("%lf\n",get(node,_Double,value));break;
 	default:	printf("%s\n",TYPENAME[node->_type_]);assert(!"this cannot happen print");			break;
     }
-#if DEBUG
-#undef printlnObject
-#endif
+
 }
-#if DEBUG
-#ifndef printlnObject
-#define printlnObject(node, indent) _printlnObject(node, indent, __FILE__, __LINE__)
-#endif
-#endif
 
 oop printCode(oop program){
     int pc = 0;
@@ -178,7 +161,13 @@ oop printCode(oop program){
         }
         switch(_Integer_value(inst)){
 
-            case TRANS:  printf("TRANS     %3d\n",_Integer_value(Array_get(program,pc++)));continue;
+            case TRANS: {
+                printf("Trans ");//T
+                oop relPosNextState  = Array_get(program,pc++);
+                oop numOfNextStateEvent = Array_get(program,pc++);
+                printf("%3d  %3d\n",_Integer_value(relPosNextState),_Integer_value(numOfNextStateEvent));
+                continue;
+            }
             case i_load: printf("i_load    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
             case l_load: printf("l_load    %3lld\n",Array_get(program,pc++)->_Long.value);continue;
             case f_load: printf("f_load    %3f\n",_Float_value(Array_get(program,pc++)));continue;

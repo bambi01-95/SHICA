@@ -1,8 +1,23 @@
 event sec = timerSec()
 
-state test{
+state s1{
 	sec(int s){
 		print(s)
+	}
+	event(int a,int b){
+		print(a)
+		if(a>3){
+			state s2
+		}
+	}
+}
+
+state s2{
+	sec(int s){
+		print(s*2)
+		if(s>2){
+			state s1
+		}
 	}
 }
 
