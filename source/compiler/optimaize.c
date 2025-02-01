@@ -1498,7 +1498,7 @@ state default{
         if(NextStateData!=nil){
             while(NextStateData!=nil){
                 printf("NextStateData\n");
-                sizeOfNextStateEvent++;
+                
                 oop tmp = CurrentStateData;
                 oop nId = NextStateData->Pair.a;
                 int gIndex = 0;
@@ -1512,10 +1512,13 @@ state default{
                 }
                 if(tmp==nil){
                     emitOI(i_load,-1);
+                    emitOI(DEFINE_L,sizeOfNextStateEvent );
                 }
                 else{
                     emitOI(i_load,gIndex);
+                    emitOI(DEFINE_L,sizeOfNextStateEvent);
                 }
+                sizeOfNextStateEvent++;
                 NextStateData =  NextStateData->Pair.b;
             }
         }
