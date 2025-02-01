@@ -81,6 +81,16 @@ void main_execute(){
     for(;;){
         getInst(pc);
         switch(inst){
+            case MSET:{
+#if TEST  
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+                getInt(pc);GM->Thread.rbp = int_value;
+                for(int i =0;i<int_value ;i++){
+                    Array_push(GM->Thread.stack,nil);
+                }
+                continue;
+            }
             case i_load:{
 #if TEST  
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
@@ -121,6 +131,22 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 coreLoc = pc;
                 coreSize = -1;//CHECKME AND REMOVE ME: coreSize -1
                 mainCore = mkCores(numCore);
+                continue;
+            }
+            case COPYCORE:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+#endif
+                getSetInt(grobalMemoryIndex,pc);
+                getSetInt(jumpRelPos,pc);
+                //get the core from the GM
+                int rbp = GM->Thread.rbp;
+                oop copyCore = GM->Thread.stack->Array.elements[rbp + grobalMemoryIndex];
+                if(copyCore!=nil){
+                    mainCore[++coreSize] = copyCore;
+                    pc = jumpRelPos + pc;
+                    GM->Thread.stack->Array.elements[rbp + grobalMemoryIndex] = nil;
+                }
                 continue;
             }
             case SETCORE:{
@@ -317,16 +343,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                 continue;                
             }
 
-            case MSET:{
-#if TEST  
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
-#endif
-                getInt(pc);GM->Thread.rbp = int_value;
-                for(int i =0;i<int_value ;i++){
-                    Array_push(GM->Thread.stack,nil);
-                }
-                continue;
-            }
+
 
             case JUMP:{
 #if TEST  
@@ -1165,6 +1182,13 @@ oop printByteCode(){
             case s_ADD:  SHICA_PRINTF("d_ADD\n");continue;
 
             case MKCORE:    getInt(pc);SHICA_PRINTF("MKCORE    %3d\n",int_value);continue;
+            case COPYCORE:{
+                SHICA_PRINTF("COPYCORE ");//T
+                getInt(pc);int indexOfGlobalMemory = int_value;
+                getInt(pc);int jumpRelPos = int_value;
+                SHICA_PRINTF("%3d  %3d (to %d)\n",indexOfGlobalMemory,jumpRelPos,pc+jumpRelPos);
+                continue;
+            }
             case SETCORE:{
                 SHICA_PRINTF("SETCORE    ");
                 getInt(pc);int libNum = int_value;

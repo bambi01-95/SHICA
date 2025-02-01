@@ -143,6 +143,13 @@ oop printCode(oop program){
                 SHICA_PRINTF("MKCORE    %3d\n",_Integer_value(Array_get(program,pc++)));
                 continue;
             }
+            case COPYCORE:{
+                SHICA_PRINTF("COPYCORE ");//T
+                int indexOfGlobalMemory = _Integer_value(Array_get(program,pc++));
+                int jumpRelPos = _Integer_value(Array_get(program,pc++));
+                SHICA_PRINTF("%3d  %3d (to %d)\n",indexOfGlobalMemory,jumpRelPos,pc+jumpRelPos);
+                continue;
+            }
             case SETCORE:{
                 int lib_num = _Integer_value(Array_get(program,pc++));
                 int func_num = _Integer_value(Array_get(program,pc++));

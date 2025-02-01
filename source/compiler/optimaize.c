@@ -1344,8 +1344,9 @@ state default{
             oop eveF = get(tmp->id,Symbol,value);
 
             if(getType(eveF)==DupEvent){
+                DEBUG_LOG("pin size %d\n",eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num);
                 emitOII(COPYCORE,(globalMemoryIndex++),
-                    ((eveF->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
+                    ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
                 eveF = eveF->DupEvent.eventFunc;
             }
