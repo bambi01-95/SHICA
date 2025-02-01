@@ -215,15 +215,20 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                             gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
                                             evalEventArgsThread->Thread.stack = newArray(10);
                                         }
-                                        for(int core_ii = 0;core_ii<=coreSize;core_ii++){
-                                            if(mainCore[core_ii]->type == SubCore){
-                                                //Stack the core into the stack
-                                                break;
+
+
+                                        int pc_i = thread->Thread.pc++;//location of thread[i]'s pc
+                                        getSetInt(relpos,pc_i);
+                                        getSetInt(numCopyCore,pc);
+                                        for(int i=0;i<numCopyCore;i++){
+                                            oop coreIndex = Array_get(GM->Thread.stack,GM->Thread.rbp + i);
+                                            if(_Integer_value(coreIndex)==-1){
+                                                Array_put(GM->Thread.stack,GM->Thread.rbp + i,nil);
+                                            }else{
+                                                Array_put(GM->Thread.stack,GM->Thread.rbp + i,mainCore[_Integer_value(coreIndex)]);
                                             }
                                         }
-                                        int pc_i = thread->Thread.pc++;//location of thread[i]'s pc
-                                        getSetInt(pos,pc_i);
-                                        pc = pos + pc_i;
+                                        pc = relpos + pc_i;
                                     #if DEBUG
                                         SHICA_PRINTF("Trans to %d\n",pc);
                                     #endif
@@ -1118,7 +1123,14 @@ oop printByteCode(){
         SHICA_PRINTF("%3d ",pc);
         getInst(pc);
         switch(inst){
-            case TRANS:  getInt(pc);SHICA_PRINTF("TRANS     %3d (to %3d)\n",int_value,pc + int_value);continue;
+            case TRANS:{
+                SHICA_PRINTF("COPYCORE ");//T
+                getInt(pc);int nextStateRelPos = int_value;
+                int nextPC = pc + nextStateRelPos;
+                getInt(pc);int numOfEvent = int_value;
+                SHICA_PRINTF("%3d  %3d (to %d)\n",nextStateRelPos,numOfEvent,nextPC);
+                continue;
+            }
             case i_load: getInt(pc);SHICA_PRINTF("i_load    %3d\n",int_value);continue;
             case l_load: getLong(pc);SHICA_PRINTF("l_load    %3lld\n",long_value);continue;
             case f_load: getFloat(pc);SHICA_PRINTF("f_load    %3f\n",float_value);continue;

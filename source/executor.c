@@ -61,8 +61,6 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
         printByteCode();
         printf("\n \x1b[31m implement main()******************\x1b[0m\n\n");
 #endif
-    DEBUG_LOG(" stop imp code\n");
-        exit(0);
         main_execute();
     return 0;
 }
