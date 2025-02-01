@@ -1339,16 +1339,18 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 if(eveF->EventFunc.pin_exps[pin_i]==NULL){
                     emitII(i_load,0);
                 }else{
-                    printlnObject(eveF->EventFunc.pin_exps[pin_i],2);
                     compile(program,eveF->EventFunc.pin_exps[pin_i],vnt,eveF->EventFunc.pin_num_type[pin_i]);  
                 }
             }
+
+
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){
                 emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num);
             }else{
                 emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,eveF->EventFunc.size_of_pin_num);
             }
+
             //MKTHREAD LN EN TN: library number, event number, size of thread
             emitII(MKTHREAD,tmp->size);
             for(int i=0;i<tmp->size;i++){

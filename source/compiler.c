@@ -6,6 +6,7 @@ FILE* SOURCE_FILE;
 #define getchar() fgetc(SOURCE_FILE)
 
 #include "./compiler/object.c"
+#include "./compiler/preprocess.c"
 #include "./compiler/parser/parser.c"
 #include "./common/inst.c"
 #include "./compiler/library/lib.c"
@@ -49,17 +50,26 @@ int main(int argc, char const *argv[])
         
 
         oop program = newArray(0);
+        oop programTrees = newArray(0);
+        STATE_TABLE = newArray(0);
         Local_VNT   = newArray(0);
         Global_VNT  = newArray(0);
         state_Pair = nil;
         
         while(yyparse()){
-            
+            if(sys_false == preprocess(result,programTrees))break;
         }
+#if DEBUG
+        printf("end of preprocess\n");
+        printlnObject(STATE_TABLE,2);
+        printlnObject(programTrees,2);
+#endif
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
         emitII(MSET,0);
-        while (yyparse()) {
-            if(sys_false == compile(program,result,nil,Undefined))break;
+        oop *elements  = get(programTrees,Array,elements);
+        int size = get(programTrees,Array,size);
+        for(int i = 0; i<size; i++){
+            compile(program,elements[i],nil,Undefined);
         }
         emitI(HALT);
         Array_put(program,1,_newInteger(Global_VNT->Array.size));// make a space for global value

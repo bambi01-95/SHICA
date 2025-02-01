@@ -41,7 +41,7 @@ child	= LBRACE p:mkNil
 state   = LBRACE s:mkState
 	  (
 	    bln !RBRACE
-	    e:event                     { State_append(s, e) }
+	    e:event                     { State_papend(s, e) }
 	  )+
 	  bln RBRACE			{ $$ = s }
 

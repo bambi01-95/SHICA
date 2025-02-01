@@ -2,7 +2,8 @@ event sec = timerSec(int a){
 	print(a)
 }
 
-state initTestCode{
+
+state aa{
 	entry(){
 		init sec(3)
 		init timerSec(4)
@@ -11,4 +12,28 @@ state initTestCode{
 		print(n)
 	}
 	sec()
+	timerSec(int c){
+		print(c)
+		if(c>2){
+			state cc
+		}
+	}
+}
+
+
+state cc{
+	entry(){
+		init sec(3)
+		init timerSec(4)
+	}
+	timerSec(int n){
+		print(n)
+	}
+	sec()
+	timerSec(int c){
+		print(c)
+		if(c>2){
+			state aa
+		}
+	}
 }

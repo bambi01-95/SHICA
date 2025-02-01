@@ -3,8 +3,10 @@
 
 #include "object.c"
 
+oop STATE_TABLE = 0;
+
 oop preprocess(oop exp,oop trees){
-    switch(getType(result)){
+    switch(getType(exp)){
 
         case SetVarEvent:{
             oop varId = get(exp, SetVarEvent, id);
@@ -22,7 +24,6 @@ oop preprocess(oop exp,oop trees){
             }else if(params==nil || body==nil){
                 fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
             }else{
-                printlnObject(varId,2);
                 get(varId,Symbol,value) = newDupEvent(varId,copyEventFunc(eventFunc),event); 
             }
             return 0;
@@ -51,6 +52,8 @@ oop preprocess(oop exp,oop trees){
                         if(getType(function)!=DupEvent){
                             fatal("line %d: %s is not DupEvent\n",get(id,Symbol,name));
                         }
+                        Array_push(globalEvent,id);
+                        break;
                     }
                     default:{
 #if DEBUG
@@ -59,11 +62,17 @@ oop preprocess(oop exp,oop trees){
                     }
                 }
             }
-            
+            Array_push(STATE_TABLE,newPair(stateName,globalEvent));
+            Array_push(trees,exp);
             break;
         }
+        case END:{
+            Array_push(trees,exp);
+            return sys_false;
+        }
         default:{
-            Array_push(trees,result);
+            Array_push(trees,exp);
+            return nil;
         }
     }
     return trees;
