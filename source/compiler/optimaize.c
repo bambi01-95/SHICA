@@ -1191,6 +1191,18 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     statement = function->DupEvent.event;
                 }
                 case Event:{
+/*
+FIXME: Do not allow this code?
+
+event sec = timerSec(int sec){
+    print(sec)
+}
+state default{
+    event sec(int sec){
+        print(sec * 2)
+    }
+}
+*/
                         emitII(JUMP,0);
                     int jump_i = program->Array.size;
                     int jump = program->Array.number;
@@ -1321,14 +1333,20 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
     // <3.イベント関数の呼び出し>/<Event function call>
         tmp = core;
+        int globalMemoryIndex = 0;//for sharing core
         while(tmp!=0){
             if(tmp->id==entry_sym){
                 tmp = tmp->next;
                 continue;
             }
+            DEBUG_LOG("  > Event %s\n",get(tmp->id,Symbol,name));
+            DEBUG_LOG("     Event type [%s]\n",TYPENAME[getType(get(tmp->id,Symbol,value))]);
             oop eveF = get(tmp->id,Symbol,value);
 
             if(getType(eveF)==DupEvent){
+                emitOII(COPYCORE,(globalMemoryIndex++),
+                    ((eveF->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
+                     + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
                 eveF = eveF->DupEvent.eventFunc;
             }
             
@@ -1342,7 +1360,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     compile(program,eveF->EventFunc.pin_exps[pin_i],vnt,eveF->EventFunc.pin_num_type[pin_i]);  
                 }
             }
-
 
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){

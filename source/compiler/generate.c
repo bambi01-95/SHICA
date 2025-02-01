@@ -150,6 +150,11 @@ oop CodeWrite(oop program){
                 genInt(_Integer_value(Array_get(program,pc++)));
                 continue;
             }
+            case COPYCORE:{
+                genInt(_Integer_value(Array_get(program,pc++)));
+                genInt(_Integer_value(Array_get(program,pc++)));
+                continue;
+            }
             case SETCORE:
             case SETSUBCORE:{
                 genInt(_Integer_value(Array_get(program,pc++)));

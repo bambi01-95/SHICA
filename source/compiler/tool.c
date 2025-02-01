@@ -251,6 +251,13 @@ oop printCode(oop program){
             case s_GT:   printf("d_GT\n");continue; 
             case s_ADD:  printf("d_ADD\n");continue;
             case MKCORE: printf("MKCORE    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
+            case COPYCORE:{
+                printf("COPYCORE ");//T
+                oop indexOfGlobalMemory  = Array_get(program,pc++);
+                oop jumpRelPos = Array_get(program,pc++);
+                printf("%3d  %3d\n",_Integer_value(indexOfGlobalMemory),_Integer_value(jumpRelPos));
+                continue;
+            }
             case SETCORE:{
                 printf("SETCORE ");//T
                 oop lib_num  = Array_get(program,pc++);

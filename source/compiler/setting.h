@@ -2,11 +2,11 @@
 #define SETTING_H
 //TEST:1 instを表示する
 
-#define TEST 0
+#define TEST 1
 //SBC:1 SBCモード // 0:Arduinoモード
 #define SBC 1
 //DEBUG:1 デバッグモード
-#define DEBUG 0
+#define DEBUG 1
 
 
 

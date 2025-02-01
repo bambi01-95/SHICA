@@ -20,7 +20,7 @@ oop preprocess(oop exp,oop trees){
             oop body      = get(event, Event, body);
             if(params==nil && body==nil){
                 oop dupEventFunc = copyEventFunc(eventFunc);
-                get(varId,Symbol,value) = dupEventFunc; 
+                get(varId,Symbol,value) = newDupEvent(varId,dupEventFunc,nil); 
             }else if(params==nil || body==nil){
                 fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
             }else{
