@@ -54,7 +54,20 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
 #endif
     // コマンドライン引数の確認
 #if SBC
+    if (argc == 2){
+        // ファイル名の拡張子をチェック
+        if (!has_extension(argv[1],".stt")) {
+            fprintf(stderr, "エラー: ファイルは .stt 拡張子でなければなりません\n");
+            return 1;
+        }
+        char *fileName = strdup(argv[1]);
+        memoryRead(fileName);
+    }else if(argc == 1){
         memoryRead("code.stt");
+    }else{
+        fprintf(stderr, "エラー: 引数が不正です\n");
+        return 1;
+    }
 #endif
 #if !RPI
         printf("\n \x1b[31m print byte code after memory read ******************\x1b[0m\n\n");

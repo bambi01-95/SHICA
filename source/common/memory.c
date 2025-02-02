@@ -19,6 +19,28 @@ int has_extension(const char *filename,char *end) {
     return 0;      // それ以外の場合は0を返す
 }
 
+void change_extension(const char *filename, const char *new_ext, char *output, size_t output_size) {
+    const char *dot = strrchr(filename, '.'); // 最後のドットの位置を探す
+    size_t base_len;
+
+    if (dot) {
+        base_len = dot - filename; // 拡張子がある場合、その位置までをコピー
+    } else {
+        base_len = strlen(filename); // 拡張子がない場合、ファイル名全体をコピー
+    }
+
+    // バッファサイズを超えないように安全にコピー
+    if (base_len + strlen(new_ext) + 1 >= output_size) {
+        fprintf(stderr, "Error: output buffer is too small.\n");
+        return;
+    }
+
+    strncpy(output, filename, base_len);
+    output[base_len] = '\0'; // NULL終端
+    strcat(output, ".");
+    strcat(output, new_ext);
+}
+
 typedef unsigned char byte;
 byte   *memory  = 0;  // memory is a huge array of bytes
 size_t  memsize = 0;  // this is the current size of data stored in memory

@@ -37,7 +37,7 @@ int main(int argc, char const *argv[])
             fprintf(stderr, "エラー: ファイルは .txt 拡張子でなければなりません\n");
             return 1;
         }
-
+        char* inputFineName = strdup(argv[1]);
         // ファイルを読み込みモードで開く
         SOURCE_FILE = fopen(argv[1], "r");
         if (SOURCE_FILE == NULL) {
@@ -77,6 +77,15 @@ int main(int argc, char const *argv[])
         printf("\n \x1b[31m write code *********************\x1b[0m\n\n");
         CodeWrite(program);
         printCode(program);
+
+        char outputFileName[32];
+        if(strcmp(inputFineName,"input.txt")!=0){
+            change_extension(inputFineName,"stt",outputFileName,32);
+        }else{
+            strcpy(outputFileName,"code.stt");
+        }
+        
+
         if(argc==3  && strcmp(argv[2],"-e")==0){
             memoryWriteC("code.c");
         }
