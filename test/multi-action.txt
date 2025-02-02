@@ -1,10 +1,10 @@
 state s{
     event(int a:a%2==0,int b){
-        print(int,a)
-        print(int,b)
+        print(a)
+        print(b)
     }
     event(int a,int b:b%3==0){
-        print(int,a)
-        print(int,b)
+        print(a)
+        print(b)
     }
 }

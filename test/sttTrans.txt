@@ -7,7 +7,7 @@ int fib(int n){
 
 state s{
     event(int a:a%2==0,int b){
-        print(int,fib(17))
+        print(fib(17))
         if(a>10){
             state k
         }
@@ -16,7 +16,7 @@ state s{
 
 state k{
     event(int a:a%3==0,int b){
-        print(int,fib(10))
+        print(fib(10))
         if(a>12){
             state s
         }

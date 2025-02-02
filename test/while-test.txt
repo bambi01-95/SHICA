@@ -3,7 +3,7 @@ state s1{
     entry(){
         int a = 0
         while(a<10){
-            print(int,a)
+            print(a)
             a += 1
         }
     }

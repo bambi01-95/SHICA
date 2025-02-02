@@ -7,6 +7,6 @@ int fib(int n){
 
 state s{
     event(int a:a%2==0,int b){
-        print(int,fib(17))
+        print(fib(17))
     }
 }

@@ -1513,8 +1513,6 @@ state default{
                     emitOI(DEFINE_L,sizeOfNextStateEvent );
                 }
                 else{
-                    printf("gIndex %d\n",gIndex);
-                    printf("sizeOfNextStateEvent %d\n",sizeOfNextStateEvent);
                     emitOI(i_load,gIndex);
                     emitOI(DEFINE_L,sizeOfNextStateEvent);
                 }

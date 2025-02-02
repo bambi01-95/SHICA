@@ -41,7 +41,7 @@ child	= LBRACE p:mkNil
 state   = LBRACE s:mkState
 	  (
 	    bln !RBRACE
-	    e:event                     { State_papend(s, e) }
+	    e:event                     { State_append(s, e) }
 	  )+
 	  bln RBRACE			{ $$ = s }
 
@@ -56,7 +56,7 @@ event   = i:id p:eventparams b:block             { $$ = newEvent(i,p,b) }
         | t:TYPE  i:id b:bracket ASSIGN x:list NLINE { $$ = newSetArray(t,i,b,x,newline); }
 		| i:id a:args		{ if(getType(get(i,Symbol,value))!=DupEvent){fatal("line %d: definition error",newline);};$$ = newCall(a, i, newline); } 
 
-stmt	= PRINT a:args NLINE      { $$ =  newPrint(a); }
+stmt	= PRINT a:args      { $$ =  newPrint(a); }
 	    | IF LPAR c:exp RPAR s:stmtbl
 	      bln ELSE t:stmtbl            	        { $$ = newIf(c, s, t) }
 	    | IF    LPAR c:exp RPAR s:stmtbl	{ $$ = newIf(c, s, sys_false) }
@@ -65,8 +65,8 @@ stmt	= PRINT a:args NLINE      { $$ =  newPrint(a); }
         | CONTINUE NLINE                    { $$ = newContinue() }
         | BREAK    NLINE                    {  $$ = newBreak() }
         | RETURN - e:exp                      { $$ = newReturn(e) }
-        | STATE i:id  NLINE                  { $$ = newRun(i) }
-	    | x:expr  NLINE                      { $$ = x  }
+        | STATE i:id                   { $$ = newRun(i) }
+	    | x:expr                            { $$ = x  }
 	    | !.                                { $$ = nil } 
 	    | < (!eol &. .)* >                  { fatal("line %d syntax error: [%s]",newline, yytext); }
 

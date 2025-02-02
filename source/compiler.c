@@ -55,7 +55,9 @@ int main(int argc, char const *argv[])
         Local_VNT   = newArray(0);
         Global_VNT  = newArray(0);
         state_Pair = nil;
+#if DEBUG
         printf("\n \x1b[31m preprocess ******************\x1b[0m\n\n");
+#endif
         while(yyparse()){
             if(sys_false == preprocess(result,programTrees))break;
         }
@@ -63,8 +65,9 @@ int main(int argc, char const *argv[])
         
 #if DEBUG
         printlnObject(STATE_TABLE,1);
-#endif
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
+#endif
+        
         emitOI(MSET,0);
         oop *elements  = get(programTrees,Array,elements);
         int size = get(programTrees,Array,size);
@@ -73,10 +76,11 @@ int main(int argc, char const *argv[])
         }
         emitO(HALT);
         Array_put(program,1,_newInteger(Global_VNT->Array.size));// make a space for global value
-
+#if DEBUG
         printf("\n \x1b[31m write code *********************\x1b[0m\n\n");
-        CodeWrite(program);
         printCode(program);
+#endif
+        CodeWrite(program);
 
         char outputFileName[32];
         if(strcmp(inputFineName,"input.txt")!=0){
@@ -87,19 +91,17 @@ int main(int argc, char const *argv[])
         
 
         if(argc==3  && strcmp(argv[2],"-e")==0){
-            memoryWriteC("code.c");
+            memoryWriteC(outputFileName);
         }
-        else memoryWrite("code.stt");
+        else memoryWrite(outputFileName);
 
         
         free(program);
         free(symbols);
         memoryClear();
     }else{
-
         fprintf(stderr, "使用方法: %s <ファイル名>\n", argv[0]);
         return 1;
-
     }
     return 0;
 }

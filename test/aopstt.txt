@@ -1,5 +1,5 @@
 advice beforeLog{
-    print(str,"beforeLog")
+    print("beforeLog")
 }
 
 pointcut beforeLog{
@@ -7,7 +7,7 @@ pointcut beforeLog{
 }
 
 advice afterLog{
-    print(str,"afterLog")
+    print("afterLog")
 }
 
 pointcut afterLog{
@@ -17,7 +17,7 @@ pointcut afterLog{
 state s1{
     event(int a,int b){
         if(a>4){
-            print(str,"s1->s2")
+            print("s1->s2")
             state s2
         }
     }
@@ -26,7 +26,7 @@ state s1{
 state s2{
     event(int a,int b){
         if(a>4){
-            print(str,"s2->s1")
+            print("s2->s1")
             state s1
         }
     }

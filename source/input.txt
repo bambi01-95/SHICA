@@ -1,33 +1,12 @@
-advice Log{
-    print("Trans")
+int fib(int n){
+    if(n<=1){
+        return n
+    }
+    return fib(n-1)+fib(n-2)
 }
 
-pointcut Log{
-    before s1,
-	before s2,
+state s{
+    event(int a:a%2==0,int b){
+        print(fib(17))
+    }
 }
-
-event sec = timerSec()
-
-state s1{
-	sec(int s){
-		print(s)
-	}
-	event(int a,int b){
-		if(a>3){
-			state s2
-		}
-	}
-}
-
-state s2{
-	event(int a,int b){
-		if(a>3){
-			state s1
-		}
-	}
-	sec(int s){
-		print(s)
-	}
-}
-
