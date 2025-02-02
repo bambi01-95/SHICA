@@ -20,11 +20,12 @@ oop preprocess(oop exp,oop trees){
             oop body      = get(event, Event, body);
             if(params==nil && body==nil){
                 oop dupEventFunc = copyEventFunc(eventFunc);
-                get(varId,Symbol,value) = newDupEvent(varId,dupEventFunc,nil); 
+                get(varId,Symbol,value) = newDupEvent(dupEventFunc,nil); 
             }else if(params==nil || body==nil){
                 fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
             }else{
-                get(varId,Symbol,value) = newDupEvent(varId,copyEventFunc(eventFunc),event); 
+                get(event,Event,id) = varId;
+                get(varId,Symbol,value) = newDupEvent(copyEventFunc(eventFunc),event); 
             }
             return 0;
         }
@@ -45,7 +46,12 @@ oop preprocess(oop exp,oop trees){
 #endif
                         break;
                     }
-                    case SetVarL:
+                    case SetVarL:{
+                        break;
+                    }
+                    case SetVarEvent:{
+                        break;
+                    }
                     case Event:{
                         oop id = get(statement,Event,id);
                         if(getType(get(id,Symbol,value))==DupEvent){

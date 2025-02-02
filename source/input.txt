@@ -1,12 +1,9 @@
-int fib(int n){
-    if(n<=1){
-        return n
-    }
-    return fib(n-1)+fib(n-2)
-}
-
-state s{
-    event(int a:a%2==0,int b){
-        print(fib(17))
-    }
+state test{
+	event sec = timerSec()
+	entry(){
+		init sec(2)
+	}
+	sec(int t){
+		print(t)
+	}
 }

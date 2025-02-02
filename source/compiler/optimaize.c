@@ -453,6 +453,17 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
 }
 
 oop stateNameG = 0;
+oop LOCAL_EVENT_DEF_TABLE = 0;//PAIR
+oop findLocalEventDef(oop id){
+    oop tmp = LOCAL_EVENT_DEF_TABLE;
+    while(tmp!=nil){
+        oop eventId = get(tmp,Pair,a)->Pair.a;
+        if(id == eventId){
+            return get(tmp,Pair,a)->Pair.b;
+        }
+    }
+    return nil;
+}
 
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 {
@@ -851,12 +862,11 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop body      = get(event, Event, body);
         if(params==nil && body==nil){
             oop dupEventFunc = copyEventFunc(eventFunc);
-            get(varId,Symbol,value) = dupEventFunc; 
+            LOCAL_EVENT_DEF_TABLE = newPair(newPair(varId,newDupEvent(dupEventFunc,nil)),LOCAL_EVENT_DEF_TABLE);
         }else if(params==nil || body==nil){
             fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
         }else{
-            printlnObject(varId,2);
-            get(varId,Symbol,value) = newDupEvent(varId,copyEventFunc(eventFunc),event); 
+            fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
         }
         return 0;
     }
@@ -879,7 +889,11 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
 	case Call:{
         oop id = exp->Call.function;
-        oop function = get(id,Symbol,value);
+        oop function = findLocalEventDef(id);
+        if(function == nil){
+            function = get(id,Symbol,value);
+        }
+        
 	    switch (getType(function)){
             case Function:{
                 int t = get(function,Function,kind);
@@ -942,7 +956,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 }
                 break;
             }
-            default:printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
+            default:{
+                printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
+            }
 	    }
         
 	    break;
@@ -1153,6 +1169,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop stateName = get(exp,State,id);
         oop *events = get(exp,State,events);
         stateNameG = stateName;//for aop (case TRANS)
+        LOCAL_EVENT_DEF_TABLE = nil;
 #if DEBUG
         SHICA_PRINTF("  > stateName %s\n\n",get(stateName,Symbol,name));
 #endif
@@ -1184,6 +1201,11 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                     }
                     statement = function->DupEvent.event;
                 }
+                case SetVarEvent:{
+                    stt_val_c++;
+                    compO(statement);
+                    break;
+                }
                 case Event:{
 /*
 FIXME: Do not allow this code?
@@ -1204,6 +1226,7 @@ state default{
                     vnt = newArray(0);
                     int m_loc = program->Array.size;
                     oop id    = get(statement, Event, id);
+                    oop tmp_  = LOCAL_EVENT_DEF_TABLE;
                     oop para  = get(statement, Event, parameters);
                     oop block = get(statement, Event, body);
 #if DEBUG
@@ -1228,8 +1251,13 @@ state default{
                             eve = eve->DupEvent.eventFunc;
                         }
                         if(getType(eve)!=EventFunc){
-                            fatal("%s is not EventFunc\n",get(id,Symbol,name));
-                            exit(1);
+                            oop isDup = findLocalEventDef(id);
+                            if(getType(isDup)==DupEvent){
+                                eve = isDup->DupEvent.eventFunc;
+                            }else{
+                                fatal("%s is not EventFunc\n",get(id,Symbol,name));
+                                exit(1);
+                            }
                         }
                         int args_s =  eve->EventFunc.size_of_args_type_array;
                         char *args =  eve->EventFunc.args_type_array;
@@ -1335,12 +1363,17 @@ state default{
             }
             oop eveF = get(tmp->id,Symbol,value);
 
-            if(getType(eveF)==DupEvent){
+            if(getType(eveF)==DupEvent){//global dup event
                 // COPYCORE GMI JS: globalMemoryIndex, jumpSize
                 emitOII(COPYCORE,(globalMemoryIndex++),
                     ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
                 eveF = eveF->DupEvent.eventFunc;
+            }else{ //Local dup event
+                oop isDup = findLocalEventDef(tmp->id);
+                if(getType(isDup)==DupEvent){
+                    eveF = isDup->DupEvent.eventFunc;
+                }
             }
             
             //ILOAD Ii: event trigger initial value, pin, ip address, etc.

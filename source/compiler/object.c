@@ -699,10 +699,9 @@ oop newEventParam(oop type,oop symbol,oop cond){
     obj->EventParam.cond = cond;
     return obj;
 }
-oop newDupEvent(oop id, oop eventFunc,oop event){
+oop newDupEvent(oop eventFunc,oop event){
     oop obj = newObject(DupEvent);
     obj->DupEvent.eventFunc = eventFunc;
-    event->Event.id = id;
     obj->DupEvent.event = event; // if some erro occur at Event function, check here
     return obj;
 }
@@ -851,12 +850,6 @@ oop newEventCall(oop arguments, oop function,int line)
 {
     oop node = newObject(Call);
     oop value = get(function,Symbol,value);
-    if(getType(value)!=EventFunc && getType(value)!=DupEvent){
-#if DEBUG
-        printf("value type %s\n",TYPENAME[getType(value)]);
-#endif
-        fatal("line %d: Non EventFunc[ %s ] is not allowed to call with init symbol",line,get(function,Symbol,name));
-    }
     node->Call.arguments = arguments;
     node->Call.function  = function;
     return node;
