@@ -346,7 +346,7 @@ oop eve_wifi_receive(oop core){
             Array_push(data,_newInteger(buffer[DATA_MY_ID]));
                 if(value == ALL_MEMBER_ID){
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
-                }else if(value == ((1U) << agent->base.myID -1)){
+                }else if(value == ((1U) << (agent->base.myID -1))){
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
                 }else{
                     Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));

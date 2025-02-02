@@ -43,5 +43,4 @@ void *gc_extern_alloc(struct ExternMemory *em, int lbs)
     return p;
 }
 
-typedef void (*gc_markFunction_t)(void *);
 #endif

@@ -22,7 +22,7 @@ void printlnObject(oop node, int indent)
         int size = node->Array.size;
         m(indent);SHICA_PRINTF("Array %d\n",size);
         for(int i = 0;i<size;i++){
-            printlnObject(node->Array.elements[i],indent+1);
+            printf("%d:",i);printlnObject(node->Array.elements[i],indent+1);
         }
         break;
     }
@@ -41,7 +41,7 @@ void printlnObject(oop node, int indent)
         for(int i=0;i<node->Core.size;i++){
             printlnObject(node->Core.threads[i],indent+1);
         }
-        SHICA_PRINTF("end\n");
+        m(indent);SHICA_PRINTF("end\n");
         break;
     }
     case Thread:{

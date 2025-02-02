@@ -30,7 +30,11 @@
 
 
 #include "./lib/msgc.c"
-
+void stop(char *file,int line){
+    SHICA_FPRINTF(stderr,"stop %s %d\n",file,line);
+    exit(1);
+}
+#define STOP() stop(__FILE__,__LINE__)
 //remove me in the feature
 #define user_error(COND,MSG,LINE) ({ \
     if(COND){ \

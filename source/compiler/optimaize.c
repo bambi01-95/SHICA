@@ -1336,6 +1336,7 @@ state default{
             oop eveF = get(tmp->id,Symbol,value);
 
             if(getType(eveF)==DupEvent){
+                // COPYCORE GMI JS: globalMemoryIndex, jumpSize
                 emitOII(COPYCORE,(globalMemoryIndex++),
                     ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
@@ -1485,29 +1486,26 @@ state default{
         for(int i=0;i<sizeOfStateTable;i++){
             oop _state = get(states[i],Pair,a);
             if(_state==id){
-                printf("next id %s\n",get(states[i],Pair,a)->Symbol.name);
                 NextStateData = get(states[i],Pair,b);
             }else if(_state==stateNameG){
-                printf("current id %s\n",get(states[i],Pair,a)->Symbol.name);
                 CurrentStateData = get(states[i],Pair,b);
             }
         }
         int sizeOfNextStateEvent = 0;
-        printf("CurrentStateData\n");
         //put state data to GM stack
         if(NextStateData!=nil){
             while(NextStateData!=nil){
-                printf("NextStateData\n");
-                
                 oop tmp = CurrentStateData;
-                oop nId = NextStateData->Pair.a;
+                oop pairIdEveIndex = NextStateData->Pair.a;
+                oop nId = pairIdEveIndex->Pair.a;
+                oop nEve = pairIdEveIndex->Pair.b;
                 int gIndex = 0;
                 while(tmp!=nil){
-                    oop cId = tmp->Pair.a;
+                    oop cId = get(tmp->Pair.a,Pair,a);
                     if(cId==nId){
+                        gIndex = _Integer_value(get(get(tmp,Pair,a),Pair,b));
                         break;
                     }
-                    gIndex++;
                     tmp = tmp->Pair.b;
                 }
                 if(tmp==nil){
@@ -1515,6 +1513,8 @@ state default{
                     emitOI(DEFINE_L,sizeOfNextStateEvent );
                 }
                 else{
+                    printf("gIndex %d\n",gIndex);
+                    printf("sizeOfNextStateEvent %d\n",sizeOfNextStateEvent);
                     emitOI(i_load,gIndex);
                     emitOI(DEFINE_L,sizeOfNextStateEvent);
                 }

@@ -8,7 +8,7 @@ all:
 	gcc -o vm executor.c
 	./vm
 
-vm:
+vms:
 	gcc -o vm executor.c
 
 	

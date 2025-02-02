@@ -3,51 +3,57 @@
 
 #include "./object.c"
 #include "../common/inst.c"
+void putIndent(int indent){
+    for(int i = 0;i<indent;i++){
+        printf("  ");
+    }
+}
 
 void printlnObject(oop node, int indent){
+    
     switch (getType(node)) {
-	case Undefined:	printf("nil\n");				break;
-	case Integer:	printf("%s\n", get(node, Integer,number));	break;
-	case Symbol :	printf("%s\n", get(node, Symbol,name));		break;
-    case Float :    printf("%s\n",get(node,   Float,number));     break;
-    case String :   printf("%s\n", get(node, String, value));   break;// c5
-    case Key:       printf("%s\n", get(node, Key,    pass));    break;
+	case Undefined:	putIndent(indent);printf("nil\n");				break;
+	case Integer:	putIndent(indent);printf("%s\n", get(node, Integer,number));	break;
+	case Symbol :	putIndent(indent);printf("%s\n", get(node, Symbol,name));		break;
+    case Float :    putIndent(indent);printf("%s\n",get(node,   Float,number));     break;
+    case String :   putIndent(indent);printf("%s\n", get(node, String, value));   break;// c5
+    case Key:       putIndent(indent);printf("%s\n", get(node, Key,    pass));    break;
 	case Pair: {
-	    printf("Pair\n");
+	    putIndent(indent);printf("Pair\n");
 	    printlnObject(get(node, Pair,a), indent+1);
 	    printlnObject(get(node, Pair,b), indent+1);
 	    break;
 	}
 	case Function: {
-	    printf("function()\n");
+	    putIndent(indent);printf("function()\n");
 	    printlnObject(get(node, Function,parameters), indent+2);
 	    printlnObject(get(node, Function,body), indent+1);
 	    break;
 	}
     case DupEvent:{
-        printf("DupEvent\n");
+        putIndent(indent);printf("DupEvent\n");
         oop eventFunc = get(node,DupEvent,eventFunc);
-        printf("event func[%d][%d]",get(eventFunc,EventFunc,lib_num),get(eventFunc,EventFunc,eve_num) );
-        printf("event of %s\n", get(node, DupEvent,event)->Event.id->Symbol.name);
+        putIndent(indent);printf("event func[%d][%d]",get(eventFunc,EventFunc,lib_num),get(eventFunc,EventFunc,eve_num) );
+        putIndent(indent);printf("event of %s\n", get(node, DupEvent,event)->Event.id->Symbol.name);
         break;
     }
 	case Binop: {
 	    switch (get(node, Binop,op)) {
-		case NE:  printf("NE\n"); break;
-		case EQ:  printf("EQ\n"); break;
-		case LT:  printf("LT\n"); break;
-		case LE:  printf("LE\n"); break;
-		case GE:  printf("GE\n"); break;
-		case GT:  printf("GT\n"); break;
-		case ADD: printf("ADD\n"); break;
-		case SUB: printf("SUB\n"); break;
-		case MUL: printf("MUL\n"); break;
-		case DIV: printf("DIV\n"); break;
-		case MOD: printf("MOD\n"); break;
-        case BAND: printf("AND\n"); break;
-        case BOR:  printf("OR\n"); break;
-        case LSH:  printf("LSH\n"); break;
-        case RSH:  printf("RSH\n"); break;
+		case NE:  putIndent(indent);printf("NE\n"); break;
+		case EQ:  putIndent(indent);printf("EQ\n"); break;
+		case LT:  putIndent(indent);printf("LT\n"); break;
+		case LE:  putIndent(indent);printf("LE\n"); break;
+		case GE:  putIndent(indent);printf("GE\n"); break;
+		case GT:  putIndent(indent);printf("GT\n"); break;
+		case ADD: putIndent(indent);printf("ADD\n"); break;
+		case SUB: putIndent(indent);printf("SUB\n"); break;
+		case MUL: putIndent(indent);printf("MUL\n"); break;
+		case DIV: putIndent(indent);printf("DIV\n"); break;
+		case MOD: putIndent(indent);printf("MOD\n"); break;
+        case BAND: putIndent(indent);printf("AND\n"); break;
+        case BOR:  putIndent(indent);printf("OR\n"); break;
+        case LSH:  putIndent(indent);printf("LSH\n"); break;
+        case RSH:  putIndent(indent);printf("RSH\n"); break;
 		default:  assert(!"this cannot happen binop");
 	    }
 	    printlnObject(get(node, Binop,lhs), indent+1);
@@ -56,78 +62,78 @@ void printlnObject(oop node, int indent){
 	}
 	case Unyop: {
 	    switch (get(node, Unyop,op)) {
-		case NEG: printf("NEG\n"); break;
+		case NEG: putIndent(indent);printf("NEG\n"); break;
 		default:  assert(!"this cannot happen unyop");
 	    }
 	    printlnObject(get(node, Unyop,rhs), indent+1);
 	    break;
 	}
 	case GetVar: {
-	    printf("GetVar %s\n", get(get(node, GetVar,id), Symbol,name));
+	    putIndent(indent);printf("GetVar %s\n", get(get(node, GetVar,id), Symbol,name));
 	    break;
 	}
 	case SetVar: {
-	    printf("SetVar %s\n", get(get(node, SetVar,id), Symbol,name));
+	    putIndent(indent);printf("SetVar %s\n", get(get(node, SetVar,id), Symbol,name));
 	    printlnObject(get(node, SetVar,rhs), indent+1);
 	    break;
 	}
 	case Call: {
-	    printf("Call\n");
+	    putIndent(indent);printf("Call\n");
 	    printlnObject(get(node, Call,function), indent+1);
 	    printlnObject(get(node, Call,arguments), indent+1);
 	    break;
 	}
 	case Print: {
-	    printf("Print\n");
+	    putIndent(indent);printf("Print\n");
 	    printlnObject(get(node, Print,arguments), indent+1);
 	    break;
 	}
 	case If: {
-	    printf("If\n");
+	    putIndent(indent);printf("If\n");
 	    printlnObject(get(node, If,condition), indent+1);
 	    printlnObject(get(node, If,statement1), indent+1);
 	    printlnObject(get(node, If,statement2), indent+1);
 	    break;
 	}
 	case While: {
-	    printf("While\n");
+	    putIndent(indent);printf("While\n");
 	    printlnObject(get(node, While,condition), indent+1);
 	    printlnObject(get(node, While,statement), indent+1);
 	    break;
 	}
-	case Block: {
+	case Block: {putIndent(indent);
 	    printf("Block...\n");
 	    break;
 	}
-    case Event:{
+    case Event:{putIndent(indent);
         printf("Event\n");
         break;
     }
-    case State:{
+    case State:{putIndent(indent);
         printf("State\n");
         break;
     }
-    case Run:{
+    case Run:{putIndent(indent);
         printf("Run\n");
         break;
     }
-    case Continue:{
+    case Continue:{putIndent(indent);
         printf("Continue\n");
         break;
     }
-    case Break:{
+    case Break:{putIndent(indent);
         printf("Break\n");
         break;
     }
-    case Return:{
+    case Return:{putIndent(indent);
         printf("Return\n");
         break;
     }
-    case END:{
+    case END:{putIndent(indent);
         printf("END\n");
         break;
     }
-    case Array:{
+    case Array:{putIndent(indent);
         int size = node->Array.size;
         printf("Array\n");
         for(int i = 0;i<size;i++){
@@ -135,15 +141,15 @@ void printlnObject(oop node, int indent){
         }
         break;
     }
-    case Assoc:{
+    case Assoc:{putIndent(indent);
         printf("type %2d, index %3d",node->Assoc.kind,node->Assoc.index);
         printlnObject(node->Assoc.symbol,indent);
         break;
     }
-    case _Integer:printf("%d\n",_Integer_value(node));break;
-    case _Long:   printf("%lld\n",get(node,_Long,value));break;
-    case _Float:  printf("%f\n",_Float_value(node));break;
-    case _Double: printf("%lf\n",get(node,_Double,value));break;
+    case _Integer:putIndent(indent);printf("%d\n",_Integer_value(node));break;
+    case _Long:   putIndent(indent);printf("%lld\n",get(node,_Long,value));break;
+    case _Float:  putIndent(indent);printf("%f\n",_Float_value(node));break;
+    case _Double: putIndent(indent);printf("%lf\n",get(node,_Double,value));break;
 	default:	printf("%s\n",TYPENAME[node->_type_]);assert(!"this cannot happen print");			break;
     }
 
@@ -162,7 +168,7 @@ oop printCode(oop program){
         switch(_Integer_value(inst)){
 
             case TRANS: {
-                printf("Trans ");//T
+                printf("Trans     ");//T
                 oop relPosNextState  = Array_get(program,pc++);
                 oop numOfNextStateEvent = Array_get(program,pc++);
                 printf("%3d  %3d\n",_Integer_value(relPosNextState),_Integer_value(numOfNextStateEvent));
@@ -241,14 +247,14 @@ oop printCode(oop program){
             case s_ADD:  printf("d_ADD\n");continue;
             case MKCORE: printf("MKCORE    %3d\n",_Integer_value(Array_get(program,pc++)));continue;
             case COPYCORE:{
-                printf("COPYCORE ");//T
+                printf("COPYCORE \t\t\t");//T
                 oop indexOfGlobalMemory  = Array_get(program,pc++);
                 oop jumpRelPos = Array_get(program,pc++);
                 printf("%3d  %3d\n",_Integer_value(indexOfGlobalMemory),_Integer_value(jumpRelPos));
                 continue;
             }
             case SETCORE:{
-                printf("SETCORE ");//T
+                printf("SETCORE   ");//T
                 oop lib_num  = Array_get(program,pc++);
                 oop func_num = Array_get(program,pc++);
                 oop numInitVals = Array_get(program,pc++);

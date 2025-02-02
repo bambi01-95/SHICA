@@ -1,3 +1,12 @@
+advice Log{
+    print("Trans")
+}
+
+pointcut Log{
+    before s1,
+	before s2,
+}
+
 event sec = timerSec()
 
 state s1{
@@ -5,7 +14,6 @@ state s1{
 		print(s)
 	}
 	event(int a,int b){
-		print(a)
 		if(a>3){
 			state s2
 		}
@@ -13,11 +21,13 @@ state s1{
 }
 
 state s2{
-	sec(int s){
-		print(s*2)
-		if(s>2){
+	event(int a,int b){
+		if(a>3){
 			state s1
 		}
+	}
+	sec(int s){
+		print(s)
 	}
 }
 

@@ -55,14 +55,14 @@ int main(int argc, char const *argv[])
         Local_VNT   = newArray(0);
         Global_VNT  = newArray(0);
         state_Pair = nil;
-        
+        printf("\n \x1b[31m preprocess ******************\x1b[0m\n\n");
         while(yyparse()){
             if(sys_false == preprocess(result,programTrees))break;
         }
+    
+        
 #if DEBUG
-        printf("end of preprocess\n");
-        printlnObject(STATE_TABLE,2);
-        printlnObject(programTrees,2);
+        printlnObject(STATE_TABLE,1);
 #endif
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
         emitOI(MSET,0);

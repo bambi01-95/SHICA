@@ -83,17 +83,20 @@ void main_execute(){
         switch(inst){
             case MSET:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getInt(pc);GM->Thread.rbp = int_value;
                 for(int i =0;i<int_value ;i++){
                     Array_push(GM->Thread.stack,nil);
                 }
+                // for(int i = int_value;i<int_value+10 ;i++){ //for first COPYCORE
+                //     Array_put(GM->Thread.stack,i,nil);
+                // }
                 continue;
             }
             case i_load:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 Array_push(stack,_newInteger(int_value));
@@ -101,7 +104,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
             }
             case CALL:{
 #if TEST    
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
 #if MSGC
                 GC_PUSH(oop,code,newThread(pc,20));
@@ -123,7 +126,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 
             case MKCORE:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(numCore,pc);
                 if(numCore == 0)continue;
@@ -135,14 +138,14 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
             }
             case COPYCORE:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(grobalMemoryIndex,pc);
                 getSetInt(jumpRelPos,pc);
-                //get the core from the GM
-                int rbp = GM->Thread.rbp;
-                oop copyCore = GM->Thread.stack->Array.elements[rbp + grobalMemoryIndex];
-                if(copyCore!=nil){
+                int rbp = getChild(GM,Thread,rbp);
+                oop copyCore = getChild(GM,Thread,stack)->Array.elements[rbp + grobalMemoryIndex];
+                if(copyCore!=nil && copyCore!=0){
+                    copyCore->Core.size = 0;//copy core type is Core/SubCore
                     mainCore[++coreSize] = copyCore;
                     pc = jumpRelPos + pc;
                     GM->Thread.stack->Array.elements[rbp + grobalMemoryIndex] = nil;
@@ -151,7 +154,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
             }
             case SETCORE:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(libNum,pc);
                 getSetInt(eveNum,pc);
@@ -162,20 +165,20 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
             }
             case SETSUBCORE:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(libNum,pc);
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);//don't use
                 oop core = setCore(libNum,eveNum,stack);
                 mainCore[++coreSize] = core;
-                SHICA_FPRINTF(stderr,"this is not supported now\n");
                 continue;
             }
             case MKTHREAD:{//FIXME: rechange the name of this instruction => SETCORE
 #if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
+                
                 getSetInt(numThread,pc);
                 mainCore[coreSize]->Core.threads = newThreads(coreLoc,20,numThread);
                 continue;
@@ -183,7 +186,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 
             case SETTHREAD:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(aRelPos,pc);
                 getSetInt(cRelPos,pc);
@@ -196,7 +199,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
             }
             case STARTIMP:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
                     for(int core_i=0;core_i<=coreSize;core_i++){
@@ -217,13 +220,14 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                         }
 
 
-                                        int pc_i = thread->Thread.pc++;//location of thread[i]'s pc
+                                        int pc_i = thread->Thread.pc;//location of thread[i]'s pc
                                         getSetInt(relpos,pc_i);
-                                        getSetInt(numCopyCore,pc);
+                                        int numPC = pc_i;
+                                        getSetInt(numCopyCore,numPC);
                                         for(int i=0;i<numCopyCore;i++){
                                             oop coreIndex = Array_get(GM->Thread.stack,GM->Thread.rbp + i);
                                             if(_Integer_value(coreIndex)==-1){
-                                                Array_put(GM->Thread.stack,GM->Thread.rbp + i,nil);
+                                                Array_put(GM->Thread.stack,GM->Thread.rbp + i, nil);
                                             }else{
                                                 Array_put(GM->Thread.stack,GM->Thread.rbp + i,mainCore[_Integer_value(coreIndex)]);
                                             }
@@ -234,10 +238,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                                     #endif
                                         isTrans = 1;
                                         int gm_size = GM->Thread.stack->Array.size;
-                                    //CHECK ME: ここでGMのスタックをクリアするか？
-                                        for(int i = gm_size;i>GM->Thread.rbp;i--){
-                                            Array_pop(GM->Thread.stack);
-                                        }
+                                        getChild(GM,Thread,stack)->Array.size = GM->Thread.rbp;
+                                        // //CHECK ME: ここでGMのスタックをクリアするか
+                                        // for(int i = gm_size;i>GM->Thread.rbp;i--){
+                                        //     Array_pop(GM->Thread.stack);
+                                        // }
                                         break;
                                     }
                                     case F_EOE:{
@@ -279,7 +284,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 
             case GLOBAL:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
 #if MSGC
                 GC_PUSH(oop,code,newThread(0,10));//FIXME: using new thread here is not good for ...
@@ -302,7 +307,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 
             case ENTRY:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getInt(pc);
                 int s_pc = pc;//store corrent pc
@@ -331,11 +336,25 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
                         #endif
                             int gm_size = GM->Thread.stack->Array.size;
                         //CHECK ME: ここでGMのスタックをクリアするか？
-                            for(int i = gm_size;i>GM->Thread.rbp;i--){
-                                Array_pop(GM->Thread.stack);
-                            }
+                            // for(int i = gm_size;i>GM->Thread.rbp;i--){
+                            //     Array_pop(GM->Thread.stack);
+                            // }
                             isStop = 1;
                             break;
+                        }
+                        case F_NONE:
+                        case  F_EOA:
+                        case F_ERROR:
+                        case F_TRUE:
+                        case F_FALSE:break;
+                        default:{
+                        #if DEBUG
+                            DEBUG_ERROR("this is not happen, main_execute case ENTRY\n");
+                            exit(1);
+                        #else
+                            SHICA_PRINTF("this is not happen, main_execute case ENTRY\n");
+                            exit(1);
+                        #endif
                         }
                     }
                 }
@@ -352,7 +371,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
 
             case JUMP:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getInt(pc); pc += int_value;
                 continue;       
@@ -364,7 +383,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst])
             }
             case HALT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 return;
             }
@@ -1124,7 +1143,7 @@ oop printByteCode(){
         getInst(pc);
         switch(inst){
             case TRANS:{
-                SHICA_PRINTF("COPYCORE ");//T
+                SHICA_PRINTF("TRANS ");//T
                 getInt(pc);int nextStateRelPos = int_value;
                 int nextPC = pc + nextStateRelPos;
                 getInt(pc);int numOfEvent = int_value;
