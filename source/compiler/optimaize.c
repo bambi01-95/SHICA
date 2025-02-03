@@ -453,17 +453,8 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
 }
 
 oop stateNameG = 0;
-oop LOCAL_EVENT_DEF_TABLE = 0;//PAIR
-oop findLocalEventDef(oop id){
-    oop tmp = LOCAL_EVENT_DEF_TABLE;
-    while(tmp!=nil){
-        oop eventId = get(tmp,Pair,a)->Pair.a;
-        if(id == eventId){
-            return get(tmp,Pair,a)->Pair.b;
-        }
-    }
-    return nil;
-}
+oop DEF_LOCAL_EVENT_LIST = 0;//PAIR
+
 
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 {
@@ -850,24 +841,8 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case SetVarEvent:{
-        fprintf(stderr,"this is not happen here");
-        oop varId = get(exp, SetVarEvent, id);
-        oop event = get(exp, SetVarEvent, rhs);
-        oop eventFuncId = get(event, Event, id);
-        oop eventFunc = get(eventFuncId,Symbol,value);
-        if(getType(eventFunc)!=EventFunc){
-            fatal("line %d: [%s] is not Event Funciton",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
-        }
-        oop params    = get(event, Event, parameters);
-        oop body      = get(event, Event, body);
-        if(params==nil && body==nil){
-            oop dupEventFunc = copyEventFunc(eventFunc);
-            LOCAL_EVENT_DEF_TABLE = newPair(newPair(varId,newDupEvent(dupEventFunc,nil)),LOCAL_EVENT_DEF_TABLE);
-        }else if(params==nil || body==nil){
-            fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
-        }else{
-            fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
-        }
+        printf("%s line %d: this is not happen here!\n",__FILE__,__LINE__);
+        exit(1);
         return 0;
     }
 
@@ -889,7 +864,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 
 	case Call:{
         oop id = exp->Call.function;
-        oop function = findLocalEventDef(id);
+        oop function = findIdFromList(id,DEF_LOCAL_EVENT_LIST);
         if(function == nil){
             function = get(id,Symbol,value);
         }
@@ -1169,7 +1144,13 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         oop stateName = get(exp,State,id);
         oop *events = get(exp,State,events);
         stateNameG = stateName;//for aop (case TRANS)
-        LOCAL_EVENT_DEF_TABLE = nil;
+        for(int i=0; i<STATE_DEF_LOCAL_EVENT_LISTS->Array.size; i++){
+            oop id = get(get(STATE_DEF_LOCAL_EVENT_LISTS,Array,elements)[i],Pair,a)->Symbol.value;
+            if(id==stateName){
+                DEF_LOCAL_EVENT_LIST = get(get(STATE_DEF_LOCAL_EVENT_LISTS,Array,elements)[i],Pair,b);
+                break;
+            }
+        }
 #if DEBUG
         SHICA_PRINTF("  > stateName %s\n\n",get(stateName,Symbol,name));
 #endif
@@ -1203,7 +1184,6 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 }
                 case SetVarEvent:{
                     stt_val_c++;
-                    compO(statement);
                     break;
                 }
                 case Event:{
@@ -1226,7 +1206,6 @@ state default{
                     vnt = newArray(0);
                     int m_loc = program->Array.size;
                     oop id    = get(statement, Event, id);
-                    oop tmp_  = LOCAL_EVENT_DEF_TABLE;
                     oop para  = get(statement, Event, parameters);
                     oop block = get(statement, Event, body);
 #if DEBUG
@@ -1251,7 +1230,7 @@ state default{
                             eve = eve->DupEvent.eventFunc;
                         }
                         if(getType(eve)!=EventFunc){
-                            oop isDup = findLocalEventDef(id);
+                            oop isDup = findIdFromList(id,DEF_LOCAL_EVENT_LIST);
                             if(getType(isDup)==DupEvent){
                                 eve = isDup->DupEvent.eventFunc;
                             }else{
@@ -1370,7 +1349,7 @@ state default{
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
                 eveF = eveF->DupEvent.eventFunc;
             }else{ //Local dup event
-                oop isDup = findLocalEventDef(tmp->id);
+                oop isDup = findIdFromList(tmp->id,DEF_LOCAL_EVENT_LIST);
                 if(getType(isDup)==DupEvent){
                     eveF = isDup->DupEvent.eventFunc;
                 }
@@ -1511,8 +1490,8 @@ state default{
             }
         }
         
-        int sizeOfStateTable = get(STATE_TABLE,Array,size);
-        oop *states = get(STATE_TABLE,Array,elements);
+        int sizeOfStateTable = get(STATE_GLOBAL_EVENT_LISTS,Array,size);
+        oop *states = get(STATE_GLOBAL_EVENT_LISTS,Array,elements);
         oop NextStateData = nil;
         oop CurrentStateData = nil;
         //search state data

@@ -51,7 +51,9 @@ int main(int argc, char const *argv[])
 
         oop program = newArray(0);
         oop programTrees = newArray(0);
-        STATE_TABLE = newArray(0);
+        STATE_GLOBAL_EVENT_LISTS = newArray(0);
+        STATE_SUBCORE_LISTS      = newArray(0);
+        STATE_DEF_LOCAL_EVENT_LISTS = newArray(0);
         Local_VNT   = newArray(0);
         Global_VNT  = newArray(0);
         state_Pair = nil;
@@ -64,7 +66,7 @@ int main(int argc, char const *argv[])
     
         
 #if DEBUG
-        printlnObject(STATE_TABLE,1);
+        printlnObject(STATE_GLOBAL_EVENT_LISTS,1);
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
 #endif
         

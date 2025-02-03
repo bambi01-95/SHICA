@@ -30,6 +30,11 @@ void printlnObject(oop node, int indent){
 	    printlnObject(get(node, Function,body), indent+1);
 	    break;
 	}
+    case EventFunc:{
+        putIndent(indent);printf("EventFunc\n");
+        putIndent(indent);printf("lib_num %d, eve_num %d\n",get(node,EventFunc,lib_num),get(node,EventFunc,eve_num));
+        break;
+    }
     case DupEvent:{
         putIndent(indent);printf("DupEvent\n");
         oop eventFunc = get(node,DupEvent,eventFunc);
