@@ -1,5 +1,5 @@
 leg: 
-	./compiler/parser/leg -o ./compiler/parser/parser.c  ./compiler/parser/parser.leg
+	leg -o ./compiler/parser/parser.c  ./compiler/parser/parser.leg
 
 com:
 	gcc -o shica ./compiler.c
