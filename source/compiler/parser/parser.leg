@@ -73,7 +73,6 @@ stmt	= PRINT a:args      { $$ =  newPrint(a); }
 stmtbl = block 
        | stmt
 
-#blocks  = b:mkBlock (bx:block  {Block_append(b, bx)} )+ {$$ = b} #here
 
 block   =  LBRACE b:mkBlock 
 	  (
@@ -94,15 +93,12 @@ assign  = (t:TYPE | t:mkNil) i:id (ASSIGN x:exp	    { $$ = newSetVar(t, i, x,new
                             )
         | (t:TYPE | t:mkNil) i:id b:bracket ASSIGN (x:list | x:exp) { $$ = newSetArray(t, i,b, x,newline);}
         | func
+		| i:ident "." s:sym         { $$ = newGetElement(i,s,newline) }
         
-#// brackets  = (s:mkBlock 
-#//                 (b:bracket { Block_append(s, b) })*
-#//             )+ {printf("bk\n");$$ = s}
+
 bracket   =  LSQP  e:exp RSQP { printf("[]\n");$$ = e }
 
-#// lists = 
 
-#//in progress
 list  = LBRACE b:mkBlock bln
 	  ( s:exp		{ Block_append(b, s) }
 	    (bln COMMA bln s:exp		{ Block_append(b, s) }
@@ -170,12 +166,8 @@ prefix	= MINUS x:value		{ $$ = newUnyop(NEG, x,newline) }
 
 postfix = i:id INCRE - { $$ = newUnyop(AINC, newGetVar(i,newline),newline) }
         | i:id DECRE - { $$ = newUnyop(ADEC, newGetVar(i,newline),newline) }
-        | func
         | value 
 
-
-func    = i:id a:args		{ $$ = newCall(a, i, newline); }      
-		| "init" - i:id a:args	{ $$ = newEventCall(a, i, newline); }
 
 args	= LPAR a:mkNil
 	  ( i:exp			{ a = newPair(i, a) }
@@ -184,13 +176,19 @@ args	= LPAR a:mkNil
 	  )?
  	  RPAR				{ $$ = a }
 
-value	= LPAR lhs:exp   RPAR		{ $$ = lhs }
-        | QUOTE  character    QUOTE -  
+value	= QUOTE  character    QUOTE -  
         | DQUOTE string DQUOTE  -
-        | float_  
-	    | integer         
+		| float_  
+	    | integer   
+		| sym
+ 
+sym     = LPAR lhs:exp   RPAR		{ $$ = lhs }
+		| i:ident "." s:sym         { $$ = newGetElement(i,s,newline) }
+		| func
 	    | i:id				{ $$ = newGetVar(i,newline) }
 
+func    = i:id a:args		{ $$ = newCall(a, i, newline); }      
+		| "init" - i:id a:args	{ $$ = newEventCall(a, i, newline); }
 
 float_	= < ( [0-9]+            expnt
 	    | [0-9]+ '.' [0-9]* expnt?
@@ -203,7 +201,7 @@ string  = < (!"\"" .)* >  -        { $$ = newString(yytext) }
 character = alpha                  { $$ = _newStrChar(yytext)}
 integer	= < [0-9]+ > - 		       { $$ = newInteger(yytext,newline) }
 id	= < alpha alnum* > -	       { $$ = intern(yytext);  }
-
+ident	= < alpha alnum* > 	       { $$ = intern(yytext);  }
 
 alpha	= [a-zA-Z_]
 alnum	= [a-zA-Z_0-9] | '_'

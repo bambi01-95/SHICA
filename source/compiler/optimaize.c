@@ -454,6 +454,7 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
 
 oop stateNameG = 0;
 oop DEF_LOCAL_EVENT_LIST = 0;//PAIR
+oop SUBCORE_LIST = 0;        //PAIR
 
 
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
@@ -461,6 +462,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     switch (getType(exp)) {
 	case Undefined:
 	case Integer:{
+
         switch(type){
             case _Integer:emitIO(i_load, _newCharInteger(get(exp,Integer,number)),_Integer);break;
             case _Long:   emitIO(l_load, _newCharLong(get(exp,Integer,number))   ,_Long);   break;
@@ -523,12 +525,18 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 	case Pair:	    break;
 	case Function:	break;
 	case Binop: {
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
 	    compOT(get(exp, Binop,lhs),type);
 	    compOT(get(exp, Binop,rhs),type);
         emitO(Binop_oprand(type,get(exp,Binop,op),exp->Binop.line));
         break;
 	}
 	case Unyop:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         compOT(get(exp, Unyop,rhs), type);
 	    switch (get(exp, Unyop,op)){
             case NEG:{
@@ -595,6 +603,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
 	case SetVar:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         //int a = 10 or int add(int a,int b){return a + b} or state default{ event ... }
         int t     = get(exp,SetVar,typeset); //setting type of symbolfdfdfd
         oop id    = get(exp,SetVar,id);      //get symbol
@@ -617,6 +628,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         }
         switch(getType(value)){
             case Function:{
+#if DEBUG
+                printf("    >Function\n");
+#endif
                 get(value,Function,kind) = t;
                 get(id,Symbol,value) = value;
                 emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
@@ -635,6 +649,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
                 int end  = program->Array.number;
                 Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
+#if DEBUG
+                printf("    <Function\n");
+#endif
                 break;
             }
         //STATE
@@ -704,6 +721,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 	    break;
     }
     case SetVarL:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         
         int t     = get(exp,SetVar,typeset); //setting type of symbolfdfdfd
         oop id    = get(exp,SetVar,id);      //get symbol
@@ -739,6 +759,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case SetVarG:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         emitO(GLOBAL);
         int t     = get(exp,SetVarG,typeset); //setting type of symbol
         oop id    = get(exp,SetVarG,id);      //get symbol
@@ -760,6 +783,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
 	case GetVar:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         oop id = get(exp,GetVar,id);
         oop ass = assoc(id,Global_VNT);
         if(ass!=nil){
@@ -784,6 +810,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
     // in progress
     case SetArray:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         int t =      get(exp,SetArray,typeset);
         oop id =     get(exp,SetArray,array);
         oop values = get(exp,SetArray,value);
@@ -841,12 +870,18 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case SetVarEvent:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         printf("%s line %d: this is not happen here!\n",__FILE__,__LINE__);
         exit(1);
         return 0;
     }
 
     case SetType:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         oop id = get(exp, SetType,id);
         oop child = get(exp,SetType,child);
         addStructTable(id,child);
@@ -854,6 +889,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case GetArray:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         int t =     get(exp,SetArray,typeset);
         oop id =    get(exp,SetArray,array);
         oop value = get(exp,SetArray,value);
@@ -861,14 +899,71 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
         printf("%s line %d: GetArray\n",__FILE__,__LINE__);
         break;
     }
-
-	case Call:{
-        oop id = exp->Call.function;
-        oop function = findIdFromList(id,DEF_LOCAL_EVENT_LIST);
-        if(function == nil){
-            function = get(id,Symbol,value);
+    case GetElement:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif 
+        //DEF: parent.child | parent.child()
+        oop parent = get(exp,GetElement,parent);//id
+        printlnObject(parent->Symbol.value,0);
+        exit(1);
+        oop child  = get(exp,GetElement,child);//id | Call
+        oop parentVar = get(parent,Symbol,value);
+        if(parentVar == sys_false){
+            parentVar = findIdFromList(parent,DEF_LOCAL_EVENT_LIST);
         }
-        
+        switch(getType(parentVar)){
+            case DupEvent:{
+                parentVar = parentVar->DupEvent.eventFunc;
+            }
+            case EventFunc:{
+                printf("end\n");
+                if(parentVar->EventFunc.event_type == 1){
+                    printf("end\n");
+                    //NEED TO FIX PARSER 
+                    //get child func
+                    oop funcId = get(child,Call,function);
+                    //get event func's function list
+                    oop eventPrimList = get(parentVar,EventFunc,ownFunclist);
+                    //search child in the list
+                    while(getType(eventPrimList)==Pair){
+                        oop id = get(get(eventPrimList,Pair,a),Pair,a);
+                        if(funcId == id){
+                            //search and get index from subcore list
+                            oop index = findIdFromList(id,SUBCORE_LIST);
+                            oop eveFunc = get(get(eventPrimList,Pair,a),Pair,b);
+                            //get_l (void*)any #into stack
+                            emitOI(GET_L, _Integer_value(index));
+                            //call_p X X X
+                            emitOIII(CALL_P,eveFunc->Primitive.func_num,eveFunc->EventFunc.lib_num,eveFunc->Primitive.size_of_args_type_array);
+                            
+                        }
+                        eventPrimList = get(eventPrimList,Pair,b);
+                    }
+                    if(eventPrimList == nil){
+                        fatal("line %d: function %s is not found in event function %s\n",exp->GetElement.line,get(funcId,Symbol,name),get(parent,Symbol,name));
+                    }
+                }
+                break;
+            }
+            default:{
+                printf("type %s\n",TYPENAME[getType(parentVar)]);
+                fatal("line %d HACK: this cannot happen GetElement\n",exp->GetElement.line);
+            }
+        }
+        printf("%s line %d: GetElement\n",__FILE__,__LINE__);
+        exit(0);
+        break;
+    }
+	case Call:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
+        oop id = exp->Call.function;
+        oop function = get(id,Symbol,value);
+        if(function == sys_false){
+            function =  findIdFromList(id,DEF_LOCAL_EVENT_LIST);
+        }
 	    switch (getType(function)){
             case Function:{
                 int t = get(function,Function,kind);
@@ -932,6 +1027,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 break;
             }
             default:{
+                printf("type %s\n",TYPENAME[getType(function)]);
                 printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
             }
 	    }
@@ -940,6 +1036,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
 	case Print:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         oop argsPair = get(exp,Print,arguments);
         argsPair = rePair(argsPair,nil);
         while(argsPair!=nil){
@@ -969,6 +1068,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
 	case If:{// ENTRY...
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         int c_type = child_type(get(exp, If,condition),vnt);
         switch(c_type){
             case Integer: c_type = _Integer;break;
@@ -1010,6 +1112,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
 	case While:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         b_push(-1);//MEMO: negative value is mark for break
         c_push(-1);//MEMO: negative value is mark for continue
         int L1 = program->Array.number;/*cond*/
@@ -1051,6 +1156,9 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case For:{//for(initstate,condition,updata){ statement }
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         b_push(-1);//MEMO: negative value is mark for break
         c_push(-1);//MEMO: negative value is mark for continue
         int size = 0;
@@ -1102,24 +1210,36 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case Break:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         emitOI(JUMP,0);
         b_push(program->Array.size);
         b_push(program->Array.number);
         break;
     }
     case Continue:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         emitOI(JUMP,0);
         c_push(program->Array.size);
         c_push(program->Array.number);
         break;
     }
     case Return:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         compOT(get(exp,Return,value),type);
         emitO(RET);
         break;
     }
 
 	case Block:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         oop *statements = get(exp, Block,statements);
 	    int  size       = get(exp, Block,size);
 	    for (int i = 0;  i < size;  ++i){
@@ -1135,19 +1255,37 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
     }
 
     case Event:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         printf("%s line %d: this is not happen, check case state:\n",__FILE__,__LINE__);
         break;
     }
 
     case State:{//from setVar
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         int size = get(exp,State,size);
         oop stateName = get(exp,State,id);
         oop *events = get(exp,State,events);
         stateNameG = stateName;//for aop (case TRANS)
+        //ローカル変数の初期化
+        Local_VNT = newArray(0);
+        //subcore size
+        //Local_VNT->Array.size = 0;
+
         for(int i=0; i<STATE_DEF_LOCAL_EVENT_LISTS->Array.size; i++){
-            oop id = get(get(STATE_DEF_LOCAL_EVENT_LISTS,Array,elements)[i],Pair,a)->Symbol.value;
+            oop id = get(get(STATE_DEF_LOCAL_EVENT_LISTS,Array,elements)[i],Pair,a);
             if(id==stateName){
                 DEF_LOCAL_EVENT_LIST = get(get(STATE_DEF_LOCAL_EVENT_LISTS,Array,elements)[i],Pair,b);
+                break;
+            }
+        }
+        for(int i=0; i<get(STATE_SUBCORE_LISTS,Array,size);i++){
+            oop id = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,a);
+            if(id == stateName){
+                SUBCORE_LIST = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,b);
                 break;
             }
         }
@@ -1413,8 +1551,6 @@ state default{
         }
 
         emitO(STARTIMP);
-        //ローカル変数の初期化
-        Local_VNT = newArray(0);
         stateName->Symbol.value = exp;
 #if DEBUG
         SHICA_PRINTF("  > end of state\n\n");
@@ -1423,6 +1559,9 @@ state default{
     }//end of case State
 
     case Advice:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         oop id = get(exp,Advice,id);
         oop block = get(exp,Advice,body);
 
@@ -1543,6 +1682,9 @@ state default{
     }
 
     case END:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         while(state_Pair->_type_ == Pair){
             oop node = state_Pair->Pair.a;
             oop id = node->Pair.a;//state that is called

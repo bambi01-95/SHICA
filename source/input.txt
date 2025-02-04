@@ -1,9 +1,8 @@
 state test{
-	event sec = timerSec()
 	entry(){
-		init sec(2)
+		init wifiGroupReceived("255.255.255.255",600000,16,"KUAS")
 	}
-	sec(int t){
-		print(t)
+	wifiGroupReceived(str addr,int id,int val){
+		wifiGroupReceived.send(-1,1)
 	}
 }

@@ -24,6 +24,11 @@ void printlnObject(oop node, int indent){
 	    printlnObject(get(node, Pair,b), indent+1);
 	    break;
 	}
+    case Primitive:{
+        putIndent(indent);printf("Primitive\n");
+        putIndent(indent);printf("lib_num %d, func_num %d\n",get(node,Primitive,lib_num),get(node,Primitive,func_num));
+        break;
+    }
 	case Function: {
 	    putIndent(indent);printf("function()\n");
 	    printlnObject(get(node, Function,parameters), indent+2);
@@ -33,13 +38,20 @@ void printlnObject(oop node, int indent){
     case EventFunc:{
         putIndent(indent);printf("EventFunc\n");
         putIndent(indent);printf("lib_num %d, eve_num %d\n",get(node,EventFunc,lib_num),get(node,EventFunc,eve_num));
+        if(get(node,EventFunc,ownFunclist)!=nil){
+            printlnObject(get(node,EventFunc,ownFunclist),indent+1);
+        }
         break;
     }
     case DupEvent:{
         putIndent(indent);printf("DupEvent\n");
         oop eventFunc = get(node,DupEvent,eventFunc);
-        putIndent(indent);printf("event func[%d][%d]",get(eventFunc,EventFunc,lib_num),get(eventFunc,EventFunc,eve_num) );
-        putIndent(indent);printf("event of %s\n", get(node, DupEvent,event)->Event.id->Symbol.name);
+        putIndent(indent);printf("  event func[%d][%d] & ",get(eventFunc,EventFunc,lib_num),get(eventFunc,EventFunc,eve_num) );
+        if(get(node,DupEvent,event)!=nil){
+            printf("event of %s\n", get(node, DupEvent,event)->Event.id->Symbol.name);
+        }else{
+            printf("event of nil\n");
+        }
         break;
     }
 	case Binop: {
@@ -107,7 +119,12 @@ void printlnObject(oop node, int indent){
 	    break;
 	}
 	case Block: {putIndent(indent);
-	    printf("Block...\n");
+	    printf("Block\n");
+        int size = get(node, Block,size);
+        for(int i = 0;i<size;i++){
+            printlnObject(node->Block.statements[i],indent+1);
+        }
+
 	    break;
 	}
     case Event:{putIndent(indent);
@@ -132,6 +149,7 @@ void printlnObject(oop node, int indent){
     }
     case Return:{putIndent(indent);
         printf("Return\n");
+        printlnObject(node->Return.value,indent+1);
         break;
     }
     case END:{putIndent(indent);

@@ -149,6 +149,7 @@ enum Type {
     SetVarL,
     SetArray,
     GetArray,
+    GetElement,
     SetVarEvent,
     SetType,
     Call,  
@@ -210,6 +211,7 @@ char *TYPENAME[END+1] = {
     "SetVarL",
     "SetArray",
     "GetArray",
+    "GetElement",
     "SetVarEvent",
     "SetType",
     "Call",
@@ -273,6 +275,7 @@ struct Unyop   	 { enum Type _type_;  enum unyop op;  oop rhs;            int li
 struct Jointp    { enum Type _type_;  enum jointp point; oop id; int position;};
 
 struct GetVar  	 { enum Type _type_;  oop id;                             int line;};
+struct GetElement{ enum Type _type_;  oop parent, child;                   int line;};
 struct SetVar  	 { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
 struct SetVarG   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
 struct SetVarL   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
@@ -311,6 +314,7 @@ struct EventFunc{
     char* pin_num_type;
     oop   *pin_exps;
     char  size_of_pin_num;
+    oop   ownFunclist;//eventFuncName.ownFunc()
 };
 
 #define TAGINT	1			// tag bits value for Integer  ........1
@@ -410,6 +414,7 @@ union Object {
 
     struct GetArray	 { enum Type __type_;enum Type typeset;  oop array, index; int line;}GetArray;
     struct SetArray	 { enum Type __type_;enum Type typeset;  oop array, index, value; int line;}SetArray;
+    struct GetElement GetElement;
 
     struct Call     Call;
     struct Print    Print;
@@ -809,6 +814,15 @@ oop newGetArray(oop array, oop index,int line)
     node->GetArray.array = array;
     node->GetArray.index = index;
     node->SetArray.line  = line;
+    return node;
+}
+
+oop newGetElement(oop parent, oop child,int line)
+{
+    oop node = newObject(GetElement);
+    node->GetElement.parent = parent;
+    node->GetElement.child  = child;
+    node->GetElement.line   = line;
     return node;
 }
 

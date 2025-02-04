@@ -74,11 +74,15 @@ oop preprocess(oop exp,oop trees){
                         break;
                     }
                     case SetVarL:{
+#if DEBUG
                         DEBUG_LOG("->SetVarL\n");
+#endif
                         break;
                     }
                     case SetVarEvent:{//local event
+                    #if DEBUG   
                         DEBUG_LOG("->SETVAR EVENT\n");
+                    #endif
                         oop varId = get(statement, SetVarEvent, id);
                         oop event = get(statement, SetVarEvent, rhs);
                         oop eventFuncId = get(event, Event, id);
@@ -99,8 +103,9 @@ oop preprocess(oop exp,oop trees){
                         break;
                     }
                     case Event:{
+#if DEBUG
                         DEBUG_LOG("->Event\n");
-                        printf("Event %s\n",get(get(statement,Event,id),Symbol,name));
+#endif
                         oop id = get(statement,Event,id);
                         oop eveFunc = nil;
                         
@@ -126,8 +131,9 @@ oop preprocess(oop exp,oop trees){
                         break;
                     }
                     case Call:{
+#if DEBUG
                         DEBUG_LOG("->Call\n");
-                        printf("Event %s\n",get(get(statement,Call,function),Symbol,name));
+#endif
                         oop id = get(statement,Call,function);
                         oop function = get(id,Symbol,value);
                         if(getType(function)!=DupEvent){
@@ -150,6 +156,7 @@ oop preprocess(oop exp,oop trees){
             }
             globalEvent = rePair(globalEvent,nil);
             subCoreList = rePair(subCoreList,nil);
+            sttLocalEvent = rePair(sttLocalEvent,nil);
             Array_push(STATE_GLOBAL_EVENT_LISTS   ,newPair(stateName,globalEvent));
             Array_push(STATE_SUBCORE_LISTS        ,newPair(stateName,subCoreList));
             Array_push(STATE_DEF_LOCAL_EVENT_LISTS,newPair(stateName,sttLocalEvent));
