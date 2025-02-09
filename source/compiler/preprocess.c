@@ -7,8 +7,6 @@
 oop STATE_GLOBAL_EVENT_LISTS  = 0;
 //stateごとに定義されているローカルイベントリスト
 oop STATE_DEF_LOCAL_EVENT_LISTS   = 0;
-//stateごとに実行定義されているサブコアリスト
-oop STATE_SUBCORE_LISTS       = 0;
 
 
 oop findIdFromList(oop id,oop list){
@@ -61,8 +59,6 @@ oop preprocess(oop exp,oop trees){
 
             oop globalEvent = nil;
             oop sttLocalEvent = nil;
-            oop subCoreList = nil;
-            int subCoreIndex = 0;
             int eventIndex = 0;
             for(int i=0;i<size; i++){
                 oop statement = events[i];
@@ -108,26 +104,41 @@ oop preprocess(oop exp,oop trees){
 #endif
                         oop id = get(statement,Event,id);
                         oop eveFunc = nil;
-                        
-                        if(getType(get(id,Symbol,value))==DupEvent){//global event
-                            globalEvent = newPair(newPair(id,_newInteger(eventIndex)),globalEvent);
-                            eveFunc = get(get(id,Symbol,value),DupEvent,eventFunc);
-                        }
-                        else if(getType(get(id,Symbol,value))!=EventFunc){//local event
-                           oop dupEve = findIdFromList(id,sttLocalEvent);
-                           if(dupEve!=nil){
-                               eveFunc = get(dupEve,DupEvent,eventFunc);
-                           }
+                        if(id == entry_sym){//need to optimize
+                            oop body = get(statement,Event,body);
+                            int size = get(body,Block,size);
+                            for(int i=0;i<size;i++){
+                                oop stm = get(body,Block,statements)[i];
+                                if(getType(stm)==Call && get(stm,Call,callType)==1){//init eventFunc()
+                                    oop function = get(stm,Call,function);//id
+                                    globalEvent = newPair(newPair(function,_newInteger(eventIndex)),globalEvent);
+                                    eventIndex++;
+                                }
+                            }
                         }else{
-                           eveFunc = get(id,Symbol,value);
+                            if(getType(get(id,Symbol,value))==DupEvent){//global event
+                                oop judge = findIdFromList(id,globalEvent);
+                                if(judge==nil){
+                                    globalEvent = newPair(newPair(id,_newInteger(eventIndex)),globalEvent);
+                                    eventIndex++;
+                                }
+                                eveFunc = get(get(id,Symbol,value),DupEvent,eventFunc);
+                            }
+                            else if(getType(get(id,Symbol,value))!=EventFunc){//local event
+                            oop dupEve = findIdFromList(id,sttLocalEvent);
+                            if(dupEve!=nil){
+                                eveFunc = get(dupEve,DupEvent,eventFunc);
+                            }
+                            }else{//global event
+                                oop judge = findIdFromList(id,globalEvent);
+                                if(judge==nil){
+                                    globalEvent = newPair(newPair(id,_newInteger(eventIndex)),globalEvent);
+                                    eventIndex++;
+                                }
+                                eveFunc = get(id,Symbol,value);
+                            }
                         }
-                        
-                        if(eveFunc!=nil){
-                            if(eveFunc->EventFunc.event_type == 1)//COMMUNICATE
 
-                            subCoreList = newPair(newPair(id,_newInteger(subCoreIndex++)),subCoreList);
-                        }
-                        eventIndex++;
                         break;
                     }
                     case Call:{
@@ -140,9 +151,6 @@ oop preprocess(oop exp,oop trees){
                             fatal("line %d: %s is not DupEvent\n",get(id,Symbol,name));
                         }
                         oop eveFunc = get(function,DupEvent,eventFunc);
-                        if(eveFunc->EventFunc.event_type == 1){
-                            subCoreList = newPair(newPair(id,_newInteger(subCoreIndex++)),subCoreList);
-                        }
                         globalEvent = newPair(newPair(id,_newInteger(eventIndex)),globalEvent);
                         eventIndex++;
                         break;
@@ -155,10 +163,8 @@ oop preprocess(oop exp,oop trees){
                 }
             }
             globalEvent = rePair(globalEvent,nil);
-            subCoreList = rePair(subCoreList,nil);
             sttLocalEvent = rePair(sttLocalEvent,nil);
             Array_push(STATE_GLOBAL_EVENT_LISTS   ,newPair(stateName,globalEvent));
-            Array_push(STATE_SUBCORE_LISTS        ,newPair(stateName,subCoreList));
             Array_push(STATE_DEF_LOCAL_EVENT_LISTS,newPair(stateName,sttLocalEvent));
             Array_push(trees,exp);
             break;

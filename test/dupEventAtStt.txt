@@ -1,0 +1,9 @@
+state test{
+	event sec = timerSec()
+	entry(){
+		init sec(2)
+	}
+	sec(int t){
+		print(t)
+	}
+}

@@ -29,6 +29,7 @@ int main(int argc, char const *argv[])
     sys_true  = _newInteger(1);
     none  = _newInteger(2);
 
+
     // コマンドライン引数の確認
     if (argc != 1){
 
@@ -52,7 +53,7 @@ int main(int argc, char const *argv[])
         oop program = newArray(0);
         oop programTrees = newArray(0);
         STATE_GLOBAL_EVENT_LISTS = newArray(0);
-        STATE_SUBCORE_LISTS      = newArray(0);
+        // STATE_SUBCORE_LISTS      = newArray(0);//REMOVE ME
         STATE_DEF_LOCAL_EVENT_LISTS = newArray(0);
         Local_VNT   = newArray(0);
         Global_VNT  = newArray(0);
@@ -63,12 +64,10 @@ int main(int argc, char const *argv[])
         while(yyparse()){
             if(sys_false == preprocess(result,programTrees))break;
         }
-#if DEBUG
         printf("\n \x1b[31m check ******************\x1b[0m\n\n");
+#if DEBUG
         printf("STATE_GLOBAL_EVENT_LISTS\n");
         printlnObject(STATE_GLOBAL_EVENT_LISTS,1);
-        printf("STATE_SUBCORE_LISTS\n");
-        printlnObject(STATE_SUBCORE_LISTS,1);
         printf("STATE_DEF_LOCAL_EVENT_LISTS\n");
         printlnObject(STATE_DEF_LOCAL_EVENT_LISTS,1);
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
@@ -95,7 +94,6 @@ int main(int argc, char const *argv[])
             strcpy(outputFileName,"code.stt");
         }
         
-
         if(argc==3  && strcmp(argv[2],"-e")==0){
             memoryWriteC(outputFileName);
         }

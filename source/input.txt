@@ -1,8 +1,30 @@
-state test{
-	entry(){
-		init wifiGroupReceived("255.255.255.255",600000,16,"KUAS")
+// state default{
+// 	entry(){
+// 		init timerSec(2)
+// 		state s1
+// 	}
+// }
+
+state s1{
+	timerSec(int i){
+		print(i)
 	}
-	wifiGroupReceived(str addr,int id,int val){
-		wifiGroupReceived.send(-1,1)
+    event(int a,int b){
+        if(a>4){
+            print("s1->s2")
+            state s2
+        }
+    }
+}
+
+state s2{
+	timerSec(int i){
+		print(i)
 	}
+    event(int a,int b){
+        if(a>4){
+            print("s2->s1")
+            state s1
+        }
+    }
 }

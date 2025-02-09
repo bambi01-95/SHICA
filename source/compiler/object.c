@@ -261,7 +261,6 @@ struct State     { enum Type _type_; oop id; oop *events; int size,index; };
 struct Advice    { enum Type _type_; oop id,body; int position; };
 struct Pointcut  { enum Type _type_; oop id,pair; };
 
-//struct Pair    { enum Type _type_;  oop data;oop next; };
 struct Pair  	 { enum Type _type_;  oop a, b; };
 struct EventParam   { enum  Type _type_; oop type,symbol,cond;};
 struct DupEvent     { enum  Type _type_; oop eventFunc,event; };
@@ -281,7 +280,7 @@ struct SetVarG   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int li
 struct SetVarL   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
 struct SetVarEvent{ enum Type _type_;  oop id; oop rhs; int line;};
 struct SetType   { enum Type _type_;  oop id; oop child; int line;};
-struct Call 	 { enum Type _type_;  oop function, arguments;            int line;};
+struct Call 	 { enum Type _type_;  oop function, arguments; char callType;            int line;};//callType: 0: normal, 1: init Event func
 struct Run       { enum Type _type_; oop state; };
 
 struct Print   	 { enum Type _type_;  oop arguments;};
@@ -857,6 +856,7 @@ oop newCall(oop arguments, oop function,int line)
     }
     node->Call.function  = function;
     node->Call.line = line;
+    node->Call.callType = 0;
     return node;
 }
 
@@ -866,6 +866,8 @@ oop newEventCall(oop arguments, oop function,int line)
     oop value = get(function,Symbol,value);
     node->Call.arguments = arguments;
     node->Call.function  = function;
+    node->Call.line = line;
+    node->Call.callType = 1;
     return node;
 }
 

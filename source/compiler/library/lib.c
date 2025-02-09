@@ -55,7 +55,7 @@ oop _newEventPrim(oop eventName,oop name,char lib_num,char func_num,char* args_t
     }
     //FIXME 
     eventName->Symbol.value->EventFunc.ownFunclist = newPair(newPair(name,prim),get(eventFunc,EventFunc,ownFunclist));
-    printlnObject(eventFunc->EventFunc.ownFunclist,0);
+    // printlnObject(eventFunc->EventFunc.ownFunclist,0);
     return prim;
 }
 #define newEventPrim(eventName,name, lib_num, func_num, return_type, size_of_args_type_array,  ...) ({ \

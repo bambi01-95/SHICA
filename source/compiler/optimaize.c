@@ -903,10 +903,10 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif 
+        printf("%s line %d: GetElement this is not supported now\n",__FILE__,__LINE__);
         //DEF: parent.child | parent.child()
         oop parent = get(exp,GetElement,parent);//id
-        printlnObject(parent->Symbol.value,0);
-        exit(1);
+
         oop child  = get(exp,GetElement,child);//id | Call
         oop parentVar = get(parent,Symbol,value);
         if(parentVar == sys_false){
@@ -1282,13 +1282,13 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 break;
             }
         }
-        for(int i=0; i<get(STATE_SUBCORE_LISTS,Array,size);i++){
-            oop id = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,a);
-            if(id == stateName){
-                SUBCORE_LIST = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,b);
-                break;
-            }
-        }
+        // for(int i=0; i<get(STATE_SUBCORE_LISTS,Array,size);i++){
+        //     oop id = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,a);
+        //     if(id == stateName){
+        //         SUBCORE_LIST = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,b);
+        //         break;
+        //     }
+        // }
 #if DEBUG
         SHICA_PRINTF("  > stateName %s\n\n",get(stateName,Symbol,name));
 #endif
@@ -1486,11 +1486,15 @@ state default{
                     ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
                 eveF = eveF->DupEvent.eventFunc;
-            }else{ //Local dup event
+            }else if(getType(eveF)!=EventFunc){ //Local dup event
                 oop isDup = findIdFromList(tmp->id,DEF_LOCAL_EVENT_LIST);
                 if(getType(isDup)==DupEvent){
                     eveF = isDup->DupEvent.eventFunc;
                 }
+            }else{
+                emitOII(COPYCORE,(globalMemoryIndex++),
+                    ((eveF->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
+                     + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
             }
             
             //ILOAD Ii: event trigger initial value, pin, ip address, etc.
