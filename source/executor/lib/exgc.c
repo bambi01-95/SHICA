@@ -11,6 +11,7 @@ such as FILE, SOCKET, etc.
 so, you can use malloc, calloc, realloc, free, etc.
 
 */
+
 struct ExternMemory{
     void **memory;
     int size;
@@ -42,5 +43,7 @@ void *gc_extern_alloc(struct ExternMemory *em, int lbs)
     em->memory[em->size] = p;
     return p;
 }
+
+////
 
 #endif

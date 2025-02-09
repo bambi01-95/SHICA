@@ -256,6 +256,7 @@ struct Core      {
     oop *threads; /*gc_mark*/
 };
 #include "./library/communicate-execute.h"
+
 struct SubCore{
     enum Type type;
     char size;
@@ -377,7 +378,7 @@ void markObject(oop obj){
                 gc_mark(obj->SubCore.var);
             }
             gc_markExternMemory(obj->SubCore.em);
-            gc_markOnly(obj->SubCore.any);
+            // gc_markOnly(obj->SubCore.any);
             return ;
         }
         case Thread:{

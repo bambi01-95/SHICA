@@ -454,7 +454,6 @@ oop Event_communicate(int eve_num,oop stack){
             core->Core.vd->VarIS.v_s1 = 0;
             core->Core.vd->VarIS.v_i1 = 0;
             core->Core.func = &eve_wifi_receive;
-
             break;
         }
         case COMMUNICATE_WiFi_BROADCAST_RECEIVE_E:{
