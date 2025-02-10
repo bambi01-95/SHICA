@@ -193,6 +193,7 @@ oop assoc(oop key, oop alist)
         for(int i=0; i<size; i++){
             oop head = alist->Array.elements[i];
             if(head == nil)continue;
+            if(head == NULL) continue;
             if(head->Assoc.symbol == key) return head;
         }
     }
@@ -1282,13 +1283,20 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 break;
             }
         }
-        // for(int i=0; i<get(STATE_SUBCORE_LISTS,Array,size);i++){
-        //     oop id = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,a);
-        //     if(id == stateName){
-        //         SUBCORE_LIST = get(get(STATE_SUBCORE_LISTS,Array,elements)[i],Pair,b);
-        //         break;
-        //     }
-        // }
+        for(int i=0; i<get(STATE_GLOBAL_EVENT_LISTS,Array,size);i++){
+            oop id = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,a);
+            if(id == stateName){
+                oop pairs = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,b);
+                int numEvent = 0;
+                while(pairs!=nil){
+                    numEvent++;
+                    pairs = get(pairs,Pair,b);
+                }
+                
+                Local_VNT->Array.size = numEvent;
+                break;
+            }
+        }
 #if DEBUG
         SHICA_PRINTF("  > stateName %s\n\n",get(stateName,Symbol,name));
 #endif
@@ -1641,7 +1649,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         for(int i=0;i<sizeOfStateTable;i++){
             oop _state = get(states[i],Pair,a);
             if(_state==id){
-                NextStateData = get(states[i],Pair,b);
+                NextStateData = get(states[i],Pair,b);//for DEFINE_L
             }else if(_state==stateNameG){
                 CurrentStateData = get(states[i],Pair,b);
             }
@@ -1663,19 +1671,13 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     }
                     tmp = tmp->Pair.b;
                 }
-                if(tmp==nil){
-                    emitOI(i_load,-1);
-                    emitOI(DEFINE_L,sizeOfNextStateEvent );
-                }
-                else{
-                    emitOI(i_load,gIndex);
-                    emitOI(DEFINE_L,sizeOfNextStateEvent);
-                }
+                if(tmp==nil){emitOI(i_load,-1);}
+                else{        emitOI(i_load,gIndex);}
+                emitOI(DEFINE_L, get(Local_VNT,Array,size) + sizeOfNextStateEvent );
                 sizeOfNextStateEvent++;
                 NextStateData =  NextStateData->Pair.b;
             }
         }
-
         emitOI(TRANS,0);
         int L = program->Array.number;
         int L_i = program->Array.size;

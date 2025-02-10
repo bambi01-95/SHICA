@@ -69,8 +69,12 @@ void main_execute(){
     int rbp = 0;
     int coreLoc = 0;    //FIXME: STTからの相対位置の取得に使用する
 
+    int gmRbp = 0;
+
 #if MSGC
     //CHECK ME: GMとstackの違いは？使い分けは？
+    //GM: ->は、Grobalに使用するメモリー
+    //stack: ->main executorのstack
     GC_PUSH(oop,GM,newThread(pc,20));
     GC_PUSH(oop,stack,newArray(20));
     gc_pushRoot((void*)&MY_AGENT_INFO);
@@ -86,12 +90,13 @@ void main_execute(){
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getInt(pc);GM->Thread.rbp = int_value;
+                gmRbp = int_value;
                 for(int i =0;i<int_value ;i++){
                     Array_push(GM->Thread.stack,nil);
                 }
-                // for(int i = int_value;i<int_value+10 ;i++){ //for first COPYCORE
-                //     Array_put(GM->Thread.stack,i,nil);
-                // }
+                for(int i =0;i< 10;i++){
+                    Array_push(GM->Thread.stack,nil);
+                }
                 continue;
             }
             case i_load:{
@@ -133,7 +138,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 //init setting core
                 coreLoc = pc;
                 coreSize = -1;//CHECKME AND REMOVE ME: coreSize -1
-                mainCore = mkCores(numCore);
+                GM->Thread.stack->Array.size = gmRbp + numCore;
+                // for(int i=0;i<numCore;i++){
+                //     Array_push(GM->Thread.stack,nil);
+                // }
+                // mainCore = mkCores(numCore);
                 continue;
             }
             case COPYCORE:{
@@ -146,9 +155,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 oop copyCore = getChild(GM,Thread,stack)->Array.elements[rbp + grobalMemoryIndex];
                 if(copyCore!=nil && copyCore!=0){
                     copyCore->Core.size = 0;//copy core type is Core/SubCore
-                    mainCore[++coreSize] = copyCore;
+                    // mainCore[++coreSize] = copyCore;
+                    getChild(GM->Thread.stack,Array,elements)[rbp + (++coreSize)] = copyCore;
                     pc = jumpRelPos + pc;
-                    GM->Thread.stack->Array.elements[rbp + grobalMemoryIndex] = nil;
+                }else{
+                    printlnObject(GM->Thread.stack,1);
                 }
                 continue;
             }
@@ -160,7 +171,8 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);
                 oop core = setCore(libNum,eveNum,stack);
-                mainCore[++coreSize] = core;
+                //mainCore[++coreSize] = core;
+                getChild(GM->Thread.stack,Array,elements)[gmRbp + (++coreSize)] = core;
                 continue;
             }
             case SETSUBCORE:{
@@ -171,7 +183,8 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);//don't use
                 oop core = setCore(libNum,eveNum,stack);
-                mainCore[++coreSize] = core;
+                // mainCore[++coreSize] = core;
+                getChild(GM->Thread.stack,Array,elements)[gmRbp + (++coreSize)] = core;
                 continue;
             }
             case MKTHREAD:{//FIXME: rechange the name of this instruction => SETCORE
@@ -180,7 +193,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #endif
                 
                 getSetInt(numThread,pc);
-                mainCore[coreSize]->Core.threads = newThreads(coreLoc,20,numThread);
+                // mainCore[coreSize]->Core.threads = newThreads(coreLoc,20,numThread);
+                oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)];
+                mainCore->Core.threads = newThreads(coreLoc,20,numThread);
                 continue;
             }
 
@@ -194,13 +209,16 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 oop thread = newThread(coreLoc + aRelPos,20);
                 
                 thread->Thread.condRelPos = cRelPos;
-                mainCore[coreSize]->Core.threads[mainCore[coreSize]->Core.size++] = thread;
+                // mainCore[coreSize]->Core.threads[mainCore[coreSize]->Core.size++] = thread;
+                oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)];
+                mainCore->Core.threads[mainCore->Core.size++] = thread;
                 continue;
             }
             case STARTIMP:{
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
+                oop *mainCore = getChild(GM->Thread.stack,Array,elements) + sizeof(oop)*gmRbp;
                 for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
                     for(int core_i=0;core_i<=coreSize;core_i++){
                     //<イベントの確認>/<check event>
@@ -214,31 +232,40 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                 FLAG flag = sub_execute(thread,GM);
                                 switch(flag){
                                     case F_TRANS:{
+                                        
                                         if(evalEventArgsThread->Thread.stack->Array.capacity>0){
                                             gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
                                             evalEventArgsThread->Thread.stack = newArray(10);
                                         }
-
-
                                         int pc_i = thread->Thread.pc;//location of thread[i]'s pc
                                         getSetInt(relpos,pc_i);
                                         int numPC = pc_i;
                                         getSetInt(numCopyCore,numPC);
-                                        for(int i=0;i<numCopyCore;i++){
-                                            oop coreIndex = Array_get(GM->Thread.stack,GM->Thread.rbp + i);
-                                            if(_Integer_value(coreIndex)==-1){
-                                                Array_put(GM->Thread.stack,GM->Thread.rbp + i, nil);
+                                        
+                                        oop copyCore[coreSize+1];
+                                        for(int i=0;i<=coreSize;i++){
+                                            copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
+                                        }
+                                        printlnObject(GM->Thread.stack,1);
+                                        for(int i=numCopyCore-1;i>=0;i-=1){
+                                            int coreIndex = _Integer_value(Array_pop(GM->Thread.stack));//DEFINE_L
+                                            if(coreIndex==-1){
+                                                getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = nil;
                                             }else{
-                                                Array_put(GM->Thread.stack,GM->Thread.rbp + i,mainCore[_Integer_value(coreIndex)]);
+                                                getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
                                             }
                                         }
+                                        printf("==================\n");
+                                        printlnObject(GM->Thread.stack,1);
+                                        printf("==================\n");
+
                                         pc = relpos + pc_i;
                                     #if DEBUG
                                         SHICA_PRINTF("Trans to %d\n",pc);
                                     #endif
                                         isTrans = 1;
-                                        int gm_size = GM->Thread.stack->Array.size;
-                                        getChild(GM,Thread,stack)->Array.size = GM->Thread.rbp;
+                                        // int gm_size = GM->Thread.stack->Array.size;
+                                        getChild(GM,Thread,stack)->Array.size = GM->Thread.rbp + numCopyCore;
                                         // //CHECK ME: ここでGMのスタックをクリアするか
                                         // for(int i = gm_size;i>GM->Thread.rbp;i--){
                                         //     Array_pop(GM->Thread.stack);

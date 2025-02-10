@@ -114,7 +114,7 @@ oop sys_false = 0;
 oop sys_true  = 0;
 oop none      = 0;
 
-oop *mainCore   = 0;
+// oop *mainCore   = 0;//Remove me
 int coreSize = 0;
 oop evalEventArgsThread = 0;
 
@@ -445,12 +445,12 @@ void isMarkObject(oop obj){
 
 void collectObjects(void)	// pre-collection funciton to mark all the symbols
 {
-    gc_markOnly(mainCore);
-    for(int i=0;i<=coreSize;i++){
-        gc_mark(mainCore[i]);
-        // SHICA_PRINTF("mark mainCore[%d]\n",i);
-        // printlnObject(mainCore[i],0);
-    }
+    // gc_markOnly(mainCore);//remove me
+    // for(int i=0;i<=coreSize;i++){
+    //     gc_mark(mainCore[i]);
+    //     // SHICA_PRINTF("mark mainCore[%d]\n",i);
+    //     // printlnObject(mainCore[i],0);
+    // }
     return;
 }
 #endif
