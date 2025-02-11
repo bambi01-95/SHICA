@@ -354,7 +354,7 @@ void markObject(oop obj){
             gc_markOnly(obj->FixArray.elements);// mark original pointer
             for(int i = 0;i<obj->FixArray.size;i++){
                 gc_mark(obj->FixArray.elements[i]);
-            }
+            } 
             return ;
         }
         case Core:{
@@ -646,26 +646,26 @@ oop newArray(int capacity){
 #else 
     oop Array_put(oop obj,unsigned int index,oop element)
     {
+        if(index >obj->Array.capacity){
     #if MSGC    //protect obj and element
-        gc_pushRoot((void*)&obj);
-        gc_pushRoot((void*)&element);
-        #if SBC
-        obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
-        #else //C++
-        obj->Array.elements = (Object**)gc_realloc(obj->Array.elements, (index + 1) * sizeof(oop));
-        #endif
-        gc_popRoots(2);
+            gc_pushRoot((void*)&obj);
+            gc_pushRoot((void*)&element);
+            obj->Array.elements = gc_realloc(obj->Array.elements,(index + 1) * sizeof(oop));
+            gc_popRoots(2);
     #else
-        obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
+            obj->Array.elements= realloc(obj->Array.elements,(index+1)*sizeof(oop));
     #endif
-        obj->Array.capacity=index + 1;
-        
+            obj->Array.capacity=index + 1;
+        }
+
         while(obj->Array.size<(index+1)){
             obj->Array.elements[obj->Array.size++]=nil;
         }
+        
         return obj->Array.elements[index]=element;
     }
 #endif
+
 
 
 //ARRAY GET

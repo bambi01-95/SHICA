@@ -84,6 +84,7 @@ void main_execute(){
 #endif
     for(;;){
         getInst(pc);
+        printf("pc %d\n",pc);
         switch(inst){
             case MSET:{
 #if TEST  
@@ -94,7 +95,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 for(int i =0;i<int_value ;i++){
                     Array_push(GM->Thread.stack,nil);
                 }
-                for(int i =0;i< 10;i++){
+                for(int i =0;i< int_value + 10;i++){
                     Array_push(GM->Thread.stack,nil);
                 }
                 continue;
@@ -158,9 +159,12 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                     // mainCore[++coreSize] = copyCore;
                     getChild(GM->Thread.stack,Array,elements)[rbp + (++coreSize)] = copyCore;
                     pc = jumpRelPos + pc;
-                }else{
-                    printlnObject(GM->Thread.stack,1);
                 }
+#if DEBUG
+                else{
+                    SHICA_PRINTF("copyCore is nil\n");
+                }
+#endif
                 continue;
             }
             case SETCORE:{
@@ -247,14 +251,18 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                             copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                                         }
                                         printlnObject(GM->Thread.stack,1);
+                                        
                                         for(int i=numCopyCore-1;i>=0;i-=1){
                                             int coreIndex = _Integer_value(Array_pop(GM->Thread.stack));//DEFINE_L
                                             if(coreIndex==-1){
-                                                getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = nil;
+                                                Array_put(GM->Thread.stack,gmRbp + i,nil);
+                                                // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = nil;
                                             }else{
-                                                getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
+                                                Array_put(GM->Thread.stack,gmRbp + i,copyCore[coreIndex]);
+                                                // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
                                             }
                                         }
+                                        getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + numCopyCore;
                                         printf("==================\n");
                                         printlnObject(GM->Thread.stack,1);
                                         printf("==================\n");
@@ -264,12 +272,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                         SHICA_PRINTF("Trans to %d\n",pc);
                                     #endif
                                         isTrans = 1;
-                                        // int gm_size = GM->Thread.stack->Array.size;
-                                        getChild(GM,Thread,stack)->Array.size = GM->Thread.rbp + numCopyCore;
-                                        // //CHECK ME: ここでGMのスタックをクリアするか
-                                        // for(int i = gm_size;i>GM->Thread.rbp;i--){
-                                        //     Array_pop(GM->Thread.stack);
-                                        // }
                                         break;
                                     }
                                     case F_EOE:{
@@ -299,6 +301,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                         }
                     }
                 }
+                printf("Trans\n");
                 continue;
             }
 
