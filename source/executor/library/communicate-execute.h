@@ -54,16 +54,19 @@
 #endif
 #define BUF_SIZE                16
 
+
+#define STRUCT_SOCKET_INFO_TYPE 0b000
 struct SocketInfo{
+    enum Type type;
     int recv_sockfd, send_sockfd;
     struct sockaddr_in recv_addr, broadcast_addr, sender_addr;
     socklen_t addr_len;
     char own_ip[INET_ADDRSTRLEN];
 };
-
+#define STRUCT_AGENT_INFO_TYPE 0b110
 struct AgentInfo{
     enum Type type;
-    agent_p agent;
+    agent_p agent;//agent_p is struct Agent*
     struct SocketInfo *socket;
 };
 #endif

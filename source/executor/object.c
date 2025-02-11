@@ -1,5 +1,8 @@
 #include "./setting.h"
 #include "./agent.c"
+#include "./lib/msgc.c"
+#include "./lib/extstr.c"
+
 #ifndef MAXTHREADSIZE
     #define MAXTHREADSIZE 10
 #endif
@@ -29,7 +32,7 @@
 #endif
 
 
-#include "./lib/msgc.c"
+
 void stop(char *file,int line){
     SHICA_FPRINTF(stderr,"stop %s %d\n",file,line);
     exit(1);
@@ -388,11 +391,17 @@ void markObject(oop obj){
             return ;
         }
         default:{
-#if DEBUG
-            DEBUG_ERROR("this is not happen type %d\n",getType(obj));
-#else
-            SHICA_PRINTF("this is not happen markObject()\n");
-#endif
+            //external struct type
+            gc_markOnly(obj);
+            extstr pointerMap = ExternStructMap[getType(obj) - END];
+            void **p = (void **)obj;
+            while(pointerMap){
+                if(pointerMap & 1){
+                    gc_mark(*p);
+                }
+                pointerMap >>= 1;
+                p++;
+            }
             return;
         }
     }
@@ -661,7 +670,7 @@ oop newArray(int capacity){
         while(obj->Array.size<(index+1)){
             obj->Array.elements[obj->Array.size++]=nil;
         }
-        
+
         return obj->Array.elements[index]=element;
     }
 #endif
