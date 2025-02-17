@@ -4,7 +4,7 @@
 
 #include "communicate-execute.h"
 #include "../lib/exgc.c"
-
+#include "../lib/extstr.c"
 void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, char *groupKey) {
     // 引数チェック
     if (ipAddr == NULL || groupKey == NULL) {
@@ -16,10 +16,13 @@ void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, c
     DEBUG_LOG("ipAddr:%s portNum:%d groupID:%d groupKey:%s\n",ipAddr,portNum,groupID,groupKey);
 #endif
 
-#if MSGC
-    struct ExternMemory *em = newExternMemory(8);
-    subcore->SubCore.em = em;
-    struct SocketInfo *socketInfo = (struct SocketInfo *)gc_extern_alloc(em,sizeof(struct SocketInfo));
+#if MSGC  
+    // struct ExternMemory *em = newExternMemory(8);
+    // subcore->SubCore.em = em;
+    // struct SocketInfo *socketInfo = (struct SocketInfo *)gc_extern_alloc(em,sizeof(struct SocketInfo));
+    
+    struct SocketInfo *socketInfo = (struct SocketInfo *)gc_alloc(sizeof(struct SocketInfo));
+    socketInfo->type = registerExternType(STRUCT_SOCKET_INFO_TYPE);
 #else
     struct SocketInfo *socketInfo = (struct SocketInfo *)malloc(sizeof(struct SocketInfo));
 #endif
@@ -58,7 +61,9 @@ void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, c
     }
 
 #if MSGC
-    struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)gc_extern_alloc(em,sizeof(struct AgentInfo));
+    // struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)gc_extern_alloc(em,sizeof(struct AgentInfo));
+    struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)gc_alloc(sizeof(struct AgentInfo));
+    MY_AGENT_INFO->type = registerExternType(STRUCT_AGENT_INFO_TYPE);
 #else
     struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)malloc(sizeof(struct AgentInfo));
 #endif
@@ -84,11 +89,12 @@ void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, c
         agent->base.myID = 0;
         agent->base.groupID = groupID;
         agent->reader.sizeOfMember = (1U);
-#if MSGC
-        agent->reader.groupKey = (char *)gc_extern_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#else
-        agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#endif
+// It is Open when groupKey will be pointer
+// #if MSGC
+//         agent->reader.groupKey = (char *)gc_extern_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
+// #else
+//         agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+// #endif
         memcpy(agent->reader.groupKey, groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
         MY_AGENT_INFO->agent = agent;//remove me after adapt em
         subcore->SubCore.any = (void *)MY_AGENT_INFO;
@@ -125,12 +131,13 @@ void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, c
                         agent_p agent = createAgent(AgentMember);
                         agent->base.myID    = buf[DATA_MY_ID];
                         agent->base.groupID = buf[DATA_GROUP_ID];
-#if MSGC
-                        agent->member.groupKey = (char *)gc_extern_alloc(em,SIZE_OF_DATA_GROUP_KEY + 1);
-#else
-                        agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#endif
-                        memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
+// It is Open when groupKey will be pointer
+// #if MSGC
+//                         agent->member.groupKey = (char *)gc_extern_alloc(em,SIZE_OF_DATA_GROUP_KEY + 1);
+// #else
+//                         agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+// #endif
+                        memcpy(agent,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
 #if DEBUG
                         DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
 #endif
@@ -160,12 +167,12 @@ void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, c
     agent->base.myID = 1;
     agent->base.groupID = groupID;
     agent->reader.sizeOfMember = (1U);
-#if MSGC
-    agent->reader.groupKey = (char *)gc_extern_alloc(em,SIZE_OF_DATA_GROUP_KEY + 1);
-#else
-    agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-#endif
-    memcpy(agent->reader.groupKey,groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
+// #if MSGC
+//     agent->reader.groupKey = (char *)gc_extern_alloc(em,SIZE_OF_DATA_GROUP_KEY + 1);
+// #else
+//     agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
+// #endif
+    setAgentGroupKey(agent,groupKey);
     MY_AGENT_INFO->agent = agent;//remove me after adapt em
     subcore->SubCore.any = (void *)MY_AGENT_INFO;
     return;
@@ -272,7 +279,7 @@ oop eve_wifi_receive(oop core){
                                 newAgent->base.myID = 0;
                                 newAgent->base.groupID = buffer[DATA_GROUP_ID];
                                 printf("current Member is %d\n",newAgent->reader.sizeOfMember);
-                                newAgent->reader.groupKey = strdup(agent->reader.groupKey);
+                                setAgentGroupKey(newAgent,agent->reader.groupKey);
 
                                 buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
                                 buffer[DATA_MY_ID]        = agent->base.myID;

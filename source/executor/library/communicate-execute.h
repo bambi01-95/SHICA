@@ -66,7 +66,7 @@ struct SocketInfo{
 #define STRUCT_AGENT_INFO_TYPE 0b110
 struct AgentInfo{
     enum Type type;
-    agent_p agent;//agent_p is struct Agent*
+    union Agent* agent;//agent_p is struct Agent*
     struct SocketInfo *socket;
 };
 #endif

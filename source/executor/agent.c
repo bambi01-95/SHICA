@@ -3,7 +3,9 @@
 #define AGENT_C
 
 #include <stdlib.h>
-
+#include "./object.c"
+#include "./lib/msgc.c"
+#include "./lib/extstr.c"
 #define MAX_GROUP 8
 
 typedef enum AgentType{
@@ -18,33 +20,42 @@ typedef union Agent *agent_p;
 
 
 struct AgentBase{
-    agent_t type;
+    enum Type type; //for gc
+    agent_t agent_type;
     char myID;
     char groupID;
 };
 
 struct AgentReader{
     struct AgentBase base;
-    char *groupKey;
+    char groupKey[4];//check me
     unsigned char sizeOfMember;
 };
 
 struct AgentMember{
     struct AgentBase base;
-    char *groupKey;
+    char groupKey[4];//check me
 };
 struct AgentVisitor{
     struct AgentBase base;
 };
 
+#define STRUCT_AGENT_TYPE 0b000
 union Agent{
+    enum Type type;
     struct AgentBase base;
     struct AgentReader reader;
     struct AgentMember member;
+    struct AgentVisitor visitor;
 };
 
 agent_p _createAgent(agent_t type,int size){
+#if MSGC
+    agent_p agent = (agent_p)gc_alloc(size);
+    agent->base.type = registerExternType(STRUCT_AGENT_TYPE);
+#else
     agent_p agent = (agent_p)malloc(sizeof(union Agent));
+#endif
     if(agent == NULL){
         return NULL;
     }
@@ -56,7 +67,7 @@ agent_p _createAgent(agent_t type,int size){
 
 agent_p _check(agent_p node,enum AgentType type, char *file, int line)
 {
-    if (node->base.type != type) {
+    if (node->base.agent_type != type) {
         printf("%s line %d: expected type %d got type %d\n", file, line, type, node->base.type);
         exit(1);
     }
@@ -65,7 +76,7 @@ agent_p _check(agent_p node,enum AgentType type, char *file, int line)
 #define getA(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
 
 char *getAgentGroupKey(agent_p agent){
-    switch(agent->base.type){
+    switch(agent->base.agent_type){
         case AgentMember:{
             return agent->member.groupKey;
         }
@@ -81,13 +92,13 @@ char *getAgentGroupKey(agent_p agent){
 }
 
 void setAgentGroupKey(agent_p agent,char *groupKey){
-    switch(agent->base.type){
+    switch(agent->base.agent_type){
         case AgentMember:{
-            agent->member.groupKey = groupKey;
+            memcpy(agent->member.groupKey,groupKey,4);
             break;
         }
         case AgentReader:{
-            agent->reader.groupKey = groupKey;
+            memcpy(agent->reader.groupKey,groupKey,4);
             break;
         }
         case AgentVisitor:{
@@ -101,7 +112,7 @@ void setAgentGroupKey(agent_p agent,char *groupKey){
 
 
 void printAgentData(agent_p agent){
-    switch(agent->base.type){
+    switch(agent->base.agent_type){
         case AgentMember:{
             printf("AgentMember\n");
             printf("myID:%d\n",agent->base.myID);
