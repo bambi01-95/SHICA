@@ -8,7 +8,28 @@ oop STATE_GLOBAL_EVENT_LISTS  = 0;
 //stateごとに定義されているローカルイベントリスト
 oop STATE_DEF_LOCAL_EVENT_LISTS   = 0;
 
+/*
+ STATE_GLOBAL_EVENT_LISTS
 
+    Pair
+        a:stateName
+        b:Pair
+            event and index (PAIR)
+            Pair
+                event and index (PAIR)
+                Pair
+                    event and index (PAIR)
+                    nil
+    Pair
+        a:bstateName
+        b:Pair
+            event and index (PAIR)
+            Pair
+                event and index (PAIR)
+                Pair
+                    event and index (PAIR)
+                    nil
+*/
 oop findIdFromList(oop id,oop list){
     oop tmp = list;
     while(tmp!=nil){

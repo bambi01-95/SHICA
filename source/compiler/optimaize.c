@@ -454,7 +454,8 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
 }
 
 oop stateNameG = 0;
-oop DEF_LOCAL_EVENT_LIST = 0;//PAIR
+oop DEF_LOCAL_EVENT_LIST = 0;//a state loca event list
+oop STATE_EVENT_LIST     = 0;//a state event list
 oop SUBCORE_LIST = 0;        //PAIR
 
 
@@ -962,76 +963,108 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         oop id = exp->Call.function;
         oop function = get(id,Symbol,value);
-        if(function == sys_false){
-            function =  findIdFromList(id,DEF_LOCAL_EVENT_LIST);
-        }
-	    switch (getType(function)){
-            case Function:{
-                int t = get(function,Function,kind);
-                if(type!=Undefined && type!=t){
-                    fatal("line %d type error: %s type but %s type, function %s\n",exp->Call.line,TYPENAME[type],TYPENAME[t],id->Symbol.name);
-                }
-                oop args   = get(exp,Call,arguments);
-                oop params = get(function, Function,parameters);
-                int num = compArgs(program,params,args,vnt);//leg11
-                int i = program->Array.number;
-                            /*number of args*/ /*function location*/
-                emitOII(CALL,num, get(function,Function,position) - i -(OPESIZE + INTSIZE*2));
-                break;
+        if(get(exp,Call,callType)){ //init EventFunction()
+            if(function == sys_false){
+                function =  findIdFromList(id,DEF_LOCAL_EVENT_LIST);
             }
-            case Primitive:{
-                char t       = get(function,Primitive,return_type);
-                if(type!=Undefined && type!=t){
-                    fatal("line %d type error: %s type but %s type, function %s\n",exp->Call.line,TYPENAME[type],TYPENAME[t],id->Symbol.name);
-                }
-                char* para_t = get(function,Primitive,args_type_array);
-                char para_s  = get(function,Primitive,size_of_args_type_array);
-                oop   args   = get(exp,Call,arguments);
-                for(int i=0; i<para_s ;i++){
-                    if(args == nil){
-                        fprintf(stderr,"error: PRIMITVE\n");
+            switch(getType(function)){
+                case DupEvent:{
+                    if(isEntry!=1){
+                        fprintf(stderr,"Definition Error: Event functions cannot be initialized except by the setup event function\n ");
                         exit(1);
                     }
-                    compOT(args->Pair.a, para_t[i]);
-                    args = args->Pair.b;
+                    oop args = get(exp,Call,arguments);
+                    oop eventFunc = get(function,DupEvent,eventFunc);
+                    char size = get(eventFunc,EventFunc,size_of_pin_num);
+                    for(int i=0; i< size;i++){
+                        //compile args
+                        compile(program,args->Pair.a,vnt,eventFunc->EventFunc.pin_num_type[i]);  
+                        eventFunc->EventFunc.pin_exps[i] =  args->Pair.a;
+                        args = args->Pair.b;
+                    }
+                    int eventPos =  _Integer_value(get(findIdFromList(id,STATE_EVENT_LIST),Pair,b));
+                    if(eventFunc->EventFunc.event_type == 0){
+                        emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventPos);
+                    }else{
+                        emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventPos);
+                    }
+                    break;
                 }
-                emitOIII(CALL_P,get(function,Primitive, lib_num),get(function,Primitive,func_num),para_s);
-                break;
+                case EventFunc:{
+                    // set pin or trigger conditino value.
+                    // in this here, not compile anything.
+                    if(isEntry!=1){
+                        fprintf(stderr,"Definition Error: Event functions cannot be initialized except by the setup event function\n ");
+                        exit(1);
+                    }
+                    oop args = get(exp,Call,arguments);
+                    oop eventFunc = function;
+                    char size = get(function,EventFunc,size_of_pin_num);
+                    for(int i=0; i< size;i++){
+                        compile(program,args->Pair.a,vnt,eventFunc->EventFunc.pin_num_type[i]);  
+                        function->EventFunc.pin_exps[i] =  args->Pair.a;
+                        args = args->Pair.b;
+                    }
+
+                    int eventPos =  _Integer_value(findIdFromList(id,STATE_EVENT_LIST));
+                    if(eventFunc->EventFunc.event_type == 0){
+                        emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventPos);
+                    }else{
+                        emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventPos);
+                    }                    
+                    break;
+                }
+                default:{
+                    fatal("line %d HACK: this cannot happen init event function %s\n",exp->Call.line,get(id,Symbol,name));
+                }
             }
-            case DupEvent:{
-                if(isEntry!=1){
-                    fprintf(stderr,"Definition Error: Event functions cannot be initialized except by the setup event function\n ");
-                    exit(1);
+        }else{
+            switch (getType(function)){
+                case Function:{
+                    int t = get(function,Function,kind);
+                    if(type!=Undefined && type!=t){
+                        fatal("line %d type error: %s type but %s type, function %s\n",exp->Call.line,TYPENAME[type],TYPENAME[t],id->Symbol.name);
+                    }
+                    oop args   = get(exp,Call,arguments);
+                    oop params = get(function, Function,parameters);
+                    int num = compArgs(program,params,args,vnt);//leg11
+                    int i = program->Array.number;
+                                /*number of args*/ /*function location*/
+                    emitOII(CALL,num, get(function,Function,position) - i -(OPESIZE + INTSIZE*2));
+                    break;
                 }
-                oop args = get(exp,Call,arguments);
-                oop eventFunc = get(function,DupEvent,eventFunc);
-                char size = get(eventFunc,EventFunc,size_of_pin_num);
-                for(int i=0; i< size;i++){
-                    eventFunc->EventFunc.pin_exps[i] =  args->Pair.a;
-                    args = args->Pair.b;
+                case Primitive:{
+                    char t       = get(function,Primitive,return_type);
+                    if(type!=Undefined && type!=t){
+                        fatal("line %d type error: %s type but %s type, function %s\n",exp->Call.line,TYPENAME[type],TYPENAME[t],id->Symbol.name);
+                    }
+                    char* para_t = get(function,Primitive,args_type_array);
+                    char para_s  = get(function,Primitive,size_of_args_type_array);
+                    oop   args   = get(exp,Call,arguments);
+                    for(int i=0; i<para_s ;i++){
+                        if(args == nil){
+                            fprintf(stderr,"error: PRIMITVE\n");
+                            exit(1);
+                        }
+                        compOT(args->Pair.a, para_t[i]);
+                        args = args->Pair.b;
+                    }
+                    emitOIII(CALL_P,get(function,Primitive, lib_num),get(function,Primitive,func_num),para_s);
+                    break;
                 }
-                break;
+                case DupEvent: 
+                case EventFunc:{
+#if DEBUG
+                    DEBUG_ERROR("type %s\n",TYPENAME[getType(function)]);
+#endif
+                }
+
+                default:{
+                    printf("type %s\n",TYPENAME[getType(function)]);
+                    printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
+                }
             }
-            case EventFunc:{
-                // set pin or trigger conditino value.
-                // in this here, not compile anything.
-                if(isEntry!=1){
-                    fprintf(stderr,"Definition Error: Event functions cannot be initialized except by the setup event function\n ");
-                    exit(1);
-                }
-                oop args = get(exp,Call,arguments);
-                char size = get(function,EventFunc,size_of_pin_num);
-                for(int i=0; i< size;i++){
-                    function->EventFunc.pin_exps[i] =  args->Pair.a;
-                    args = args->Pair.b;
-                }
-                break;
-            }
-            default:{
-                printf("type %s\n",TYPENAME[getType(function)]);
-                printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
-            }
-	    }
+        }
         
 	    break;
     }
@@ -1283,16 +1316,18 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 break;
             }
         }
+
         for(int i=0; i<get(STATE_GLOBAL_EVENT_LISTS,Array,size);i++){
             oop id = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,a);
             if(id == stateName){
                 oop pairs = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,b);
                 int numEvent = 0;
+                STATE_EVENT_LIST = pairs;
                 while(pairs!=nil){
                     numEvent++;
                     pairs = get(pairs,Pair,b);
                 }
-                
+                 
                 Local_VNT->Array.size = numEvent;
                 break;
             }
@@ -1518,9 +1553,9 @@ state default{
 
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){
-                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eveF->EventFunc.size_of_pin_num);
+                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, globalMemoryIndex - 1);//FIXME: local event
             }else{
-                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,eveF->EventFunc.size_of_pin_num);
+                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,globalMemoryIndex - 1);//FIXME: local event
             }
 
             //MKTHREAD LN EN TN: library number, event number, size of thread
