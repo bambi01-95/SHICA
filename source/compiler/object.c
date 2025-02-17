@@ -15,6 +15,10 @@
 #include <sys/select.h>
 #include <termios.h>
 
+#ifndef MAXTHREADSIZE
+    #define MAXTHREADSIZE 10
+#endif
+
 union Object;
 typedef union Object Object;
 typedef Object *oop;

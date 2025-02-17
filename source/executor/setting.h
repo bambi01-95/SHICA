@@ -10,7 +10,7 @@
 //SBC:1 PC or single board computerの時
 #define SBC 1
 //DEBUG:1 デバッグモード
-#define DEBUG 0
+#define DEBUG 1
 
 #if SBC
     #define SHICA_PRINTF(...) printf(__VA_ARGS__)

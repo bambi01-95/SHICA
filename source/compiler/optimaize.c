@@ -675,7 +675,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     else if((ass = assoc(id, Local_VNT))!=nil){
                         if(t!=Undefined)fatal("line %d variable error: %s is defined in Local variable\n",exp->SetVar.line,get(id,Symbol,name));
                         compOT(value,ass->Assoc.kind);
-                        emitOI(DEFINE_L,ass->Assoc.index); 
+                        emitOI(DEFINE_L,MAXTHREADSIZE + ass->Assoc.index); 
                     }
                     else{
                         ass = assoc(id,vnt);
@@ -750,7 +750,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
             }
             compOT(value,ass->Assoc.kind);
-            emitOI(DEFINE_L,ass->Assoc.index); 
+            emitOI(DEFINE_L, MAXTHREADSIZE + ass->Assoc.index); 
         }
         
         #if DEBUG
@@ -853,7 +853,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 case _Integer:{
                     compOT(values,ass->Assoc.kind);
                     compOT(index,ass->Assoc.kind);
-                    emitOI(DEFINE_List,ass->Assoc.index);
+                    emitOI(DEFINE_List, MAXTHREADSIZE + ass->Assoc.index);
                     break;
                 }
                 case _Long:
@@ -1321,14 +1321,14 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             oop id = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,a);
             if(id == stateName){
                 oop pairs = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,b);
-                int numEvent = 0;
+                // int numEvent = 0;//remove me
                 STATE_EVENT_LIST = pairs;
                 while(pairs!=nil){
-                    numEvent++;
+                    // numEvent++;//remove me
                     pairs = get(pairs,Pair,b);
                 }
                  
-                Local_VNT->Array.size = numEvent;
+                // Local_VNT->Array.size = numEvent;//remove me
                 break;
             }
         }
@@ -1498,14 +1498,18 @@ state default{
         exp->State.index = stt_loc;
         
         
-
-        struct CoreData *tmp = core;
         unsigned char num_of_core = 0;
-        while(tmp!=0){
-            if(tmp->id!=entry_sym){
-                num_of_core++;
-            }
-            tmp = tmp->next;
+        struct CoreData *tmp = core;
+        // while(tmp!=0){
+        //     if(tmp->id!=entry_sym){
+        //         num_of_core++;
+        //     }
+        //     tmp = tmp->next;
+        // }
+        oop pair = STATE_EVENT_LIST;
+        while(pair!=nil){
+            pair = get(pair,Pair,b);
+            num_of_core++;
         }
         
 
@@ -1708,7 +1712,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 }
                 if(tmp==nil){emitOI(i_load,-1);}
                 else{        emitOI(i_load,gIndex);}
-                emitOI(DEFINE_L, get(Local_VNT,Array,size) + sizeOfNextStateEvent );
+                emitOI(DEFINE_L, MAXTHREADSIZE + get(Local_VNT,Array,size) + sizeOfNextStateEvent );
                 sizeOfNextStateEvent++;
                 NextStateData =  NextStateData->Pair.b;
             }

@@ -84,7 +84,7 @@ void main_execute(){
 #endif
     for(;;){
         getInst(pc);
-        printf("pc %d\n",pc);
+        printf("pc %d\n",pc - 1);
         switch(inst){
             case MSET:{
 #if TEST  
@@ -139,7 +139,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 //init setting core
                 coreLoc = pc;
                 coreSize = -1;//CHECKME AND REMOVE ME: coreSize -1
-                GM->Thread.stack->Array.size = gmRbp + numCore;
+                GM->Thread.stack->Array.size = gmRbp + MAXTHREADSIZE;//Event maximam size is 10
                 // for(int i=0;i<numCore;i++){
                 //     Array_push(GM->Thread.stack,nil);
                 // }
@@ -222,7 +222,14 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
-                oop *mainCore = getChild(GM->Thread.stack,Array,elements) + sizeof(oop)*gmRbp;
+#if MSGC
+                oop *mainCore = (oop*)gc_alloc(sizeof(oop)*(coreSize+1));
+#else
+                oop mainCore[coreSize+1];
+#endif
+                for(int i=0;i<=coreSize;i++){
+                    mainCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
+                }
                 for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
                     for(int core_i=0;core_i<=coreSize;core_i++){
                     //<イベントの確認>/<check event>
@@ -354,21 +361,44 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                     switch(flag){
                         case F_EOE:isStop = 1;break;
                         case F_TRANS:{
+                                        
                             if(evalEventArgsThread->Thread.stack->Array.capacity>0){
                                 gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
                                 evalEventArgsThread->Thread.stack = newArray(10);
                             }
-                            int pc_i = code->Thread.pc++;//location of thread[i]'s pc
-                            getSetInt(pos,pc_i);
-                            s_pc = pos + pc_i;
+                            int pc_i = code->Thread.pc;//location of thread[i]'s pc
+                            getSetInt(relpos,pc_i);
+                            int numPC = pc_i;
+                            getSetInt(numCopyCore,numPC);
+                            
+                            oop copyCore[coreSize+1];
+                            for(int i=0;i<=coreSize;i++){
+                                copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
+                            }
+                            printlnObject(GM->Thread.stack,1);
+                            
+                            for(int i=numCopyCore-1;i>=0;i-=1){
+                                DEBUG_LOG("size %d\n",GM->Thread.stack->Array.size);
+                                oop data = Array_pop(GM->Thread.stack);
+                                printlnObject(data,1);
+                                int coreIndex = _Integer_value(data);//DEFINE_L
+                                if(coreIndex==-1){
+                                    Array_put(GM->Thread.stack,gmRbp + i,nil);
+                                    // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = nil;
+                                }else{
+                                    Array_put(GM->Thread.stack,gmRbp + i,copyCore[coreIndex]);
+                                    // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
+                                }
+                            }
+                            getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + numCopyCore;
+                            printf("==================\n");
+                            printlnObject(GM->Thread.stack,1);
+                            printf("==================\n");
+
+                            pc = relpos + pc_i;
                         #if DEBUG
-                            SHICA_PRINTF("Trans to %d\n",s_pc);
+                            SHICA_PRINTF("Trans to %d\n",pc);
                         #endif
-                            int gm_size = GM->Thread.stack->Array.size;
-                        //CHECK ME: ここでGMのスタックをクリアするか？
-                            // for(int i = gm_size;i>GM->Thread.rbp;i--){
-                            //     Array_pop(GM->Thread.stack);
-                            // }
                             isStop = 1;
                             break;
                         }
@@ -1129,6 +1159,34 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
                 if(cond == sys_false)return F_FALSE;//offset
                 else if(cond == sys_true)continue;
                 else if(_Integer_value(cond)==0)return F_FALSE;//offset
+                continue;
+            }
+            case SETCORE:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+#endif
+                getInt(mpc);
+                int lib_num = int_value;
+                getInt(mpc);
+                int eve_num = int_value;
+                getSetInt(pos,mpc);
+                DEBUG_LOG("pos %d\n",pos);
+                oop result = setCore(lib_num,eve_num,mstack);
+                Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
+                continue;
+            }
+            case SETSUBCORE:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+#endif
+                getInt(mpc);
+                int lib_num = int_value;
+                getInt(mpc);
+                int eve_num = int_value;
+                getSetInt(pos,mpc);
+                
+                oop result = setCore(lib_num,eve_num,mstack);
+                Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
                 continue;
             }
             case HALT:{
