@@ -70,6 +70,7 @@ void main_execute(){
     int coreLoc = 0;    //FIXME: STTからの相対位置の取得に使用する
 
     int gmRbp = 0;
+    int maxCoreSize = 0;
 
 #if MSGC
     //CHECK ME: GMとstackの違いは？使い分けは？
@@ -138,12 +139,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 if(numCore == 0)continue;
                 //init setting core
                 coreLoc = pc;
+                maxCoreSize = numCore;
                 coreSize = -1;//CHECKME AND REMOVE ME: coreSize -1
                 GM->Thread.stack->Array.size = gmRbp + MAXTHREADSIZE;//Event maximam size is 10
-                // for(int i=0;i<numCore;i++){
-                //     Array_push(GM->Thread.stack,nil);
-                // }
-                // mainCore = mkCores(numCore);
                 continue;
             }
             case COPYCORE:{
@@ -156,7 +154,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 oop copyCore = getChild(GM,Thread,stack)->Array.elements[rbp + grobalMemoryIndex];
                 if(copyCore!=nil && copyCore!=0){
                     copyCore->Core.size = 0;//copy core type is Core/SubCore
-                    // mainCore[++coreSize] = copyCore;
                     getChild(GM->Thread.stack,Array,elements)[rbp + (++coreSize)] = copyCore;
                     pc = jumpRelPos + pc;
                 }
@@ -175,7 +172,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);
                 oop core = setCore(libNum,eveNum,stack);
-                //mainCore[++coreSize] = core;
                 getChild(GM->Thread.stack,Array,elements)[gmRbp + (++coreSize)] = core;
                 continue;
             }
@@ -187,7 +183,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);//don't use
                 oop core = setCore(libNum,eveNum,stack);
-                // mainCore[++coreSize] = core;
                 getChild(GM->Thread.stack,Array,elements)[gmRbp + (++coreSize)] = core;
                 continue;
             }
@@ -195,9 +190,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
-                
                 getSetInt(numThread,pc);
-                // mainCore[coreSize]->Core.threads = newThreads(coreLoc,20,numThread);
                 oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)];
                 mainCore->Core.threads = newThreads(coreLoc,20,numThread);
                 continue;
@@ -211,9 +204,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 getSetInt(cRelPos,pc);
 
                 oop thread = newThread(coreLoc + aRelPos,20);
-                
                 thread->Thread.condRelPos = cRelPos;
-                // mainCore[coreSize]->Core.threads[mainCore[coreSize]->Core.size++] = thread;
                 oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)];
                 mainCore->Core.threads[mainCore->Core.size++] = thread;
                 continue;
@@ -269,7 +260,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                                 // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
                                             }
                                         }
-                                        getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + numCopyCore;
+                                        getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
                                         printf("==================\n");
                                         printlnObject(GM->Thread.stack,1);
                                         printf("==================\n");
@@ -359,7 +350,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 for(int isStop=0;isStop!=1;){
                     FLAG flag = sub_execute(code,GM);
                     switch(flag){
-                        case F_EOE:isStop = 1;break;
+                        case F_EOE:{
+                            isStop = 1;
+                            pc = s_pc;
+                            break;
+                        }
                         case F_TRANS:{
                                         
                             if(evalEventArgsThread->Thread.stack->Array.capacity>0){
@@ -371,8 +366,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                             int numPC = pc_i;
                             getSetInt(numCopyCore,numPC);
                             
-                            oop copyCore[coreSize+1];
-                            for(int i=0;i<=coreSize;i++){
+                            oop copyCore[maxCoreSize];
+                            DEBUG_LOG("coreSize %d\n",maxCoreSize);
+                            for(int i=0;i<maxCoreSize;i++){
                                 copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                             }
                             printlnObject(GM->Thread.stack,1);
@@ -390,7 +386,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                     // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
                                 }
                             }
-                            getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + numCopyCore;
+                            getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
                             printf("==================\n");
                             printlnObject(GM->Thread.stack,1);
                             printf("==================\n");
@@ -423,7 +419,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #else
                 // free(code);
 #endif
-                pc = s_pc;
+                
                 continue;                
             }
 
