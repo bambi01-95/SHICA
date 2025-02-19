@@ -15,23 +15,23 @@ vms:
 run:
 	./vm
 
+clean:
+	rm -f ./vm
+	rm -f ./shica
 
 pi:
 	gcc -o vm executor.c -lpigpio -lpthread
 
-gitShare:
+git:
+	rm -f ./vm
+	rm -f ./shica
 	git add .
-	git commit -m "update"
+	git commit -m "$(if $(MSG),$(MSG),Debug)"
 	git push
 
 gitUpdata:
 	git fetch origin
 	git pull origin main
-
-daygit:
-	git add .
-	git commit -m "dalily commit"
-	git push
 
 gitKillUpdata:
 	git reset --hard

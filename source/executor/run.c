@@ -85,7 +85,9 @@ void main_execute(){
 #endif
     for(;;){
         getInst(pc);
+#if TEST
         printf("pc %d\n",pc - 1);
+#endif
         switch(inst){
             case MSET:{
 #if TEST  
@@ -248,7 +250,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                         for(int i=0;i<=coreSize;i++){
                                             copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                                         }
+                                        #if DEBUG
                                         printlnObject(GM->Thread.stack,1);
+                                        #endif
                                         
                                         for(int i=numCopyCore-1;i>=0;i-=1){
                                             int coreIndex = _Integer_value(Array_pop(GM->Thread.stack));//DEFINE_L
@@ -261,10 +265,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                             }
                                         }
                                         getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
+                                        #if DEBUG
                                         printf("==================\n");
                                         printlnObject(GM->Thread.stack,1);
                                         printf("==================\n");
-
+                                        #endif
                                         pc = relpos + pc_i;
                                     #if DEBUG
                                         SHICA_PRINTF("Trans to %d\n",pc);
@@ -299,7 +304,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                         }
                     }
                 }
-                printf("Trans\n");
                 continue;
             }
 
@@ -367,16 +371,17 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                             getSetInt(numCopyCore,numPC);
                             
                             oop copyCore[maxCoreSize];
-                            DEBUG_LOG("coreSize %d\n",maxCoreSize);
                             for(int i=0;i<maxCoreSize;i++){
                                 copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                             }
+#if DEBUG
                             printlnObject(GM->Thread.stack,1);
-                            
+#endif
                             for(int i=numCopyCore-1;i>=0;i-=1){
-                                DEBUG_LOG("size %d\n",GM->Thread.stack->Array.size);
                                 oop data = Array_pop(GM->Thread.stack);
+#if DEBUG
                                 printlnObject(data,1);
+#endif
                                 int coreIndex = _Integer_value(data);//DEFINE_L
                                 if(coreIndex==-1){
                                     Array_put(GM->Thread.stack,gmRbp + i,nil);
@@ -387,9 +392,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                 }
                             }
                             getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
+#if DEBUG
                             printf("==================\n");
                             printlnObject(GM->Thread.stack,1);
                             printf("==================\n");
+#endif
 
                             pc = relpos + pc_i;
                         #if DEBUG
@@ -1166,7 +1173,6 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
                 getInt(mpc);
                 int eve_num = int_value;
                 getSetInt(pos,mpc);
-                DEBUG_LOG("pos %d\n",pos);
                 oop result = setCore(lib_num,eve_num,mstack);
                 Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
                 continue;
