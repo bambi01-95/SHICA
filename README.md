@@ -83,3 +83,7 @@ Graduate School of Engineering, Programming System Laboratory.
 ### Parser (PEG/LEG)
 
 [peg/leg — recursive-descent parser generators for C](https://www.piumarta.com/software/peg/)
+
+### Uni
+
+[KUAS home page](https://www.kuas.ac.jp/)
