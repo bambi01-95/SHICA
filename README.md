@@ -5,7 +5,13 @@
 This is a programming language for real-world multi-agent systems inspired by LSL.  
 It provides event management for each state.
 
-## Under Development – Not Ready for Use
+## Table of Contents
+
+- [Development Status](#Development Status)
+
+## Development Status
+
+### Under Development – Not Ready for Use
 
 This project is still under development and not ready for public use.
 
@@ -19,7 +25,7 @@ If you are interested in using it, please contact us first.
 
     v1.0.2 RPI GPIO lib and Wifi UDP lib
 
-## Setup / How to use
+## Setup
 
 ### To set up the development environment, please follow the steps below
 
@@ -32,16 +38,18 @@ If you are interested in using it, please contact us first.
 2. compile SHICA compiler:
 
     ```sh
-        cd ../source
-        make com
+    cd ../source
+    make com
     ```
 
 3. compile SHICA virtual machin:
 
     ```sh
-        cd ../source
-        make vms
+    cd ../source
+    make vms
     ```
+
+## Implementation
 
 ### To implement the shica code, please follow the steps below
 
@@ -50,13 +58,13 @@ If you are interested in using it, please contact us first.
 2. Compile by shica compiler:
 
     ```sh
-        ./shica yor_code.txt
+    ./shica yor_code.txt
     ```
 
 3. Run shica code by shica vm:
 
     ```sh
-        ./vm yor_code.stt
+    ./vm yor_code.stt
     ```
 
 ## Affiliation
