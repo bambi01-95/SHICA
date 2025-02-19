@@ -59,8 +59,7 @@ agent_p _createAgent(agent_t type,int size){
     if(agent == NULL){
         return NULL;
     }
-    agent->base.type = type;
-
+    agent->base.agent_type = type;
     return agent;
 }
 #define createAgent(TYPE) _createAgent(TYPE,sizeof(struct TYPE))
