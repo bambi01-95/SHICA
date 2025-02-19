@@ -25,9 +25,9 @@ If you are interested in using it, please contact us first.
 
 1. Clone this repository:
 
-'''sh
-    d-.-b b
-'''
+    ```sh
+        d-.-b b
+    ```
 
 2. compile SHICA compiler:
     cd ../source
