@@ -22,12 +22,13 @@ state default{
 }
 ```
 
-SHICA handles events within a state. The following is an example of SHICA code that handles an event triggered every 10 second:
+SHICA handles events within a state. The following is an example of LED management code that handles two events, timerSec() and gpioPinRead():
 
 ```shica
 state default{ //default state is initially implemented
     entry(){
         gpioSet(13,0) //set pin 13 for OUTPUT
+        init gpioPinRead(17,1) set gpio 17 pin read event 
         init timerSec(10) //set timer event every 10 sec
         state off //state transistion to off state
     }
@@ -36,10 +37,9 @@ state default{ //default state is initially implemented
 state off{
     entry(){
         print("LED OFF")
-        timerSec.reset(0) //reset timer 0
         gpioWrite(13,0) //LED off
     }
-    timerSec(int s){
+    gpioPinRead(){
         state on
     }
 }
@@ -53,10 +53,14 @@ state on{
     timerSec(int s){
         state off
     }
+    gpioPinRead(){
+        state off
+    }
 }
 ```
 
-This code manages LED on and off using two states: on and off. It will transition to the opposite state every 10 seconds.
+This code manages LED on and off using two states: on and off. It will transition to the opposite state when Button (pin 17) is cliked. And also, on state will transistion to
+off state after 10 seconds.
 
 ## Documentation
 
