@@ -2,8 +2,7 @@
 
 ## Event Oriented Programming Language for Malti Agent System
 
-This is a programming language for real-world multi-agent systems inspired by LSL.  
-It provides event management for each state.
+This is a programming language for real-world multi-agent systems inspired by LSL. It provides event management for each state.
 
 ## Features
 
@@ -26,20 +25,21 @@ state default{
 SHICA handles events within a state. The following is an example of SHICA code that handles an event triggered every 10 second:
 
 ```shica
-state default{
+state default{ //default state is initially implemented
     entry(){
-        gpioSet(13,0)
-        init timerSec(10)
-        state off
+        gpioSet(13,0) //set pin 13 for OUTPUT
+        init timerSec(10) //set timer event every 10 sec
+        state off //state transistion to off state
     }
 }
+
 state off{
     entry(){
         print("LED OFF")
-        timerSec.reset(0)
-        gpioWrite(13,0)
+        timerSec.reset(0) //reset timer 0
+        gpioWrite(13,0) //LED off
     }
-    timeSec(int s){
+    timerSec(int s){
         state on
     }
 }
@@ -47,10 +47,10 @@ state off{
 state on{
     entry(){
         print("LED ON")
-        timerSec.reset(0)
-        gpioWrite(13,1)
+        timerSec.reset(0) //reset timer 0
+        gpioWrite(13,1) //LED on
     }
-    timeSec(int s){
+    timerSec(int s){
         state off
     }
 }
@@ -59,6 +59,8 @@ state on{
 This code manages LED on and off using two states: on and off. It will transition to the opposite state every 10 seconds.
 
 ## Documentation
+
+Currently, no documentation is provided.Please reffer ./test/.
 
 ## Development Status
 
@@ -125,7 +127,7 @@ Graduate School of Engineering, Programming System Laboratory.
 
 ## Other
 
-### Linden Scripting Language
+### Secound Life (Linden Scripting Language)
 
 [Second Life home page](https://secondlife.com/)
 
@@ -135,6 +137,6 @@ Graduate School of Engineering, Programming System Laboratory.
 
 [peg/leg — recursive-descent parser generators for C](https://www.piumarta.com/software/peg/)
 
-### Uni
+### KUAS
 
 [KUAS home page](https://www.kuas.ac.jp/)
