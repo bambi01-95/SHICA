@@ -2,6 +2,15 @@
 
 ## Event Oriented Programming Language for Malti Agent System
 
+This is a programming language for real-world multi-agent systems inspired by LSL.  
+It provides event management for each state.
+
+## Under Development – Not Ready for Use
+
+This project is still under development and not ready for public use.
+    If you are interested in using it, please contact us first.
+
+## Version?
 
     v1.0.0 First Release: multi action and eval args cond
 
@@ -9,124 +18,18 @@
 
     v1.0.2 RPI GPIO lib and Wifi UDP lib
 
-    .
+## Affiliation
 
-    ├── README.md  
+This project is developed by Deer d-.-b at Kyoto University of Advanced Science,  
+Graduate School of Engineering, Programming System Laboratory.
 
-    ├── source  
+## Other
 
-    │   ├── code.stt  
+### Linden Scripting Language
 
-    │   ├── common  
+[Second Life home page](https://secondlife.com/)
+[LSL Portal](https://wiki.secondlife.com/wiki/LSL_Portal)
 
-    │   │   ├── inst.c  
+### Parser (PEG/LEG)
 
-    │   │   ├── liblist  
-
-    │   │   │   ├── library.h  
-
-    │   │   │   └── stdlib.h  
-
-    │   │   └── memory.c  
-
-    │   ├── compiler  
-
-    │   │   ├── generate.c  
-
-    │   │   ├── lib  
-
-    │   │   │   └── cLangInterface  
-
-    │   │   │       ├── cParser.leg  
-
-    │   │   │       ├── input.txt  
-
-    │   │   │       ├── leg  
-
-    │   │   │       ├── makefile  
-
-    │   │   │       ├── memo.txt  
-
-    │   │   │       ├── output.c  
-
-    │   │   │       ├── test  
-
-    │   │   │       └── test.c  
-
-    │   │   ├── library  
-
-    │   │   │   ├── lib.c  
-
-    │   │   │   └── stdlib-compile.c  
-
-    │   │   ├── object.c  
-
-    │   │   ├── optimaize.c  
-
-    │   │   ├── parser  
-
-    │   │   │   ├── MEMO.txt  
-
-    │   │   │   ├── leg  
-
-    │   │   │   ├── parser.c  
-
-    │   │   │   ├── parser.h  
-
-    │   │   │   └── parser.leg  
-
-    │   │   └── tool.c  
-
-    │   ├── compiler.c  
-
-    │   ├── executor  
-
-    │   │   ├── lib  
-
-    │   │   │   ├── fatal.c  
-
-    │   │   │   └── msgc.c  
-
-    │   │   ├── library  
-
-    │   │   │   ├── lib.c  
-
-    │   │   │   └── stdlib-execute.c  
-
-    │   │   ├── object.c  
-
-    │   │   ├── run.c  
-
-    │   │   ├── setting.h  
-
-    │   │   └── tool.c  
-
-    │   ├── executor.c  
-
-    │   ├── expanded.c  
-
-    │   ├── input.txt  
-
-    │   ├── makefile  
-
-    │   ├── shica  
-
-    │   └── vm  
-
-    └── test  
-
-        ├── Makefile  
-
-        ├── code.stt  
-
-        ├── for-test.txt  
-
-        ├── if-ineq-test.txt  
-
-        ├── if-number-test.txt  
-
-        └── while-test.txt  
-
-
-
-[leg](https://www.piumarta.com/software/peg/)
+[peg/leg — recursive-descent parser generators for C](https://www.piumarta.com/software/peg/)
