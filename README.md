@@ -5,9 +5,60 @@
 This is a programming language for real-world multi-agent systems inspired by LSL.  
 It provides event management for each state.
 
-## Table of Contents
+## Features
 
-- [Development Status](#Development Status)
+- State machine like sysntax (LSL)
+- Event ...
+- Multi action, one event
+
+## Sample Code of SHICA
+
+This is a code that prints "Hello World!":
+
+```shica
+state default{
+    entry(){
+        print("Hello World!")
+    }
+}
+```
+
+SHICA handles events within a state. The following is an example of SHICA code that handles an event triggered every 10 second:
+
+```shica
+state default{
+    entry(){
+        gpioSet(13,0)
+        init timerSec(10)
+        state off
+    }
+}
+state off{
+    entry(){
+        print("LED OFF")
+        timerSec.reset(0)
+        gpioWrite(13,0)
+    }
+    timeSec(int s){
+        state on
+    }
+}
+
+state on{
+    entry(){
+        print("LED ON")
+        timerSec.reset(0)
+        gpioWrite(13,1)
+    }
+    timeSec(int s){
+        state off
+    }
+}
+```
+
+This code manages LED on and off using two states: on and off. It will transition to the opposite state every 10 seconds.
+
+## Documentation
 
 ## Development Status
 
@@ -19,11 +70,11 @@ If you are interested in using it, please contact us first.
 
 ## Version?
 
-    v1.0.0 First Release: multi action and eval args cond
+v1.0.0 First Release: multi action and eval args cond
 
-    v1.0.1 Optimaze eval event args
+v1.0.1 Optimaze eval event args
 
-    v1.0.2 RPI GPIO lib and Wifi UDP lib
+v1.0.2 RPI GPIO lib and Wifi UDP lib
 
 ## Setup
 
