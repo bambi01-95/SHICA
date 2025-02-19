@@ -26,26 +26,38 @@ If you are interested in using it, please contact us first.
 1. Clone this repository:
 
     ```sh
-        d-.-b b
+    d-.-b b
     ```
 
 2. compile SHICA compiler:
-    cd ../source
-    make com
+
+    ```sh
+        cd ../source
+        make com
+    ```
 
 3. compile SHICA virtual machin:
-    cd ../source
-    make vms
+
+    ```sh
+        cd ../source
+        make vms
+    ```
 
 ### To implement the shica code, please follow the steps below
 
 1. Write a code by reading and refergin sample code at ./test.
 
 2. Compile by shica compiler:
-    ./shica yor_code.txt
+
+    ```sh
+        ./shica yor_code.txt
+    ```
 
 3. Run shica code by shica vm:
-    ./vm yor_code.stt
+
+    ```sh
+        ./vm yor_code.stt
+    ```
 
 ## Affiliation
 
