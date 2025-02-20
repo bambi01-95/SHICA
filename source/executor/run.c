@@ -516,13 +516,13 @@ FLAG sub_execute(oop process,oop GM){
         switch(inst){
             case TRANS:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 return F_TRANS;
             }
             case i_load:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));
@@ -550,6 +550,9 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
                 continue;    
             }
             case s_load:{
+#if TEST
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
+#endif
                 getString(mpc);
                 Array_push(mstack,newString(string_value));
                 continue;
@@ -567,7 +570,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 /* _Integer */
             case i_EQ:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l == r));
@@ -575,7 +578,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_NE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l != r));
@@ -583,7 +586,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_LT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api();
                 int l = api();
@@ -592,7 +595,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_LE:{//inprogress
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l <= r));
@@ -600,7 +603,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_GE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >= r));
@@ -608,7 +611,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_GT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l >  r));
@@ -616,7 +619,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_AND:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l && r));
@@ -624,7 +627,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_OR:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,newBoolean(l || r));
@@ -632,7 +635,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_ADD:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l + r));
@@ -640,7 +643,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_SUB:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l - r));
@@ -648,7 +651,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_MUL:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l * r));
@@ -656,7 +659,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_DIV:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l / r));
@@ -664,7 +667,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_MOD:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 int r = api(),l = api();
                 Array_push(mstack,_newInteger(l % r));
@@ -912,7 +915,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
 /* end calc */
             case CALL:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,_newInteger(int_value));//number of args
@@ -930,7 +933,7 @@ SHICA_PRINTF("CALL_P\n");
             }
             case GET:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data = Array_get(mstack,mrbp + int_value);
@@ -939,7 +942,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case GET_L:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 // SHICA_PRINTF("    %s\n",TYPENAME[getType(mstack)]);
@@ -948,7 +951,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case GET_G:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 Array_push(mstack,Array_get(GM->Thread.stack,int_value));//index
@@ -956,7 +959,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case DEFINE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -965,7 +968,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case DEFINE_L:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data  = Array_pop(mstack);
@@ -974,7 +977,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case DEFINE_G:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 oop data = Array_pop(mstack);
@@ -983,7 +986,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case DEFINE_List:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
 #if DEBUG
                 DEBUG_LOG("this is not support now");
@@ -999,19 +1002,19 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case GLOBAL_END:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 return F_EOE;
             }
             case SETQ:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 continue;
             }
             case RET:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 oop value = Array_pop(mstack);//return value
                 oop data = nil;
@@ -1026,7 +1029,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case JUMPF:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);//get offset inpro
                 oop cond = Array_pop(mstack);
@@ -1038,7 +1041,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case JUMP:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);     //get offset
                 mpc += int_value;//get offset
@@ -1046,7 +1049,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case MSUB:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 //now
                 mstack = Array_push(mstack, new_Basepoint(mrbp));//before mrpb
@@ -1060,7 +1063,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case MPOP:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 for(;;){
                     oop data = Array_pop(mstack);
@@ -1073,7 +1076,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case MPICK:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 int adress = int_value;
@@ -1085,49 +1088,49 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case i_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%d\n",_Integer_value(Array_pop(mstack)));
                 continue;
             }
             case l_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%lld\n",Array_pop(mstack)->_Long.value);
                 continue;
             }
             case f_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%f",_Float_value(Array_pop(mstack)));
                 continue;
             }
             case d_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%f",Array_pop(mstack)->_Double.value);
                 continue;
             }
             case c_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%c",_Char_value(Array_pop(mstack)));
                 continue;
             }
             case s_PRINT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 SHICA_PRINTF("%s\n\n",Array_pop(mstack)->_String.value);
                 continue;
             }
             case EOE:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 // mpc  = mrbp;
                 mpc -= 1;
@@ -1139,13 +1142,13 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case EOC:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 return F_TRUE;
             }
             case EOA:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 oop data = nil;
                 while(getType(data = Array_pop(mstack)) != _BasePoint);
@@ -1155,7 +1158,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case COND:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 oop cond = Array_pop(mstack);
                 //FIXME: usign sys_false and sys_true
@@ -1166,7 +1169,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case SETCORE:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 int lib_num = int_value;
@@ -1179,21 +1182,21 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
             }
             case SETSUBCORE:{
 #if TEST
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 getInt(mpc);
                 int lib_num = int_value;
                 getInt(mpc);
                 int eve_num = int_value;
                 getSetInt(pos,mpc);
-                
+                DEBUG_LOG("pop all element of setsubcore"); df
                 oop result = setCore(lib_num,eve_num,mstack);
                 Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
                 continue;
             }
             case HALT:{
 #if TEST  
-if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc,INSTNAME[inst]);}
+if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]);}
 #endif
                 if(getChild(mstack,Array,size)==1){
                     SHICA_PRINTF("HALT-----------------------\n");
@@ -1446,7 +1449,7 @@ oop printByteCode(){
                 SHICA_PRINTF("jumpF     ");//T
                 getInt(pc);
                 int offset = int_value; 
-                SHICA_PRINTF("%3d\n",offset);//T
+                SHICA_PRINTF("%3d (to %3d)\n",offset,pc+offset);//T
                 continue;
             }
             case JUMP:{

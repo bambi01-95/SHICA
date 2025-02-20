@@ -471,6 +471,7 @@ oop Event_communicate(int eve_num,oop stack){
             break;
         }
         case COMMUNICATE_WiFi_GROUP_RECEIVE_E:{
+            DEBUG_LOG("COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
             core = newCore(Default);
             core->Core.var = newFixArray(4);
             core->Core.var->FixArray.elements[0] = Array_pop(stack);//String  address
@@ -480,6 +481,7 @@ oop Event_communicate(int eve_num,oop stack){
             oop d = core->Core.var;
             init_eve_wifi_receive(core,d->FixArray.elements[0]->_String.value, d->FixArray.elements[1]->_Integer._value, d->FixArray.elements[2]->_Integer._value, d->FixArray.elements[3]->_String.value);
             core->Core.func = &eve_wifi_receive;
+            DEBUG_LOG("COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
             break;
         }
         default:{
