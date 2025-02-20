@@ -932,9 +932,20 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                         if(index == nil){
                             fatal("line %d: event %s is not found in state %s\n",exp->GetElement.line,get(parentId,Symbol,name),stateNameG);
                         }
-                        //get_l (void*)any #into stack
-                        emitOI(GET_L, _Integer_value(index));
                         oop prim = get(get(eventPrimList,Pair,a),Pair,b);  
+                        oop args = child->Call.arguments;
+                        for(int i=0;i<prim->Primitive.size_of_args_type_array;i++){
+                            if(args == nil){
+                                fatal("line %d: too few arguments\n",exp->GetElement.line);
+                            }
+                            compile(program,args->Pair.a,vnt,prim->Primitive.args_type_array[i]);
+                            args = args->Pair.b;
+                        }
+                        if(args != nil){
+                            fatal("line %d: too many arguments\n",exp->GetElement.line);
+                        }
+                        //get_l core #into stack
+                        emitOI(GET_L, _Integer_value(index));
                         //call_p X X X
                         emitOIII(CALL_P,prim->Primitive.lib_num,prim->Primitive.func_num,prim->Primitive.size_of_args_type_array);
                         break;
