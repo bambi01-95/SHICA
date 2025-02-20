@@ -1189,7 +1189,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]
                 getInt(mpc);
                 int eve_num = int_value;
                 getSetInt(pos,mpc);
-                DEBUG_LOG("pop all element of setsubcore"); df
+                DEBUG_LOG("pop all element of setsubcore"); 
                 oop result = setCore(lib_num,eve_num,mstack);
                 Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
                 continue;
