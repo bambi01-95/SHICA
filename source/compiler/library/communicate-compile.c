@@ -16,7 +16,7 @@ void setting_communicate(){
     //wifiGloupReceived(str addr,int id, int str)::no init but use wifiBldGroup() function
     setEventFuncSub(wifiGroupReceived,COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_RECEIVE_E, 3, list(_Integer,_Integer,String), 4, list(String,_Integer,_Integer,String));
         //wifiBuildGroup(str toId, int val)
-        newEventPrim(wifiGroupReceived, send,    COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_BROADCAST_P, Undefined, 2, _Integer, _Integer);
+        newEventPrim(wifiGroupReceived, send, COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_BROADCAST_P, Undefined, 2, _Integer, _Integer);
 
     //Primitive
                 /*funcname,  libnum, funcnum, return_type, num_args, args_type */

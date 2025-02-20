@@ -16,6 +16,7 @@ void setting_stdlib(){
     setEventFunc(event,    STDLIB, TEST_E    ,2,list(_Integer,_Integer),1,list(Undefined));
     setEventFunc(loop,     STDLIB, LOOP_E    ,1,list(Undefined),1,list(Undefined));
     setEventFunc(timerSec,STDLIB, TIMERSEC_E,1,list(_Integer),1,list(_Integer)); /*FIXME: Operater should be 1*/
+        newEventPrim(timerSec, reset,    STDLIB, TIMERSEC_RESET_P, Undefined, 0, _Integer);
     setEventFunc(keyget,   STDLIB, KEYGET_E  ,1,list(_Integer),1,list(Undefined));
     return;
 }

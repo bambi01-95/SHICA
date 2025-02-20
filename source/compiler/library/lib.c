@@ -1,7 +1,21 @@
 #ifndef LIB_C
 #define LIB_C
 #include "../object.c"
-#define list(...)  {__VA_ARGS__}
+
+
+char *typelist(int size, ...){
+    char* str = malloc(size+1);
+    va_list args;
+    va_start(args,size);
+    for(int i = 0; i < size; i++){
+        str[i] = va_arg(args,int);
+    }
+    str[size] = '\0';
+    va_end(args);
+    return str;
+}
+
+#define list(...)  {__VA_ARGS__} //FIXME: using typelist instead of list
 
 oop _setEventFunc(oop name,char lib_num,char eve_num,char eventType,char* args_type_array,char size_of_args_type_array,char * pin_num,char  size_of_pin_num){
     oop prim = newObject(EventFunc);
@@ -59,8 +73,7 @@ oop _newEventPrim(oop eventName,oop name,char lib_num,char func_num,char* args_t
     return prim;
 }
 #define newEventPrim(eventName,name, lib_num, func_num, return_type, size_of_args_type_array,  ...) ({ \
-    static char name##__[size_of_args_type_array] = {__VA_ARGS__}; \
-    _newEventPrim(intern(#eventName),intern(#name), lib_num, func_num,name##__, size_of_args_type_array , return_type);\
+    _newEventPrim(intern(#eventName),intern(#name), lib_num, func_num,typelist(size_of_args_type_array,__VA_ARGS__), size_of_args_type_array , return_type);\
 })
 
 

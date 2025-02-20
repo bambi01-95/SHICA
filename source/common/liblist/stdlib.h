@@ -13,6 +13,7 @@ extern enum STDLIB_P{
     ITOC_P,
     APPENDCHAR_P,
     EXIT_P,
+    TIMERSEC_RESET_P,
 } STDLIB_P;
 
 #endif

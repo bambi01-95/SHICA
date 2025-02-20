@@ -920,31 +920,31 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             }
             case EventFunc:{
                 printf("end\n");
-                if(parentVar->EventFunc.event_type == 1){
-                    printf("end\n");
-                    //NEED TO FIX PARSER 
-                    //get child func
-                    oop funcId = get(child,Call,function);
-                    //get event func's function list
-                    oop eventPrimList = get(parentVar,EventFunc,ownFunclist);
-                    //search child in the list
-                    while(getType(eventPrimList)==Pair){
-                        oop id = get(get(eventPrimList,Pair,a),Pair,a);
-                        if(funcId == id){
-                            //search and get index from subcore list
-                            oop index = findIdFromList(id,SUBCORE_LIST);
-                            oop eveFunc = get(get(eventPrimList,Pair,a),Pair,b);
-                            //get_l (void*)any #into stack
-                            emitOI(GET_L, _Integer_value(index));
-                            //call_p X X X
-                            emitOIII(CALL_P,eveFunc->Primitive.func_num,eveFunc->EventFunc.lib_num,eveFunc->Primitive.size_of_args_type_array);
-                            
+                //NEED TO FIX PARSER 
+                //get child func
+                oop funcId = get(child,Call,function);
+                //get event func's function list
+                oop eventPrimList = get(parentVar,EventFunc,ownFunclist);
+                //search child in the list
+                while(getType(eventPrimList)==Pair){
+                    oop id = get(get(eventPrimList,Pair,a),Pair,a);
+                    if(funcId == id){
+                        printf("found\n");
+                        //search and get index from subcore list
+                        oop index = findIdFromList(id,STATE_EVENT_LIST);
+                        if(index == nil){
+                            fatal("line %d: function %s is not found in event function %s\n",exp->GetElement.line,get(funcId,Symbol,name),get(parent,Symbol,name));
                         }
-                        eventPrimList = get(eventPrimList,Pair,b);
+                        //get_l (void*)any #into stack
+                        emitOI(GET_L, _Integer_value(index));
+                        //call_p X X X
+                        emitOIII(CALL_P,funcId->Primitive.func_num,funcId->EventFunc.lib_num,funcId->Primitive.size_of_args_type_array);
+                        break;
                     }
-                    if(eventPrimList == nil){
-                        fatal("line %d: function %s is not found in event function %s\n",exp->GetElement.line,get(funcId,Symbol,name),get(parent,Symbol,name));
-                    }
+                    eventPrimList = get(eventPrimList,Pair,b);
+                }
+                if(eventPrimList == nil){
+                    fatal("line %d: function %s is not found in event function %s\n",exp->GetElement.line,get(funcId,Symbol,name),get(parent,Symbol,name));
                 }
                 break;
             }

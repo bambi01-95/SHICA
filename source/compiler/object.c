@@ -315,8 +315,8 @@ struct EventFunc{
     char* args_type_array;
     char  size_of_args_type_array;
     char* pin_num_type;
-    oop   *pin_exps;
     char  size_of_pin_num;
+    oop   *pin_exps;
     oop   ownFunclist;//eventFuncName.ownFunc()
 };
 
@@ -387,7 +387,7 @@ struct Thread{
     oop stack; 
     oop queue[5];  
     Func func;
-    union VarData*  vd;
+    union VarData*  vd;//REMOVE ME
 };
 
 union Object {
