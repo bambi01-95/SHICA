@@ -16,7 +16,7 @@ char *typelist(int arg1, ...){
     }
     list[i] = 0;
     va_end(args);
-    char* ret = (char *)malloc(i);
+    char* ret = strdup(list);
     return ret;
 }
 

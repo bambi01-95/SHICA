@@ -1,10 +1,44 @@
 
-
-state default{
-	timerSec(int i){
-		print(i)
-        if(i>3){
-            timerSec.reset()
+state init{
+	entry(){
+		int v = gpioInitialise()
+        if(v<0){
+            print("Error")
+            gpioDelay(20000)
+            state init
         }
+		init wifiGroupReceived("192.168.1.255",60000,12,"KUAS") //build Group
+        gpioSetMode(17,0) //LED, output
+		gpioSetMode(27,0) //Button, input
+        gpioSetPullUpDown(27,2) //Button, pull up
+		gpioDelay(1000000)
+		state off
+	}
+}
+
+state off{
+	entry(){
+		print("off")
+		gpioWrite(17,0)
+	}
+	triReadGPIO(int p:(p&(1<<27))==0){
+		wifiGroupReceived.send(-1,1)
+		state on
+	}
+	wifiGroupReceived(int from,int id:(id==1),int data){
+        print(data)
+	}
+}
+
+state on{
+	entry(){
+		print("on")
+		gpioWrite(17,1)
+	}
+	triReadGPIO(int p:(p&(1<<27))==0){
+		state off
+	}
+	wifiGroupReceived(int from,int id,int data){
+		state off
 	}
 }

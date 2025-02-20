@@ -14,7 +14,7 @@ void setting_communicate(){
     //wifiBrReceived(str addr,str msg)::init wifiBrReceived("addr", portNum)
     setEventFunc(wifiBrReceived,COMMUNICATELIB, COMMUNICATE_WiFi_BROADCAST_RECEIVE_E, 2, list(String,String), 2, list(String,_Integer));
     //wifiGloupReceived(str addr,int id, int str)::no init but use wifiBldGroup() function
-    setEventFuncSub(wifiGroupReceived,COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_RECEIVE_E, 3, list(_Integer,_Integer,String), 4, list(String,_Integer,_Integer,String));
+    setEventFuncSub(wifiGroupReceived,COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_RECEIVE_E, 3, list(_Integer,_Integer,_Integer), 4, list(String,_Integer,_Integer,String));
         //wifiBuildGroup(str toId, int val)
         newEventPrim(wifiGroupReceived, send, COMMUNICATELIB, COMMUNICATE_WiFi_GROUP_BROADCAST_P, Undefined, 2, typelist(_Integer, _Integer, END));
 

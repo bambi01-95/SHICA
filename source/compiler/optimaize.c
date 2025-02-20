@@ -1441,11 +1441,11 @@ state default{
                             oop a = get(para,Pair,a);
                             getType(a->EventParam.type);
                             if(args[j]!=getType(a->EventParam.type)){
-                                fprintf(stderr,"event fuction args[%s]!=para[%s] error\n",TYPENAME[args[j]],TYPENAME[getType(a->EventParam.type)]);
+                                fatal("%s arg[%d] type is %s, not %s\n",get(id,Symbol,name),j,TYPENAME[args[j]],TYPENAME[getType(a->EventParam.type)]);
                                 exit(1);
                             }
                             if(assoc(a->EventParam.symbol,vnt)!=nil)
-                                fatal("type error: cannot apply same symbol in parameter\n");
+                                fatal("variable error: %s cannot apply same symbol in parameter\n",get(id,Symbol,name));
                             if(assoc(a->EventParam.symbol,Global_VNT)!=nil)
                                 fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
                             
