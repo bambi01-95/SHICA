@@ -498,16 +498,21 @@ oop Event_communicate(int eve_num,oop stack){
 
 
 void communicate_wifi_group_send(oop process,oop GM){
-    oop subcore;
+    oop subcore = Array_pop(mstack);
+    void* any = subcore->SubCore.any;
+    if(any == 0){
+        fatal("should be initialize wifiGroupReceive()\n");
+        return;
+    }
     getInt(mpc);int size_args = int_value;
     int sendToId = api();
     int value = api();
 #if DEBUG
     DEBUG_LOG("sendToId:%d value:%d\n",sendToId,value);
 #endif
-    struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)GM->SubCore.any;
+    struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)any;
     if(MY_AGENT_INFO == 0){
-        SHICA_PRINTF("MY_AGENT_INFO is not set\n");
+        SHICA_PRINTF("It doesn't belong to some group now\n");
         return;
     }
     struct SocketInfo *socketInfo = MY_AGENT_INFO->socket;
@@ -632,6 +637,7 @@ void communicate_wifi_broadcast(oop process,oop GM) {
     close(sockfd);
     return ;
 }
+
 
 
 void lib_communicate(oop process,oop GM){
