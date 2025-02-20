@@ -453,7 +453,7 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
     return new;
 }
 
-oop stateNameG = 0;
+oop stateNameG = 0;          //using process state name
 oop DEF_LOCAL_EVENT_LIST = 0;//a state loca event list
 oop STATE_EVENT_LIST     = 0;//a state event list
 oop SUBCORE_LIST = 0;        //PAIR
@@ -905,46 +905,44 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif 
-        printf("%s line %d: GetElement this is not supported now\n",__FILE__,__LINE__);
         //DEF: parent.child | parent.child()
-        oop parent = get(exp,GetElement,parent);//id
+        oop parentId = get(exp,GetElement,parent);//id
 
         oop child  = get(exp,GetElement,child);//id | Call
-        oop parentVar = get(parent,Symbol,value);
-        if(parentVar == sys_false){
-            parentVar = findIdFromList(parent,DEF_LOCAL_EVENT_LIST);
+        oop parentVar = get(parentId,Symbol,value);
+        if(parentVar == sys_false){//sudo shutdown now
+            parentVar = findIdFromList(parentId,DEF_LOCAL_EVENT_LIST);
         }
         switch(getType(parentVar)){
             case DupEvent:{
                 parentVar = parentVar->DupEvent.eventFunc;
             }
             case EventFunc:{
-                printf("end\n");
                 //NEED TO FIX PARSER 
                 //get child func
                 oop funcId = get(child,Call,function);
                 //get event func's function list
-                oop eventPrimList = get(parentVar,EventFunc,ownFunclist);
+                oop eventPrimList = get(parentVar,EventFunc,ownFunclist); //Pair (Symbol, Primtive)
                 //search child in the list
                 while(getType(eventPrimList)==Pair){
-                    oop id = get(get(eventPrimList,Pair,a),Pair,a);
-                    if(funcId == id){
-                        printf("found\n");
+                    oop id = get(get(eventPrimList,Pair,a),Pair,a); //Symbol
+                    if(funcId == id){//event has function
                         //search and get index from subcore list
-                        oop index = findIdFromList(id,STATE_EVENT_LIST);
+                        oop index = findIdFromList(parentId,STATE_EVENT_LIST);
                         if(index == nil){
-                            fatal("line %d: function %s is not found in event function %s\n",exp->GetElement.line,get(funcId,Symbol,name),get(parent,Symbol,name));
+                            fatal("line %d: event %s is not found in state %s\n",exp->GetElement.line,get(parentId,Symbol,name),stateNameG);
                         }
                         //get_l (void*)any #into stack
                         emitOI(GET_L, _Integer_value(index));
+                        oop prim = get(get(eventPrimList,Pair,a),Pair,b);  
                         //call_p X X X
-                        emitOIII(CALL_P,funcId->Primitive.func_num,funcId->EventFunc.lib_num,funcId->Primitive.size_of_args_type_array);
+                        emitOIII(CALL_P,prim->Primitive.lib_num,prim->Primitive.func_num,prim->Primitive.size_of_args_type_array);
                         break;
                     }
                     eventPrimList = get(eventPrimList,Pair,b);
                 }
                 if(eventPrimList == nil){
-                    fatal("line %d: function %s is not found in event function %s\n",exp->GetElement.line,get(funcId,Symbol,name),get(parent,Symbol,name));
+                    fatal("line %d: function %s is not found in event function %s\n",exp->GetElement.line,get(funcId,Symbol,name),get(parentId,Symbol,name));
                 }
                 break;
             }
@@ -953,8 +951,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 fatal("line %d HACK: this cannot happen GetElement\n",exp->GetElement.line);
             }
         }
-        printf("%s line %d: GetElement\n",__FILE__,__LINE__);
-        exit(0);
         break;
     }
 	case Call:{

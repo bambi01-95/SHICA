@@ -338,6 +338,16 @@ void stdlib_appendchar(oop process,oop GM){
     return;
 }
 
+//this is event prim function
+void stdlib_timersec_reset(oop process,oop GM){
+    oop core = Array_pop(mstack);
+    getInt(mpc);int size_args = int_value;
+
+    core->Core.vd->VarTI.v_t1 = time(NULL);
+    core->Core.vd->VarTI.v_i1  = 0;
+    core->Core.vd->VarTI.v_i2  = 1;
+    return;
+}
 
 void lib_stdlib(oop process,oop GM){
     //is it need gc_push
@@ -354,9 +364,13 @@ void lib_stdlib(oop process,oop GM){
         case EXIT_P:{
             stdlib_exit(process,GM);
             break;
-        }
+        } 
         case APPENDCHAR_P:{
             stdlib_appendchar(process,GM);
+            break;
+        }
+        case TIMERSEC_RESET_P:{
+            stdlib_timersec_reset(process,GM);
             break;
         }
         default:

@@ -3,16 +3,21 @@
 #include "../object.c"
 
 
-char *typelist(int size, ...){
-    char* str = malloc(size+1);
+char *typelist(int arg1, ...){
     va_list args;
-    va_start(args,size);
-    for(int i = 0; i < size; i++){
-        str[i] = va_arg(args,int);
+    va_start(args, arg1);
+    char list[32]; //maximam 32 arguments
+    int i = 0;
+    list[i++] = arg1;
+    for(;;){
+        int arg = va_arg(args, int);
+        if(arg == END)break;
+        list[i++] = arg;
     }
-    str[size] = '\0';
+    list[i] = 0;
     va_end(args);
-    return str;
+    char* ret = (char *)malloc(i);
+    return ret;
 }
 
 #define list(...)  {__VA_ARGS__} //FIXME: using typelist instead of list
@@ -72,8 +77,9 @@ oop _newEventPrim(oop eventName,oop name,char lib_num,char func_num,char* args_t
     // printlnObject(eventFunc->EventFunc.ownFunclist,0);
     return prim;
 }
-#define newEventPrim(eventName,name, lib_num, func_num, return_type, size_of_args_type_array,  ...) ({ \
-    _newEventPrim(intern(#eventName),intern(#name), lib_num, func_num,typelist(size_of_args_type_array,__VA_ARGS__), size_of_args_type_array , return_type);\
+
+#define newEventPrim(eventName,name, lib_num, func_num, return_type, size_of_args_type_array,  args_type_array) ({ \
+    _newEventPrim(intern(#eventName),intern(#name), lib_num, func_num, args_type_array, size_of_args_type_array , return_type);\
 })
 
 

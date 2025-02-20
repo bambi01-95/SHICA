@@ -64,8 +64,8 @@ int main(int argc, char const *argv[])
         while(yyparse()){
             if(sys_false == preprocess(result,programTrees))break;
         }
-        printf("\n \x1b[31m check ******************\x1b[0m\n\n");
 #if DEBUG
+        printf("\n \x1b[31m check ******************\x1b[0m\n\n");
         printf("STATE_GLOBAL_EVENT_LISTS\n");
         printlnObject(STATE_GLOBAL_EVENT_LISTS,1);
         printf("STATE_DEF_LOCAL_EVENT_LISTS\n");
