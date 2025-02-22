@@ -220,7 +220,7 @@ oop eve_wifi_receive(oop core){
                         printAgentData(agent);
                         #endif
 
-                        if(agent->base.type == AgentReader){
+                        if(agent->base.agent_type == AgentReader){
                             DEBUG_LOG("Process REQUEST_JOIN");
                             int list = agent->reader.sizeOfMember;
                             int newId = 1;
@@ -267,7 +267,7 @@ oop eve_wifi_receive(oop core){
                         #if DEBUG
                         DEBUG_LOG("REQUEST_LEAVE\n");
                         #endif
-                        if(agent->base.type == AgentReader){
+                        if(agent->base.agent_type == AgentReader){
                             agent->reader.sizeOfMember &= ~(1 << buffer[DATA_MY_ID]); 
                             //send SUCCESS
                             buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
@@ -285,7 +285,7 @@ oop eve_wifi_receive(oop core){
                         #if DEBUG
                         DEBUG_LOG("REQUEST_TO_BE_READER\n");
                         #endif
-                        if(agent->base.type == AgentMember){
+                        if(agent->base.agent_type == AgentMember){
                             if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){//checking for me or not
                                 agent_p newAgent = createAgent(AgentReader);
                                 newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << (agent->base.myID-1));//remove my id
