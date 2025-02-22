@@ -215,10 +215,10 @@ oop eve_wifi_receive(oop core){
             if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(getAgentGroupKey(agent), buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
                 switch(buffer[DATA_REQUEST_TYPE]){
                     case REQUEST_JOIN:{
+                        #if DEBUG
+                        DEBUG_LOG("REQUEST_JOIN");
+                        #endif
                         if(agent->base.type == AgentReader){
-    #if DEBUG
-                            DEBUG_LOG("REQUEST_JOIN");
-    #endif
                             int list = agent->reader.sizeOfMember;
                             int newId = 1;
                             while(list){
@@ -261,10 +261,10 @@ oop eve_wifi_receive(oop core){
                     }
 
                     case REQUEST_LEAVE:{
+                        #if DEBUG
+                        DEBUG_LOG("REQUEST_LEAVE\n");
+                        #endif
                         if(agent->base.type == AgentReader){
-    #if DEBUG
-                            DEBUG_LOG("REQUEST_LEAVE\n");
-    #endif
                             agent->reader.sizeOfMember &= ~(1 << buffer[DATA_MY_ID]); 
                             //send SUCCESS
                             buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
@@ -279,11 +279,11 @@ oop eve_wifi_receive(oop core){
                         break;
                     }
                     case REQUEST_TO_BE_READER:{
+                        #if DEBUG
+                        DEBUG_LOG("REQUEST_TO_BE_READER\n");
+                        #endif
                         if(agent->base.type == AgentMember){
                             if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){//checking for me or not
-                                #if DEBUG
-                                DEBUG_LOG("REQUEST_TO_BE_READER\n");
-                                #endif
                                 agent_p newAgent = createAgent(AgentReader);
                                 newAgent->reader.sizeOfMember = buffer[DATA_SIZE_OF_MEMBER] & ~(1 << (agent->base.myID-1));//remove my id
                                 newAgent->base.myID = 0;
@@ -306,76 +306,69 @@ oop eve_wifi_receive(oop core){
                         return core;
                     }
                     case REQUEST_TRIGER:{
+                        #if DEBUG
+                        DEBUG_LOG("REQUEST_TRIGER\n");
+                        #else
+                        SHICA_PRINTF(" REQUEST_TRIGER");
+                        #endif
                         if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){
-                            #if DEBUG
-                            DEBUG_LOG("REQUEST_TRIGER\n");
-                            #else
-                            SHICA_PRINTF(" REQUEST_TRIGER");
-                            #endif
-                            //CHECK ME: with wifi_send_p
-                            // Success Message
-
-                            //protect t:thread
-
-
-    /* trigger data */
-    int isOnce = 0;
-    evalEventArgsThread->Thread.stack->Array.size = 1;//1:basepoint
-    unsigned char value = buffer[DATA_REQUEST_MEMEBER_ID];
-    for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
-        int isFalse = 0;
-        oop thread = core->Core.threads[thread_i];
-        //<引数の評価>/<Evaluation of arguments>
-        if(thread->Thread.condRelPos != 0){
-            if(isOnce == 0){
-                Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_MY_ID]));
-                if(value== ALL_MEMBER_ID){
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
-                }else if(value == ((1U) << (agent->base.myID -1))){
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
-                }else{
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
-                }
-                Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_DATA]));
-                isOnce = 1;
-            }else{
-                evalEventArgsThread->Thread.stack->Array.size = 4;
-            }
-            evalEventArgsThread->Thread.pc = thread->Thread.base + thread->Thread.condRelPos;
-            for(;;){
-                FLAG flag = sub_execute(evalEventArgsThread,nil);
-                if(flag == F_TRUE){
-                    break;
-                }
-                else if(flag == F_FALSE){
-                    isFalse = 1;
-                    break;
-                }
-            }
-        }
-        
-        //<条件が満たされたときの処理>/<Processing when the condition is met>
-        if(!isFalse){
-            printf("trigger!!!\n");//remove
-            //protect t:thread
-            gc_pushRoot((void*)&core);//CHECKME: is it need?
-            oop data = newArray(2);
-            Array_push(data,_newInteger(buffer[DATA_MY_ID]));
-                if(value == ALL_MEMBER_ID){
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
-                }else if(value == ((1U) << (agent->base.myID -1))){
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
-                }else{
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
-                }
-            Array_push(data,_newInteger(buffer[DATA_DATA]));
-            gc_popRoots(1);
-            enqueue(thread->Thread.queue,data);
-        }else{
-            printf("not trigger\n");//remove
-        }
-    }
-
+                            /* trigger data */
+                            int isOnce = 0;
+                            evalEventArgsThread->Thread.stack->Array.size = 1;//1:basepoint
+                            unsigned char value = buffer[DATA_REQUEST_MEMEBER_ID];
+                            for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
+                                int isFalse = 0;
+                                oop thread = core->Core.threads[thread_i];
+                                //<引数の評価>/<Evaluation of arguments>
+                                if(thread->Thread.condRelPos != 0){
+                                    if(isOnce == 0){
+                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_MY_ID]));
+                                        if(value== ALL_MEMBER_ID){
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
+                                        }else if(value == ((1U) << (agent->base.myID -1))){
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
+                                        }else{
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
+                                        }
+                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_DATA]));
+                                        isOnce = 1;
+                                    }else{
+                                        evalEventArgsThread->Thread.stack->Array.size = 4;
+                                    }
+                                    evalEventArgsThread->Thread.pc = thread->Thread.base + thread->Thread.condRelPos;
+                                    for(;;){
+                                        FLAG flag = sub_execute(evalEventArgsThread,nil);
+                                        if(flag == F_TRUE){
+                                            break;
+                                        }
+                                        else if(flag == F_FALSE){
+                                            isFalse = 1;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                //<条件が満たされたときの処理>/<Processing when the condition is met>
+                                if(!isFalse){
+                                    printf("trigger!!!\n");//remove
+                                    //protect t:thread
+                                    gc_pushRoot((void*)&core);//CHECKME: is it need?
+                                    oop data = newArray(2);
+                                    Array_push(data,_newInteger(buffer[DATA_MY_ID]));
+                                        if(value == ALL_MEMBER_ID){
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
+                                        }else if(value == ((1U) << (agent->base.myID -1))){
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
+                                        }else{
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
+                                        }
+                                    Array_push(data,_newInteger(buffer[DATA_DATA]));
+                                    gc_popRoots(1);
+                                    enqueue(thread->Thread.queue,data);
+                                }else{
+                                    printf("not trigger\n");//remove
+                                }
+                            }
 
                             return core;
                         }
@@ -401,7 +394,7 @@ oop eve_wifi_receive(oop core){
                 #endif
             }
         }
-#else
+#else //SBC
     SHICA_PRINTF("eve_wifi_receive\n");
 #endif
     return core;
