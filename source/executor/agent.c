@@ -6,6 +6,7 @@
 #include "./object.c"
 #include "./lib/msgc.c"
 #include "./lib/extstr.c"
+#include "./setting.h"
 #define MAX_GROUP 8
 
 typedef enum AgentType{
@@ -64,6 +65,7 @@ agent_p _createAgent(agent_t type,int size){
 }
 #define createAgent(TYPE) _createAgent(TYPE,sizeof(struct TYPE))
 
+#if DEBUG
 agent_p _check_agent_type(agent_p node,enum AgentType type, char *file, int line)
 {
     if (node->base.agent_type != type) {
@@ -73,8 +75,17 @@ agent_p _check_agent_type(agent_p node,enum AgentType type, char *file, int line
     return node;
 }
 #define getA(PTR, TYPE, FIELD)	(_check_agent_type((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
+#else
+#define getA(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
+#endif
 
-char *getAgentGroupKey(agent_p agent){
+#if DEBUG
+#define getAgentGroupKey(A) _getAgentGroupKey(__FILE__,__LINE__,A)
+char *_getAgentGroupKey(char *file, int line, agent_p agent)
+#else
+char *getAgentGroupKey(agent_p agent)
+#endif
+{
     switch(agent->base.agent_type){
         case AgentMember:{
             return agent->member.groupKey;
@@ -84,11 +95,18 @@ char *getAgentGroupKey(agent_p agent){
         }
         case AgentVisitor:
         default:{
+#if DEBUG
+            DEBUG_LOG_REF("UNKNOWN AGENT TYPE \n");
+            exit(1);
+#else
             printf("%s line %d UNKNOWN\n",__FILE__,__LINE__);
+#endif
         }
     }
     return 0;
 }
+
+
 
 void setAgentGroupKey(agent_p agent,char *groupKey){
     switch(agent->base.agent_type){
