@@ -486,6 +486,7 @@ oop Event_communicate(int eve_num,oop stack){
             DEBUG_LOG("3COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
             init_eve_wifi_receive(subcore);
             DEBUG_LOG("4COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
+            printAgentData(((struct AgentInfo *)subcore->SubCore.any)->agent);
             subcore->SubCore.func = &eve_wifi_receive;
             core = subcore;
             break;
