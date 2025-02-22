@@ -53,7 +53,12 @@ nil = static_cast<oop>(gc_beAtomic(_newObject(sizeof(struct Undefined), Undefine
     gc_pushRoot((void*)&evalEventArgsThread);
 #endif
     // コマンドライン引数の確認
+
+
 #if SBC
+#if DEBUG
+checkOffset();
+#endif
     if (argc == 2){
         // ファイル名の拡張子をチェック
         if (!has_extension(argv[1],".stt")) {

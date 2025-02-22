@@ -1533,12 +1533,15 @@ state default{
                 continue;
             }
             oop eveF = get(tmp->id,Symbol,value);
-
+            int jump = 0;
+            int jump_i = 0;
             if(getType(eveF)==DupEvent){//global dup event
                 // COPYCORE GMI JS: globalMemoryIndex, jumpSize
                 emitOII(COPYCORE,(globalMemoryIndex++),
                     ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
+                jump = program->Array.number;
+                jump_i = program->Array.size;
                 eveF = eveF->DupEvent.eventFunc;
             }else if(getType(eveF)!=EventFunc){ //Local dup event
                 oop isDup = findIdFromList(tmp->id,DEF_LOCAL_EVENT_LIST);
@@ -1546,9 +1549,9 @@ state default{
                     eveF = isDup->DupEvent.eventFunc;
                 }
             }else{
-                emitOII(COPYCORE,(globalMemoryIndex++),
-                    ((eveF->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
-                     + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
+                emitOII(COPYCORE,(globalMemoryIndex++),0/*jump*//*pinNUM*//*SETCORE/SETSUBCORE*/);
+                jump = program->Array.number;
+                jump_i = program->Array.size;
             }
             
             //ILOAD Ii: event trigger initial value, pin, ip address, etc.
@@ -1562,11 +1565,15 @@ state default{
                 }
             }
 
+
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){
                 emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, globalMemoryIndex - 1);//FIXME: local event
             }else{
                 emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,globalMemoryIndex - 1);//FIXME: local event
+            }
+            if(jump!=0){
+                Array_put(program,jump_i - 1,_newInteger(program->Array.number - jump));//jump args
             }
 
             //MKTHREAD LN EN TN: library number, event number, size of thread

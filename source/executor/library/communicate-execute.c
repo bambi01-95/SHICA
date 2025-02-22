@@ -5,7 +5,17 @@
 #include "communicate-execute.h"
 #include "../lib/exgc.c"
 #include "../lib/extstr.c"
-void init_eve_wifi_receive(oop subcore,char *ipAddr, int portNum, int groupID, char *groupKey) {
+void init_eve_wifi_receive(oop subcore) {
+    // 引数チェック
+    DEBUG_LOG("THIS IS ERROR");
+    printlnObject(subcore,1);
+
+    oop *elements = subcore->SubCore.var->FixArray.elements; 
+    char *ipAddr  = getChild(elements[0],_String,value);
+    int portNum  = _Integer_value(elements[1]);
+    int groupID  = _Integer_value(elements[2]);
+    char *groupKey = getChild(elements[3],_String,value);
+
     // 引数チェック
     if (ipAddr == NULL || groupKey == NULL) {
         SHICA_FPRINTF(stderr, "Invalid argument\n");
@@ -471,17 +481,17 @@ oop Event_communicate(int eve_num,oop stack){
             break;
         }
         case COMMUNICATE_WiFi_GROUP_RECEIVE_E:{
-            DEBUG_LOG("COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
-            core = newCore(Default);
-            core->Core.var = newFixArray(4);
-            core->Core.var->FixArray.elements[0] = Array_pop(stack);//String  address
-            core->Core.var->FixArray.elements[1] = Array_pop(stack);//Integer port
-            core->Core.var->FixArray.elements[2] = Array_pop(stack);//Integer groupID
-            core->Core.var->FixArray.elements[3] = Array_pop(stack);//String  groupKey
-            oop d = core->Core.var;
-            init_eve_wifi_receive(core,d->FixArray.elements[0]->_String.value, d->FixArray.elements[1]->_Integer._value, d->FixArray.elements[2]->_Integer._value, d->FixArray.elements[3]->_String.value);
-            core->Core.func = &eve_wifi_receive;
-            DEBUG_LOG("COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
+            oop subcore = newSubCore();
+            subcore->SubCore.var = newFixArray(4);
+            subcore->SubCore.var->FixArray.elements[0] = Array_pop(stack);//String  address
+            subcore->SubCore.var->FixArray.elements[1] = Array_pop(stack);//Integer port
+            subcore->SubCore.var->FixArray.elements[2] = Array_pop(stack);//Integer groupID
+            subcore->SubCore.var->FixArray.elements[3] = Array_pop(stack);//String  groupKey
+            DEBUG_LOG("3COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
+            init_eve_wifi_receive(subcore);
+            DEBUG_LOG("4COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
+            subcore->SubCore.func = &eve_wifi_receive;
+            core = subcore;
             break;
         }
         default:{

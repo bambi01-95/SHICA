@@ -22,8 +22,18 @@ void printlnObject(oop node, int indent)
         int size = node->Array.size;
         m(indent);SHICA_PRINTF("Array %d\n",size);
         for(int i = 0;i<size;i++){
-            printf("%d:",i);printlnObject(node->Array.elements[i],indent+1);
+            m(indent);printf("%d:",i);printlnObject(node->Array.elements[i],indent+1);
         }
+        m(indent);SHICA_PRINTF("end Array\n");
+        break;
+    }
+    case FixArray:{
+        int size = node->FixArray.size;
+        m(indent);SHICA_PRINTF("FixArray %d\n",size);
+        for(int i = 0;i<size;i++){
+            m(indent);printf("%d:",i);printlnObject(node->FixArray.elements[i],indent+1);
+        }
+        m(indent);SHICA_PRINTF("end FixArray\n");
         break;
     }
     case Queue:{
@@ -41,7 +51,21 @@ void printlnObject(oop node, int indent)
         for(int i=0;i<node->Core.size;i++){
             printlnObject(node->Core.threads[i],indent+1);
         }
-        m(indent);SHICA_PRINTF("end\n");
+        m(indent);SHICA_PRINTF("end Core\n");
+        break;
+    }
+    case SubCore:{
+        m(indent);SHICA_PRINTF("SubCore\n");
+        m(indent);SHICA_PRINTF("size %d\n",node->SubCore.size);
+        for(int i=0;i<node->SubCore.size;i++){
+            printlnObject(node->SubCore.threads[i],indent+1);
+        }
+        if(node->SubCore.size == 0)
+            m(indent);SHICA_PRINTF("thread is empty\n");
+
+        if(node->SubCore.var != 0)
+            printlnObject(node->SubCore.var,indent+1);
+        m(indent);SHICA_PRINTF("end Subcore\n");
         break;
     }
     case Thread:{

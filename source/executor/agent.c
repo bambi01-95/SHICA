@@ -64,7 +64,7 @@ agent_p _createAgent(agent_t type,int size){
 }
 #define createAgent(TYPE) _createAgent(TYPE,sizeof(struct TYPE))
 
-agent_p _check(agent_p node,enum AgentType type, char *file, int line)
+agent_p _check_agent_type(agent_p node,enum AgentType type, char *file, int line)
 {
     if (node->base.agent_type != type) {
         printf("%s line %d: expected type %d got type %d\n", file, line, type, node->base.type);
@@ -72,7 +72,7 @@ agent_p _check(agent_p node,enum AgentType type, char *file, int line)
     }
     return node;
 }
-#define getA(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
+#define getA(PTR, TYPE, FIELD)	(_check_agent_type((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
 
 char *getAgentGroupKey(agent_p agent){
     switch(agent->base.agent_type){

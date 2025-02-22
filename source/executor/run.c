@@ -219,7 +219,12 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 oop *mainCore = (oop*)gc_alloc(sizeof(oop)*(coreSize+1));
 #else
                 oop mainCore[coreSize+1];
+                DEBUG_LOG("coreSize %d\n",coreSize);
 #endif
+                if(coreSize == -1){
+                    SHICA_FPRINTF(stderr,"coreSize is -1\n");
+                    exit(1);
+                }
                 for(int i=0;i<=coreSize;i++){
                     mainCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                 }
@@ -230,10 +235,10 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                     //<イベントアクションの実行>/<implement event action>
                         for(int thread_i=0;thread_i<mainCore[core_i]->Core.size;thread_i++){
                             oop thread = mainCore[core_i]->Core.threads[thread_i];
-                            
                             if(thread->Thread.flag == 1){
                                 //implement function of event
                                 FLAG flag = sub_execute(thread,GM);
+
                                 switch(flag){
                                     case F_TRANS:{
                                         
@@ -246,15 +251,15 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                         int numPC = pc_i;
                                         getSetInt(numCopyCore,numPC);
                                         
-                                        oop copyCore[coreSize+1];
-                                        for(int i=0;i<=coreSize;i++){
+                                        oop copyCore[maxCoreSize];
+                                        for(int i=0;i<=maxCoreSize;i++){
                                             copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                                         }
                                         #if DEBUG
                                         printlnObject(GM->Thread.stack,1);
                                         #endif
                                         
-                                        for(int i=numCopyCore-1;i>=0;i-=1){
+                                        for(int i=maxCoreSize-1;i>=0;i-=1){
                                             int coreIndex = _Integer_value(Array_pop(GM->Thread.stack));//DEFINE_L
                                             if(coreIndex==-1){
                                                 Array_put(GM->Thread.stack,gmRbp + i,nil);

@@ -2,6 +2,7 @@
 #include "./agent.c"
 #include "./lib/msgc.c"
 #include "./lib/extstr.c"
+#include <stddef.h>
 
 #ifndef MAXTHREADSIZE
     #define MAXTHREADSIZE 10
@@ -53,6 +54,7 @@ void debug_log(char *file,int line,const char *format, ...) {
     va_list args;
     va_start(args, format);
     printf("[LOG] %s line %d:\t",file,line);
+    printf("\n  ");
     vprintf(format, args);
     printf("\n");
     va_end(args);
@@ -255,8 +257,8 @@ struct Core      {
     char size;
     Func func;
     oop   var;
-    union VarData*  vd;/*gc_mark*/
     oop *threads; /*gc_mark*/
+    union VarData*  vd;/*gc_mark*/
 };
 #include "./library/communicate-execute.h"
 
@@ -316,19 +318,44 @@ int getType(oop o)
     return o->type;
 }
 
-#if Debug
-    oop _check(oop node, enum Type type, char *file, int line)
+#if DEBUG
+    oop _check(char *name,oop node, enum Type type, char *file, int line)
     {
         if (getType(node) != type) {
         SHICA_FPRINTF(stderr, "\n%s:%d: expected type %d got type %d\n", file, line, type, getType(node));
             printf("%s but %s\n",TYPENAME[type],TYPENAME[getType(node)]);
-        exit(1);
+            exit(1);
+        }
+        switch(getType(node)){
+            case _Integer:
+            case _Float:
+            case _Char:{
+                DEBUG_ERROR("%s type should use %s_value(%s) instead of getChild(...)\n",
+                    TYPENAME[getType(node)],TYPENAME[getType(node)],name);
+                exit(1);
+            }
+            default:
+                break;
         }
         return node;
     }
-    #define getChild(PTR, TYPE, FIELD)	(_check((PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
+    #define getChild(PTR, TYPE, FIELD)	(_check(#PTR, (PTR), TYPE, __FILE__, __LINE__)->TYPE.FIELD)
 #else
     #define getChild(PTR, TYPE, FIELD)  (PTR->TYPE.FIELD)
+#endif
+
+#if DEBUG
+void checkOffset(void){
+    //enum Type
+    assert(offsetof(struct Core, type) == offsetof(struct _Undefined, type));
+    assert(offsetof(struct Core, type) == offsetof(struct _Undefined, type));
+    //Core and SubCore
+    assert(offsetof(struct Core, size) == offsetof(struct SubCore, size));
+    assert(offsetof(struct Core, func) == offsetof(struct SubCore, func));
+    assert(offsetof(struct Core, var) == offsetof(struct SubCore, var));
+    assert(offsetof(struct Core, threads) == offsetof(struct SubCore, threads));
+    DEBUG_LOG("checkOffset() is OK\n");
+}
 #endif
 
 // GC_MARK
@@ -821,12 +848,12 @@ oop Array_args_copy(oop from,oop to)
 oop newFixArray(int size){
 #if MSGC
     GC_PUSH(oop, obj, newObject(FixArray));
-    obj->FixArray.size     = 0;
-    obj->FixArray.elements = gc_alloc(sizeof(oop) * size);
+    obj->FixArray.size     = size;
+    obj->FixArray.elements = (oop*)gc_alloc(sizeof(oop) * size);
     GC_POP(obj);
 #else
     oop obj = newObject(FixArray);
-    obj->FixArray.size = 0;
+    obj->FixArray.size = size;
     obj->FixArray.elements = calloc(size, sizeof(oop));
 #endif
     return obj;
@@ -992,24 +1019,23 @@ oop _newCore(size_t vdMemSize)
 }
 #define newCore(VD_TYPE)	_newCore(sizeof(struct VD_TYPE))
 
-oop _newSubCore(size_t vdMemSize)
+oop _newSubCore()
 {
 #if MSGC
     GC_PUSH(oop, node, newObject(SubCore));
     // node->Core.func = 0; //after calling this function, set function
-    VD vd = gc_beAtomic(gc_alloc(vdMemSize));
-    node->Core.vd   = vd;
-    node->Core.size = 0;
+    node->SubCore.var   = 0;
+    node->SubCore.size = 0;
     GC_POP(node);
 #else
     oop node = newObject(SubCore);
     // node->Core.func = 0; //after calling this function, set function
-    node->Core.vd = calloc(1,vdMemSize);
-    node->Core.size = 0;
+    node->SubCore.var =   0;
+    node->SubCore.size = 0;
 #endif
     return node;
 }
-#define newSubCore(VD_TYPE)	_newSubCore(sizeof(struct VD_TYPE))
+#define newSubCore()	_newSubCore()
 
 oop _remkSubCore(oop core,size_t vdMemSize,int numThread)
 {
