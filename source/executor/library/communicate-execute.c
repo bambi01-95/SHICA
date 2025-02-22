@@ -79,7 +79,7 @@ void init_eve_wifi_receive(oop subcore) {
 #endif
     MY_AGENT_INFO->socket = socketInfo;
   
-#define TIMEOUT 2
+#define TIMEOUT 1
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     buf[DATA_REQUEST_TYPE] = REQUEST_JOIN;
@@ -99,22 +99,9 @@ void init_eve_wifi_receive(oop subcore) {
         agent->base.myID = 0;
         agent->base.groupID = groupID;
         agent->reader.sizeOfMember = (1U);
-// It is Open when groupKey will be pointer
-// #if MSGC
-//         agent->reader.groupKey = (char *)gc_extern_alloc(SIZE_OF_DATA_GROUP_KEY + 1);
-// #else
-//         agent->reader.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-// #endif
         memcpy(agent->reader.groupKey, groupKey,SIZE_OF_DATA_GROUP_KEY + 1);
         MY_AGENT_INFO->agent = agent;//remove me after adapt em
         subcore->SubCore.any = (void *)MY_AGENT_INFO;
-        // perror("send_broadcast_nonblocking");
-        // close(socketInfo->recv_sockfd);
-        // close(socketInfo->send_sockfd);
-        // SHICA_PRINTF("%s line %d\n",__FILE__,__LINE__);
-        // exit(1);
-        // MY_AGENT_INFO = 0;
-        // return;
     }
     // グループ参加リクエストの受信
     time_t start = time(NULL);
@@ -141,12 +128,6 @@ void init_eve_wifi_receive(oop subcore) {
                         agent_p agent = createAgent(AgentMember);
                         agent->base.myID    = buf[DATA_MY_ID];
                         agent->base.groupID = buf[DATA_GROUP_ID];
-// It is Open when groupKey will be pointer
-// #if MSGC
-//                         agent->member.groupKey = (char *)gc_extern_alloc(em,SIZE_OF_DATA_GROUP_KEY + 1);
-// #else
-//                         agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
-// #endif
                         memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
 #if DEBUG
                         DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
