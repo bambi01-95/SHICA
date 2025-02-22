@@ -219,6 +219,7 @@ oop eve_wifi_receive(oop core){
                         DEBUG_LOG("REQUEST_JOIN");
                         #endif
                         if(agent->base.type == AgentReader){
+                            DEBUG_LOG("Process REQUEST_JOIN");
                             int list = agent->reader.sizeOfMember;
                             int newId = 1;
                             while(list){
