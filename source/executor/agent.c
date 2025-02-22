@@ -57,9 +57,6 @@ agent_p _createAgent(agent_t type,int size){
 #else
     agent_p agent = (agent_p)malloc(sizeof(union Agent));
 #endif
-    if(agent == NULL){
-        return NULL;
-    }
     agent->base.agent_type = type;
     return agent;
 }

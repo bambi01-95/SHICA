@@ -147,7 +147,7 @@ void init_eve_wifi_receive(oop subcore) {
 // #else
 //                         agent->member.groupKey = (char *)malloc(SIZE_OF_DATA_GROUP_KEY + 1);
 // #endif
-                        memcpy(agent,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
+                        memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
 #if DEBUG
                         DEBUG_LOG("Join Group Success: my id is %d\n",agent->base.myID);
 #endif
