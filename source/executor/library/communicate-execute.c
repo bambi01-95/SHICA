@@ -330,7 +330,7 @@ oop eve_wifi_receive(oop core){
                                     //protect t:thread
                                     gc_pushRoot((void*)&core);//CHECKME: is it need?
                                     oop data = newArray(3);
-                                    printf("%s line %d: %s\n",__FILE__,__LINE__,buffer[DATA_REQUEST_SENDER_ID]);
+                                    printf("%s line %d: %d\n",__FILE__,__LINE__,buffer[DATA_REQUEST_SENDER_ID]);
                                     Array_push(data,_newInteger(buffer[DATA_REQUEST_SENDER_ID]));
                                     if(value == ALL_MEMBER_ID){
                                         Array_push(data,_newInteger(0));
