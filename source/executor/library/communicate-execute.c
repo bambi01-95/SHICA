@@ -299,7 +299,7 @@ oop eve_wifi_receive(oop core){
                                 //<引数の評価>/<Evaluation of arguments>
                                 if(thread->Thread.condRelPos != 0){
                                     if(isOnce == 0){
-                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_REQUEST_SENDER_ID]));
+                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger((int)buffer[DATA_REQUEST_SENDER_ID]));
                                         if(value== ALL_MEMBER_ID){
                                             Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));//ALL MEMBER:0
                                         }else if(value == ((1U) << (agent->base.myID -1))){
@@ -330,8 +330,7 @@ oop eve_wifi_receive(oop core){
                                     //protect t:thread
                                     gc_pushRoot((void*)&core);//CHECKME: is it need?
                                     oop data = newArray(3);
-                                    printf("%s line %d: %d\n",__FILE__,__LINE__,buffer[DATA_REQUEST_SENDER_ID]);
-                                    Array_push(data,_newInteger(buffer[DATA_REQUEST_SENDER_ID]));
+                                    Array_push(data,_newInteger((int)buffer[DATA_REQUEST_SENDER_ID]));
                                     if(value == ALL_MEMBER_ID){
                                         Array_push(data,_newInteger(0));
                                     }else if(value == ((1U) << (agent->base.myID -1))){
@@ -505,6 +504,7 @@ void communicate_wifi_group_send(oop process,oop GM){
     buf[DATA_REQUEST_TYPE] = REQUEST_TRIGER;
     buf[DATA_GROUP_ID] = agent->base.groupID;
     buf[DATA_REQUEST_SENDER_ID] = agent->base.myID;
+    printf("myid %d\n",agent->base.myID);
     if(sendToId < 0){
         buf[DATA_REQUEST_MEMEBER_ID] = ALL_MEMBER_ID;//all member: 11111111
     }else{
