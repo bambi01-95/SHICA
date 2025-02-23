@@ -341,11 +341,12 @@ oop eve_wifi_receive(oop core){
                                     Array_push(data,_newInteger(buffer[DATA_DATA]));
                                     gc_popRoots(1);
                                     enqueue(thread->Thread.queue,data);
-                                }else{
-                                #if DEBUG
-                                    DEBUG_LOG("not trigger\n");//remove
-                                #endif
                                 }
+                            #if DEBUG
+                                else{
+                                    DEBUG_LOG("not trigger\n");//remove
+                                }
+                            #endif
                             }
 
                             return core;

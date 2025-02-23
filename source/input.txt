@@ -43,6 +43,7 @@ state on{
 		state off
 	}
 	wifiGroupReceived(int from,int id,int data:data==1){
+		print(from,id,data)
 		state off
 	}
 }
