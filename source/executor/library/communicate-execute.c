@@ -329,15 +329,15 @@ oop eve_wifi_receive(oop core){
                                 if(!isFalse){
                                     //protect t:thread
                                     gc_pushRoot((void*)&core);//CHECKME: is it need?
-                                    oop data = newArray(2);
+                                    oop data = newArray(3);
                                     Array_push(data,_newInteger(buffer[DATA_MY_ID]));
-                                        if(value == ALL_MEMBER_ID){
-                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
-                                        }else if(value == ((1U) << (agent->base.myID -1))){
-                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
-                                        }else{
-                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
-                                        }
+                                    if(value == ALL_MEMBER_ID){
+                                        Array_push(data,_newInteger(0));
+                                    }else if(value == ((1U) << (agent->base.myID -1))){
+                                        Array_push(data,_newInteger(1));
+                                    }else{
+                                        Array_push(data,_newInteger(2));
+                                    }
                                     Array_push(data,_newInteger(buffer[DATA_DATA]));
                                     gc_popRoots(1);
                                     enqueue(thread->Thread.queue,data);
@@ -511,7 +511,7 @@ void communicate_wifi_group_send(oop process,oop GM){
     }   
     buf[DATA_SIZE_OF_MEMBER] = 1;
     memcpy(buf + DATA_GROUP_KEY, getAgentGroupKey(agent), 4);
-    buf[DATA_DATA] = 0;
+    buf[DATA_DATA] = (char)value;
 
     // グループ参加リクエストの送信
     int ret = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buf, BUF_SIZE);
