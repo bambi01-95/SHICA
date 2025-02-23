@@ -1,3 +1,7 @@
+//Radio Group System
+//broadcast 1 to all devices in the same group
+//wifiGroupReceived() func. in on state is only triggered when the data is 1
+//wifiGroupReceived() func. in off state is triggered when the data is 0
 
 state init{
 	entry(){
@@ -22,10 +26,9 @@ state off{
 		gpioWrite(17,0)
 	}
 	triReadGPIO(int p:(p&(1<<27))==0){
-		wifiGroupReceived.send(-1,1)
 		state on
 	}
-	wifiGroupReceived(int from,int id:(id==1),int data){
+	wifiGroupReceived(int from,int id,int data:data==0){
         print(data)
 	}
 }
@@ -34,11 +37,12 @@ state on{
 	entry(){
 		print("on")
 		gpioWrite(17,1)
+		wifiGroupReceived.send(-1,1)
 	}
 	triReadGPIO(int p:(p&(1<<27))==0){
 		state off
 	}
-	wifiGroupReceived(int from,int id,int data){
+	wifiGroupReceived(int from,int id,int data:data==1){
 		state off
 	}
 }
