@@ -7,8 +7,6 @@
 #include "../lib/extstr.c"
 void init_eve_wifi_receive(oop subcore) {
     // 引数チェック
-    DEBUG_LOG("THIS IS ERROR");
-    printlnObject(subcore,1);
 
     oop *elements = subcore->SubCore.var->FixArray.elements; 
     char *ipAddr  = getChild(elements[0],_String,value);
@@ -189,8 +187,6 @@ oop eve_wifi_receive(oop core){
             }
 #if DEBUG
             DEBUG_LOG("\nReceived from %s: %s\n", sender_ip, buffer);
-#else
-            SHICA_PRINTF("\nReceived from %s", sender_ip); 
 #endif
 
             if(agent->base.groupID == buffer[DATA_GROUP_ID] && memcmp(getAgentGroupKey(agent), buffer + DATA_GROUP_KEY, SIZE_OF_DATA_GROUP_KEY) == 0){
@@ -202,7 +198,6 @@ oop eve_wifi_receive(oop core){
                         #endif
 
                         if(agent->base.agent_type == AgentReader){
-                            DEBUG_LOG("Process REQUEST_JOIN");
                             int list = agent->reader.sizeOfMember;
                             int newId = 1;
                             while(list){
@@ -292,8 +287,6 @@ oop eve_wifi_receive(oop core){
                     case REQUEST_TRIGER:{
                         #if DEBUG
                         DEBUG_LOG("REQUEST_TRIGER\n");
-                        #else
-                        SHICA_PRINTF(" REQUEST_TRIGER");
                         #endif
                         if((buffer[DATA_REQUEST_MEMEBER_ID]>> (agent->base.myID-1) & 1) == 1){
                             /* trigger data */
@@ -334,7 +327,6 @@ oop eve_wifi_receive(oop core){
                                 
                                 //<条件が満たされたときの処理>/<Processing when the condition is met>
                                 if(!isFalse){
-                                    printf("trigger!!!\n");//remove
                                     //protect t:thread
                                     gc_pushRoot((void*)&core);//CHECKME: is it need?
                                     oop data = newArray(2);
@@ -350,7 +342,9 @@ oop eve_wifi_receive(oop core){
                                     gc_popRoots(1);
                                     enqueue(thread->Thread.queue,data);
                                 }else{
-                                    printf("not trigger\n");//remove
+                                #if DEBUG
+                                    DEBUG_LOG("not trigger\n");//remove
+                                #endif
                                 }
                             }
 
@@ -464,10 +458,7 @@ oop Event_communicate(int eve_num,oop stack){
             subcore->SubCore.var->FixArray.elements[1] = Array_pop(stack);//Integer port
             subcore->SubCore.var->FixArray.elements[2] = Array_pop(stack);//Integer groupID
             subcore->SubCore.var->FixArray.elements[3] = Array_pop(stack);//String  groupKey
-            DEBUG_LOG("3COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
             init_eve_wifi_receive(subcore);
-            DEBUG_LOG("4COMMUNICATE_WiFi_GROUP_RECEIVE_E\n");
-            printAgentData(((struct AgentInfo *)subcore->SubCore.any)->agent);
             subcore->SubCore.func = &eve_wifi_receive;
             core = subcore;
             break;

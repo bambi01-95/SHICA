@@ -219,12 +219,13 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 oop *mainCore = (oop*)gc_alloc(sizeof(oop)*(coreSize+1));
 #else
                 oop mainCore[coreSize+1];
-                DEBUG_LOG("coreSize %d\n",coreSize);
 #endif
+#if DEBUG
                 if(coreSize == -1){
-                    SHICA_FPRINTF(stderr,"coreSize is -1\n");
+                    DEBUG_ERROR(stderr,"coreSize is -1\n");
                     exit(1);
                 }
+#endif
                 for(int i=0;i<=coreSize;i++){
                     mainCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                 }
@@ -255,9 +256,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                         for(int i=0;i<=maxCoreSize;i++){
                                             copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                                         }
-                                        #if DEBUG
+                                    #if DEBUG
                                         printlnObject(GM->Thread.stack,1);
-                                        #endif
+                                    #endif
                                         
                                         for(int i=maxCoreSize-1;i>=0;i-=1){
                                             int coreIndex = _Integer_value(Array_pop(GM->Thread.stack));//DEFINE_L
@@ -270,11 +271,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                             }
                                         }
                                         getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
-                                        #if DEBUG
+                                    #if DEBUG
                                         printf("==================\n");
                                         printlnObject(GM->Thread.stack,1);
                                         printf("==================\n");
-                                        #endif
+                                    #endif
                                         pc = relpos + pc_i;
                                     #if DEBUG
                                         SHICA_PRINTF("Trans to %d\n",pc);
@@ -1194,7 +1195,6 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]
                 getInt(mpc);
                 int eve_num = int_value;
                 getSetInt(pos,mpc);
-                DEBUG_LOG("pop all element of setsubcore"); 
                 oop result = setCore(lib_num,eve_num,mstack);
                 Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
                 continue;
