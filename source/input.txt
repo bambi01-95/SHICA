@@ -37,12 +37,12 @@ state on{
 	entry(){
 		print("on")
 		gpioWrite(17,1)
-		wifiGroupReceived.send(-1,1)
+		wifiGroupReceived.send(-1,3)
 	}
 	triReadGPIO(int p:(p&(1<<27))==0){
 		state off
 	}
-	wifiGroupReceived(int from,int id,int data:data==1){
+	wifiGroupReceived(int from,int id,int data:data==3){
 		print(from,id,data)
 		state off
 	}
