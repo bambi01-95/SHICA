@@ -42,7 +42,7 @@ state on{
 	triReadGPIO(int p:(p&(1<<27))==0){
 		state off
 	}
-	wifiGroupReceived(int from,int id,int data:data==3){
+	wifiGroupReceived(int from,int id,int data){
 		print(from,id,data)
 		state off
 	}
