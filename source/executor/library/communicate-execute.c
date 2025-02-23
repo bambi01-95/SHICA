@@ -330,7 +330,7 @@ oop eve_wifi_receive(oop core){
                                     //protect t:thread
                                     gc_pushRoot((void*)&core);//CHECKME: is it need?
                                     oop data = newArray(3);
-                                    Array_push(data,_newInteger((int)buffer[DATA_REQUEST_SENDER_ID]));
+                                    Array_push(data,_newInteger(buffer[DATA_DATA]));
                                     if(value == ALL_MEMBER_ID){
                                         Array_push(data,_newInteger(0));
                                     }else if(value == ((1U) << (agent->base.myID -1))){
@@ -338,7 +338,7 @@ oop eve_wifi_receive(oop core){
                                     }else{
                                         Array_push(data,_newInteger(2));
                                     }
-                                    Array_push(data,_newInteger(buffer[DATA_DATA]));
+                                    Array_push(data,_newInteger((int)buffer[DATA_REQUEST_SENDER_ID]));
                                     gc_popRoots(1);
                                     enqueue(thread->Thread.queue,data);
                                 }
