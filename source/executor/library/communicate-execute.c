@@ -82,7 +82,7 @@ void init_eve_wifi_receive(oop subcore) {
     memset(buf, 0, BUF_SIZE);
     buf[DATA_REQUEST_TYPE] = REQUEST_JOIN;
     buf[DATA_GROUP_ID] = groupID;
-    buf[DATA_MY_ID] = 0;
+    buf[DATA_REQUEST_SENDER_ID] = 0;
     buf[DATA_REQUEST_MEMEBER_ID] = 0;
     buf[DATA_SIZE_OF_MEMBER] = 1;
     memcpy(buf + DATA_GROUP_KEY, groupKey, 4);
@@ -124,7 +124,7 @@ void init_eve_wifi_receive(oop subcore) {
                 switch(buf[DATA_REQUEST_TYPE]){
                     case REQUEST_TO_BE_MEMBER:{
                         agent_p agent = createAgent(AgentMember);
-                        agent->base.myID    = buf[DATA_MY_ID];
+                        agent->base.myID    = buf[DATA_REQUEST_SENDER_ID];
                         agent->base.groupID = buf[DATA_GROUP_ID];
                         memcpy(agent->member.groupKey,buf + DATA_GROUP_KEY,SIZE_OF_DATA_GROUP_KEY + 1);
 #if DEBUG
@@ -224,7 +224,7 @@ oop eve_wifi_receive(oop core){
                                 DEBUG_LOG("current Member is %d\n",agent->reader.sizeOfMember);
     #endif
                                 buffer[DATA_REQUEST_TYPE] = REQUEST_TO_BE_MEMBER;
-                                buffer[DATA_MY_ID]        = newId;
+                                buffer[DATA_REQUEST_SENDER_ID]        = newId;
                                 buffer[DATA_REQUEST_MEMEBER_ID] = (1 << (newId-1));
                                 buffer[DATA_SIZE_OF_MEMBER] = agent->reader.sizeOfMember;
                                 int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
@@ -244,10 +244,10 @@ oop eve_wifi_receive(oop core){
                         DEBUG_LOG("REQUEST_LEAVE\n");
                         #endif
                         if(agent->base.agent_type == AgentReader){
-                            agent->reader.sizeOfMember &= ~(1 << buffer[DATA_MY_ID]); 
+                            agent->reader.sizeOfMember &= ~(1 << buffer[DATA_REQUEST_SENDER_ID]); 
                             //send SUCCESS
                             buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
-                            buffer[DATA_MY_ID] = agent->base.myID;
+                            buffer[DATA_REQUEST_SENDER_ID] = agent->base.myID;
                             int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
                             if (sent < 0) {
                                 perror("sendto");
@@ -271,7 +271,7 @@ oop eve_wifi_receive(oop core){
                                 setAgentGroupKey(newAgent,agent->reader.groupKey);
 
                                 buffer[DATA_REQUEST_TYPE] = REQUEST_SUCCESS;
-                                buffer[DATA_MY_ID]        = agent->base.myID;
+                                buffer[DATA_REQUEST_SENDER_ID]        = agent->base.myID;
                                 int sent = send_broadcast_nonblocking(socketInfo->send_sockfd, &socketInfo->broadcast_addr, buffer, BUF_SIZE);
                                 if (sent < 0) {
                                     perror("sendto");
@@ -299,13 +299,13 @@ oop eve_wifi_receive(oop core){
                                 //<引数の評価>/<Evaluation of arguments>
                                 if(thread->Thread.condRelPos != 0){
                                     if(isOnce == 0){
-                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_MY_ID]));
+                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_REQUEST_SENDER_ID]));
                                         if(value== ALL_MEMBER_ID){
-                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));//ALL MEMBER:0
                                         }else if(value == ((1U) << (agent->base.myID -1))){
-                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(1));//MYSELF:1
                                         }else{
-                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));
+                                            Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));//OTHER:2
                                         }
                                         Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_DATA]));
                                         isOnce = 1;
@@ -330,7 +330,8 @@ oop eve_wifi_receive(oop core){
                                     //protect t:thread
                                     gc_pushRoot((void*)&core);//CHECKME: is it need?
                                     oop data = newArray(3);
-                                    Array_push(data,_newInteger(buffer[DATA_MY_ID]));
+                                    printf("%s line %d: %s\n",__FILE__,__LINE__,buffer[DATA_REQUEST_SENDER_ID]);
+                                    Array_push(data,_newInteger(buffer[DATA_REQUEST_SENDER_ID]));
                                     if(value == ALL_MEMBER_ID){
                                         Array_push(data,_newInteger(0));
                                     }else if(value == ((1U) << (agent->base.myID -1))){
@@ -503,11 +504,11 @@ void communicate_wifi_group_send(oop process,oop GM){
     memset(buf, 0, BUF_SIZE);
     buf[DATA_REQUEST_TYPE] = REQUEST_TRIGER;
     buf[DATA_GROUP_ID] = agent->base.groupID;
-    buf[DATA_MY_ID] = agent->base.myID;
+    buf[DATA_REQUEST_SENDER_ID] = agent->base.myID;
     if(sendToId < 0){
         buf[DATA_REQUEST_MEMEBER_ID] = ALL_MEMBER_ID;//all member: 11111111
     }else{
-        buf[DATA_REQUEST_MEMEBER_ID] = sendToId;//0:reader or other: member
+        buf[DATA_REQUEST_MEMEBER_ID] = (char)sendToId;//0:reader or other: member
     }   
     buf[DATA_SIZE_OF_MEMBER] = 1;
     memcpy(buf + DATA_GROUP_KEY, getAgentGroupKey(agent), 4);

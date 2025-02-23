@@ -36,7 +36,7 @@
 // broadcast data index
 #define DATA_REQUEST_TYPE        0x00
 #define DATA_GROUP_ID            0x01
-#define DATA_MY_ID               0x02
+#define DATA_REQUEST_SENDER_ID   0x02
 #define DATA_REQUEST_MEMEBER_ID  0x03
 #define DATA_SIZE_OF_MEMBER      0x04
 #define DATA_GROUP_KEY           0x05
