@@ -299,7 +299,7 @@ oop eve_wifi_receive(oop core){
                                 //<引数の評価>/<Evaluation of arguments>
                                 if(thread->Thread.condRelPos != 0){
                                     if(isOnce == 0){
-                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger((int)buffer[DATA_REQUEST_SENDER_ID]));
+                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_DATA]));//arg 3
                                         if(value== ALL_MEMBER_ID){
                                             Array_push(evalEventArgsThread->Thread.stack,_newInteger(0));//ALL MEMBER:0
                                         }else if(value == ((1U) << (agent->base.myID -1))){
@@ -307,7 +307,7 @@ oop eve_wifi_receive(oop core){
                                         }else{
                                             Array_push(evalEventArgsThread->Thread.stack,_newInteger(2));//OTHER:2
                                         }
-                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger(buffer[DATA_DATA]));
+                                        Array_push(evalEventArgsThread->Thread.stack,_newInteger((int)buffer[DATA_REQUEST_SENDER_ID]));//arg1
                                         isOnce = 1;
                                     }else{
                                         evalEventArgsThread->Thread.stack->Array.size = 4;
