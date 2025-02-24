@@ -23,6 +23,8 @@
 //Device
 #define RPI 1// 1:RaspberryPi 0:Other
 
+//LIB
+#define ROS 1// 1:ROS 0:Not use
 
 #endif
 

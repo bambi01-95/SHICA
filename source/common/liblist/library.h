@@ -8,6 +8,9 @@ extern enum LIB{
 #if RPI
     GPIOLIB,
 #endif //RPI
+#if ROS
+    ROSLIB,
+#endif //ROS
 }LIB;
 
 #endif
