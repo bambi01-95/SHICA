@@ -95,15 +95,13 @@ v1.0.2 RPI GPIO lib and Wifi UDP lib
 2. compile SHICA compiler:
 
     ```sh
-    cd ../source
-    make com
+    d-.-b b
     ```
 
 3. compile SHICA virtual machin:
 
     ```sh
-    cd ../source
-    make vms
+    d-.-b b
     ```
 
 ## Implementation
@@ -115,13 +113,13 @@ v1.0.2 RPI GPIO lib and Wifi UDP lib
 2. Compile by shica compiler:
 
     ```sh
-    ./shica yor_code.txt
+    d-.-b b
     ```
 
 3. Run shica code by shica vm:
 
     ```sh
-    ./vm yor_code.stt
+    d-.-b b
     ```
 
 ## Affiliation
