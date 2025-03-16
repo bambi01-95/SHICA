@@ -1,54 +1,12 @@
-//Radio Group System
-//broadcast 1 to all devices in the same group
-//wifiGroupReceived() func. in on state is only triggered when the data is 1
-//wifiGroupReceived() func. in off state is triggered when the data is 0
-
-
-state init{
-	entry(){
-		int v = gpioInitialise()
-        if(v<0){
-            print("Error")
-            gpioDelay(20000)
-            state init
-        }
-		init wifiGroupReceived("192.168.1.255",60000,12,"KUAS") //build Group
-        //persist wifiGroupReceived;
-        gpioSetMode(17,0) //LED, output
-		gpioSetMode(27,1) //Button, input
-        gpioSetPullUpDown(27,2) //Button, pull up
-		gpioDelay(1000000)
-		state off
+state a{
+	timerSec(int s){
+		state b
 	}
 }
 
-state off{
-	entry(){
-		print("off")
-		gpioWrite(17,0)//LED off
-	}
-    //32 pin raspi 0
-	triggerReadGPIO(int p:(p&(1<<27))==0){
-		state on
-	}
-	// wifiGroupReceived(int from,int id,int data:data==0){
-    //     print(data)
-    //     state on
-	// }
-}
-
-state on{
-	entry(){
-		print("on")
-		gpioWrite(17,1)//led on
-		wifiGroupReceived.send(-1)//-1:BROADCAST_OTHERS
-	}
-	triReadGPIO(int p:(p&(1<<27))==0){
-		state off
-	}
-	wifiGroupReceived(int from,int id){
-		print(from,id)
-		state off
+state b{
+	timerSec(int s){
+		state a
 	}
 }
 

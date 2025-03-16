@@ -226,11 +226,12 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                     exit(1);
                 }
 #endif
+
                 for(int i=0;i<=coreSize;i++){
                     mainCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                 }
                 for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
-                    for(int core_i=0;core_i<=coreSize;core_i++){
+                    for(int core_i=0;core_i<=coreSize && isTrans==0;core_i++){
                     //<イベントの確認>/<check event>
                         mainCore[core_i]->Core.func(mainCore[core_i]);
                     //<イベントアクションの実行>/<implement event action>
