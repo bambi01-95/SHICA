@@ -1,14 +1,19 @@
 state a{
 	timerSec(int s){
+		print(s)
+	}
+	timerSec(int s:s%2==0){
+		print(s)
 		state b
 	}
 }
 
 state b{
+	entry(){
+		print("b")
+	}
 	timerSec(int s){
+		print(s)
 		state a
 	}
 }
-
-//macro
-//persist 

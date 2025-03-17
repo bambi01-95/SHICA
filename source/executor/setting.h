@@ -24,7 +24,7 @@
 #define UNMARK 1
 
 //Device
-#define RPI 1 // 1:RaspberryPi 0:Other
+#define RPI 0 // 1:RaspberryPi 0:Other
 
 //Library
 #define ROS 0 // 1:ROS 0:Other
