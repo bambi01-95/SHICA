@@ -9,7 +9,7 @@
 #include <pigpio.h>
 
 #if SBC //event()
-oop eve_gpio_read(oop core){
+oop eve_gpio_read(oop core, oop GM){
     uint32_t gpio_states = gpioRead_Bits_0_31();
     if(gpio_states > 0){
         int isOnce = 0;
@@ -28,7 +28,7 @@ oop eve_gpio_read(oop core){
                 }
                 evalEventArgsThread->Thread.pc = thread->Thread.base + thread->Thread.condRelPos;
                 for(;;){
-                    FLAG flag = sub_execute(evalEventArgsThread,nil);
+                    FLAG flag = sub_execute(evalEventArgsThread,GM);
                     if(flag == F_TRUE){
                         break;
                     }

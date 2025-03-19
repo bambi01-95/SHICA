@@ -233,7 +233,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
                     for(int core_i=0;core_i<=coreSize;core_i++){
                     //<イベントの確認>/<check event>
-                        mainCore[core_i]->Core.func(mainCore[core_i]);
+                        mainCore[core_i]->Core.func(mainCore[core_i],GM);
                     //<イベントアクションの実行>/<implement event action>
                         for(int thread_i=0;thread_i<mainCore[core_i]->Core.size;thread_i++){
                             oop thread = mainCore[core_i]->Core.threads[thread_i];

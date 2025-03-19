@@ -5,7 +5,7 @@
 #include "communicate-execute.h"
 #include "../lib/exgc.c"
 #include "../lib/extstr.c"
-void init_eve_wifi_receive(oop subcore) {
+void init_eve_wifi_receive(oop subcore,oop GM) {
     // 引数チェック
 
     oop *elements = subcore->SubCore.var->FixArray.elements; 
@@ -169,7 +169,7 @@ void init_eve_wifi_receive(oop subcore) {
 }
 
 
-oop eve_wifi_receive(oop core){
+oop eve_wifi_receive(oop core,oop GM){
     //corret 
 #if SBC
         struct AgentInfo *MY_AGENT_INFO = (struct AgentInfo *)core->SubCore.any;
@@ -314,7 +314,7 @@ oop eve_wifi_receive(oop core){
                                     }
                                     evalEventArgsThread->Thread.pc = thread->Thread.base + thread->Thread.condRelPos;
                                     for(;;){
-                                        FLAG flag = sub_execute(evalEventArgsThread,nil);
+                                        FLAG flag = sub_execute(evalEventArgsThread,GM);
                                         if(flag == F_TRUE){
                                             break;
                                         }
@@ -459,7 +459,7 @@ oop Event_communicate(int eve_num,oop stack){
             subcore->SubCore.var->FixArray.elements[1] = Array_pop(stack);//Integer port
             subcore->SubCore.var->FixArray.elements[2] = Array_pop(stack);//Integer groupID
             subcore->SubCore.var->FixArray.elements[3] = Array_pop(stack);//String  groupKey
-            init_eve_wifi_receive(subcore);
+            init_eve_wifi_receive(subcore,stack);
             subcore->SubCore.func = &eve_wifi_receive;
             core = subcore;
             break;

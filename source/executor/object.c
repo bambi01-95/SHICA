@@ -108,7 +108,7 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
 union Object;
 typedef union Object Object;
 typedef Object *oop;
-typedef oop (*Func)(oop);
+typedef oop (*Func)(oop,oop);
 
 typedef union VarData VarData;
 typedef VarData *VD;

@@ -11,7 +11,7 @@
     argsCond: それぞれのconditionの内容が入っている
 */
 #if SBC //event()
-oop eve_test(oop core){
+oop eve_test(oop core,oop GM){
     time_t current_time = time(NULL);
     if(current_time - core->Core.vd->VarTI.v_t1 >= core->Core.vd->VarTI.v_i2){
         core->Core.vd->VarTI.v_t1 = current_time;
@@ -34,7 +34,7 @@ oop eve_test(oop core){
                 }
                 evalEventArgsThread->Thread.pc = thread->Thread.base + thread->Thread.condRelPos;
                 for(;;){
-                    FLAG flag = sub_execute(evalEventArgsThread,nil);
+                    FLAG flag = sub_execute(evalEventArgsThread,GM);
                     if(flag == F_TRUE){
                         break;
                     }
@@ -61,7 +61,7 @@ oop eve_test(oop core){
     return core;
 }
 #else
-oop eve_test(oop core){
+oop eve_test(oop core,oop GM){
     SHICA_PRINTF("eve_test\n");
     return core;
 }
@@ -69,7 +69,7 @@ oop eve_test(oop core){
 
 
 
-oop eve_loop(oop core){
+oop eve_loop(oop core,oop GM){
     for(int thread_i = 0;thread_i<core->Core.size;thread_i++){
         oop thread = core->Core.threads[thread_i];
         if(thread->Thread.flag == 0){
@@ -91,7 +91,7 @@ oop eve_loop(oop core){
 
 
 #if SBC
-oop eve_timer(oop core){
+oop eve_timer(oop core,oop GM){
     time_t current_time = time(NULL);
     if(current_time - core->Core.vd->VarTI.v_t1 >= core->Core.vd->VarTI.v_i2){
         core->Core.vd->VarTI.v_t1 = current_time;
@@ -111,7 +111,7 @@ oop eve_timer(oop core){
                 }
                 evalEventArgsThread->Thread.pc = t->Thread.base + t->Thread.condRelPos;
                 for(;;){
-                    FLAG flag = sub_execute(evalEventArgsThread,nil);
+                    FLAG flag = sub_execute(evalEventArgsThread,GM);
                     if(flag == F_TRUE)break;
                     else if(flag == F_FALSE){
                         isFalse = 1;
@@ -133,7 +133,7 @@ oop eve_timer(oop core){
     return core;
 }
 #else
-oop eve_timer(oop core){
+oop eve_timer(oop core, oop GM){
     SHICA_PRINTF("eve_timer\n");
     return core;
 }
@@ -143,7 +143,7 @@ oop eve_timer(oop core){
 
 #if SBC
 #include <termios.h> //keyboard input
-oop eve_keyget(oop core){
+oop eve_keyget(oop core, oop GM){
     char buf;
     struct termios old_flags, new_flags;
     fd_set fds;
@@ -205,7 +205,7 @@ oop eve_keyget(oop core){
             if(t->Thread.condRelPos != 0){
                 evalEventArgsThread->Thread.pc = t->Thread.base + t->Thread.condRelPos;
                 for(;;){
-                    FLAG flag = sub_execute(evalEventArgsThread,nil);
+                    FLAG flag = sub_execute(evalEventArgsThread,GM);
                     if(flag == F_TRUE)break;
                     else if(flag == F_FALSE){
                         isFalse = 1;
@@ -284,7 +284,7 @@ oop Event_stdlib(int eve_num,oop stack){
             core = newCore(Default);
             core->Core.func = &eve_keyget;
             //clear key buffer
-            while(0!=core->Core.func(core))dequeue(core);
+            while(0!=core->Core.func(core,nil))dequeue(core);
             break;
         }
         default:{

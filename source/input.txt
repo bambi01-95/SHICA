@@ -1,19 +1,7 @@
-state a{
-	timerSec(int s){
-		print(s)
-	}
-	timerSec(int s:s%2==0){
-		print(s)
-		state b
-	}
-}
+int val = 10
 
-state b{
-	entry(){
-		print("b")
-	}
-	timerSec(int s){
-		print(s)
-		state a
+state a{
+	event(int a,int b){
+		print(a+b)
 	}
 }
