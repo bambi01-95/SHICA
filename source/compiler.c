@@ -28,6 +28,8 @@ int main(int argc, char const *argv[])
     sys_false = _newInteger(0);
     sys_true  = _newInteger(1);
     none  = _newInteger(2);
+    wildcard_aop = intern("_wildcard_aop_");
+    specific_aop = newArray(0);
 
 
     // コマンドライン引数の確認

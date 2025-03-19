@@ -1588,7 +1588,25 @@ state default{
             }
             tmp = tmp->next;
         }
-        //<AOPの呼び出し>/<AOP call>
+        //<AOPの呼び出し>/<AOP call> BEFORE OR AROUND
+        //for BEFORE 
+        // trans * -> stateName{ process }
+        oop aspectArr = get(wildcard_aop,Symbol,aspect);
+        for(int i=0;i<aspectArr->Array.size;i++){
+            oop *jointps = get(aspectArr,Array,elements);
+            oop jointp = jointps[i];
+            switch(get(jointp,Jointp,point)){
+                case AFTER:break;
+                case BEFORE:
+                case AROUND:{
+                    DEBUG_LOG("WILD\n");
+                    int pos = get(jointp,Jointp,position);
+                    int cpc = program->Array.number;
+                    emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
+                    break;
+                }
+            }
+        }
 
         if(get(stateName,Symbol,aspect)!=nil){
             oop aspect = get(stateName,Symbol,aspect);
@@ -1600,6 +1618,7 @@ state default{
                     case AFTER:  break;
                     case BEFORE:
                     case AROUND:{
+                        DEBUG_LOG("BEFORE\n");
                         int pos = get(jointp,Jointp,position);
                         int cpc = program->Array.number;
                         emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
@@ -1673,7 +1692,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
     case Run:{
         oop id = get(exp,Run,state);
         
-        //<AOPの呼び出し>/<AOP call>
+        //<AOPの呼び出し>/<AOP call> AFTER OR AROUND
+        //trans stateName -> *{ process }
+        //trans * -> * { process }
         if(get(stateNameG,Symbol,aspect)!=nil){
             oop aspect = get(stateNameG,Symbol,aspect);
             int size = get(aspect,Array,size);
@@ -1683,7 +1704,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 switch(get(jointp,Jointp,point)){
                     case BEFORE:break;
                     case AFTER:  
-                    case AROUND:{
+                    case AROUND:{ 
+                        DEBUG_LOG("AFTER\n");
+                        //(stateNameG == CURRENT && id == NEXT) do *,*{ process }
                         int pos = get(jointp,Jointp,position);
                         int cpc = program->Array.number;
                         emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
@@ -1691,6 +1714,21 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                         break;
                     }
                 }
+            }
+        }
+
+        for(int i=0;i<get(specific_aop,Array,size);i++){
+            oop jointp = specific_aop->Array.elements[i];
+            oop pair = get(jointp,Jointp,id);
+            oop from = get(pair,Pair,a);
+            oop to = get(pair,Pair,b);
+            printf("from %s to %s\n",get(from,Symbol,name),get(to,Symbol,name));
+            printf("from %s to %s\n",get(stateNameG,Symbol,name),get(id,Symbol,name));
+            if(stateNameG == from && id == to){
+                DEBUG_LOG("SPECIFIC\n");
+                int pos = get(jointp,Jointp,position);
+                int cpc = program->Array.number;
+                emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
             }
         }
         
@@ -1739,7 +1777,53 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         state_Pair = newPair(newPair(id,newPair(_newInteger(L_i),_newInteger(L))),state_Pair);
         break;
     }
+    case TransAspect:{
+        oop fromId = get(exp,TransAspect,from);
+        oop toId = get(exp,TransAspect,to);
+        oop body = get(exp,TransAspect,body);
+        int pos  = 0;
+//BODY 
+        emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
+        vnt = newArray(0);          //Create symbol name table
+        int jump = program->Array.number;
+        int jump_i = program->Array.size;
+        pos = program->Array.number;  //CALL num: num is this number
+    emitOI(MSUB,0);                 //rbp for variable
+    int msub_loc = program->Array.size;
+        compOT(body,Undefined);
+        emitO(EOA);
+    int vnt_size = vnt->Array.size;
+    Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
+        int end  = program->Array.number;
+    Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
 
+
+    //prepare state transision
+    printlnObject(fromId,2);
+    printlnObject(toId,2);
+        if(fromId==nil){
+            if(toId==nil){//  *,* all
+                DEBUG_LOG("*,*\n");
+                wildcard_aop = setTrans(BEFORE,wildcard_aop,pos);
+            }else{//  *,I before 
+                DEBUG_LOG("*,I\n");
+                toId = setTrans(BEFORE,toId,pos);
+                DEBUG_LOG("%s\n",get(toId,Symbol,name));
+            }
+        }else{
+            if(toId==nil){//  I,* after
+                DEBUG_LOG("I,*\n");
+                fromId = setTrans(AFTER,fromId,pos);
+                DEBUG_LOG("%s\n",get(fromId,Symbol,name));
+            }else{//  I,I specific
+                DEBUG_LOG("I,I\n");
+                oop jointp = newJointp(AROUND,newPair(fromId,toId));
+                jointp->Jointp.position = pos;
+                Array_push(specific_aop,jointp);
+            }
+        }
+        break;
+    }
     case END:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);

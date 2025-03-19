@@ -14,6 +14,7 @@ int newline = 1;
 start	= bln d:define 	{ result = d }
 
 define  = t:STATE i:id s:state                { $$ = setState(i,s)  }
+		| "trans" - trans
 		| ADVICE   i:id b:block { $$ = newAdvice(i,b) }
 		| POINTCUT i:id j:jointps { $$ = newPointcut(i,j) }
 		| STRUCT i:id  p:child { $$ = newSetType(i,p,newline) }
@@ -23,6 +24,12 @@ define  = t:STATE i:id s:state                { $$ = setState(i,s)  }
         | RUN      i:id                       { $$ = newRun(newGetVar(i,newline)) }
         | !.                                  { $$ = newEND() }
 	    | < (!eol &. .)* >                    { fatal("line %d syntax error: [%s]",newline, yytext); }
+
+trans   = STAR COMMA ( STAR b:block { $$ = newTransAspect(nil,nil,b); printf("1\n"); }
+					 | i:id b:block { $$ = newTransAspect(nil,i,b) ; printf("2\n");})
+		| i:id COMMA (STAR b:block  { $$ = newTransAspect(i, nil,b); printf("3\n"); }
+		             |j:id b:block  { $$ = newTransAspect(i,  j,b) ; printf("4\n");})
+
 
 jointps  = LBRACE p:mkNil
 		( bln !RBRACE j:jointp COMMA { p = newPair(j, p) }

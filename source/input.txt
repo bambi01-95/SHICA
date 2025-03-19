@@ -1,7 +1,27 @@
-int val = 10
+trans a , b{
+	print("a->b")
+}
+
+trans * , b{
+	print("entry")
+}
+
+trans a , *{
+	print("exit")
+}
+
+trans *,*{
+	print("all")
+}
 
 state a{
-	event(int a,int b){
-		print(a+b)
+	timerSec(int s:s%2==0){
+		state b
+	}
+}
+
+state b{
+	timerSec(int s:s%2==0){
+		state a
 	}
 }

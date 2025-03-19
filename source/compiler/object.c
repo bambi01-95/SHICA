@@ -117,6 +117,8 @@ oop sys_true  = 0;
 oop none  = 0;
 oop entry_sym = 0;
 
+oop wildcard_aop = 0;//for transAspect
+oop specific_aop = 0;//for transAspect
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
 typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;
@@ -146,6 +148,7 @@ enum Type {
     Binop, 
     Unyop,  
     Jointp,
+    TransAspect,
 
     GetVar, 
     SetVar,  
@@ -208,6 +211,7 @@ char *TYPENAME[END+1] = {
     "Binop",
     "Unyop",
     "Jointp",
+    "TransAspect",
 
     "GetVar",
     "SetVar",
@@ -276,6 +280,7 @@ struct Array     { enum Type _type_;  oop *elements; int size/* related capacity
 struct Binop   	 { enum Type _type_;  enum binop op;  oop lhs, rhs;       int line;};
 struct Unyop   	 { enum Type _type_;  enum unyop op;  oop rhs;            int line;};
 struct Jointp    { enum Type _type_;  enum jointp point; oop id; int position;};
+struct TransAspect{ enum Type _type_;  oop from; oop to; oop body; };
 
 struct GetVar  	 { enum Type _type_;  oop id;                             int line;};
 struct GetElement{ enum Type _type_;  oop parent, child;                   int line;};
@@ -408,6 +413,7 @@ union Object {
     struct Binop    Binop;
     struct Unyop    Unyop;
     struct Jointp   Jointp;
+    struct TransAspect TransAspect;
     struct GetVar   GetVar;
     struct SetVar   SetVar;
     struct SetVarG SetVarG;
@@ -681,6 +687,7 @@ oop newList_d1(enum Type t){
     return node;
 }
 
+oop Array_push(oop obj,oop element);
 void printlnObject(oop node, int indent);
 
 oop newPair(oop a, oop b)
@@ -759,6 +766,27 @@ oop newJointp(enum jointp point, oop id)
     node->Jointp.id    = id;
     node->Jointp.position = 0; // it is used at the optimaize.c
     return node;
+}
+
+oop newTransAspect(oop from, oop to, oop body)
+{
+    oop node = newObject(TransAspect);
+    node->TransAspect.from = from;
+    node->TransAspect.to   = to;
+    node->TransAspect.body = body;
+    return node;
+}
+
+oop setTrans(enum jointp point,oop id,int pc){
+    oop aspect = get(id,Symbol,aspect);
+    if(aspect==nil){
+        aspect = newArray(0);
+    }
+    oop jointp = newJointp(point,id);
+    jointp->Jointp.position = pc;
+    Array_push(aspect,jointp);
+    id->Symbol.aspect = aspect;
+    return id;
 }
 
 oop newGetVar(oop id,int line)
