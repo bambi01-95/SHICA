@@ -60,10 +60,43 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 #include <unistd.h>//remove
 
 
+
+
 //should be one execute function
 // FLAG executor(oop thread,oop GM){
 
 // }
+int parmanebtBinaryData = 0;
+int currentBinaryData = 0;
+
+int getIndexOfEvent(int i){
+    // 01010 c
+    // 00011 p
+    // 01011 m
+    // return 2
+    int mixBinaryData = parmanebtBinaryData | currentBinaryData;
+    int cBinaryData = currentBinaryData;
+    int count = 0; //2
+    int index = 0; //2
+    while(cBinaryData){
+        if(cBinaryData & 1){
+            if(count++ == i){
+                count = 0;
+                break;
+            }
+        }
+        index++;
+        cBinaryData >>= 1;
+    }
+    for(int i=0;i<index;i++){
+        if(mixBinaryData & 1){
+            count++;
+        }
+        mixBinaryData >>= 1;
+    }
+    return count;
+}
+
 void main_execute(){
     int pc = 0;
     int rbp = 0;
@@ -151,12 +184,14 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(grobalMemoryIndex,pc);
+                int index = getIndexOfEvent(grobalMemoryIndex);
+                coreSize = index;//should be rename
                 getSetInt(jumpRelPos,pc);
                 int rbp = getChild(GM,Thread,rbp);
-                oop copyCore = getChild(GM,Thread,stack)->Array.elements[rbp + grobalMemoryIndex];
+                oop copyCore = getChild(GM,Thread,stack)->Array.elements[rbp + index];
                 if(copyCore!=nil && copyCore!=0){
                     copyCore->Core.size = 0;//copy core type is Core/SubCore
-                    getChild(GM->Thread.stack,Array,elements)[rbp + (++coreSize)] = copyCore;
+                    getChild(GM->Thread.stack,Array,elements)[rbp + index] = copyCore;
                     pc = jumpRelPos + pc;
                 }
 #if DEBUG
@@ -174,7 +209,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);
                 oop core = setCore(libNum,eveNum,stack);
-                getChild(GM->Thread.stack,Array,elements)[gmRbp + (++coreSize)] = core;
+                getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
                 continue;
             }
             case SETSUBCORE:{
@@ -185,7 +220,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);//don't use
                 oop core = setCore(libNum,eveNum,stack);
-                getChild(GM->Thread.stack,Array,elements)[gmRbp + (++coreSize)] = core;
+                getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
                 continue;
             }
             case MKTHREAD:{//FIXME: rechange the name of this instruction => SETCORE
@@ -243,23 +278,51 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 
                                 switch(flag){
                                     case F_TRANS:{
-                                        
-                                        if(evalEventArgsThread->Thread.stack->Array.capacity>0){
+                                        //評価スレッドの初期化
+                                        if(evalEventArgsThread->Thread.stack->Array.capacity>10){
                                             gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
                                             evalEventArgsThread->Thread.stack = newArray(10);
                                         }
-                                        int pc_i = thread->Thread.pc;//location of thread[i]'s pc
-                                        getSetInt(relpos,pc_i);
-                                        int numPC = pc_i;
-                                        getSetInt(numCopyCore,numPC);
-                                        
                                         oop copyCore[maxCoreSize];
                                         for(int i=0;i<=maxCoreSize;i++){
                                             copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                                         }
-                                    #if DEBUG
-                                        printlnObject(GM->Thread.stack,1);
-                                    #endif
+
+                                        int pc_i = thread->Thread.pc;//location of thread[i]'s pc
+                                        getSetInt(relpos,pc_i);
+                                        int numPC = pc_i;
+                                        //binary list data
+                                        getSetInt(nextBinaryData,pc);
+                                        int mixBinaryData = nextBinaryData | parmanebtBinaryData;
+                                        int realCurrentBinaryData = parmanebtBinaryData | currentBinaryData;
+
+                                        int copy_index = 0;
+                                        int current_index = 0;
+                                        for(;;){
+                                            if(realCurrentBinaryData&1 && mixBinaryData&1){ //c1 n1 => copy
+                                                getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index] = copyCore[current_index];
+                                                copy_index++;
+                                                current_index++;
+                                            }
+                                            else if(realCurrentBinaryData&1){ //c1 n0 => remove
+                                                current_index++;
+                                            }
+                                            else if(mixBinaryData&1){ //c0 n1 => add nil
+                                                getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index] = nil;
+                                                copy_index++;
+                                            }
+                                            else if(realCurrentBinaryData | mixBinaryData){ //c0 n0 => nothing
+                                                break;
+                                            }
+                                            realCurrentBinaryData >>= 1;
+                                            mixBinaryData >>= 1;
+                                        }
+                                        currentBinaryData = nextBinaryData;
+
+                                        /*
+                                        getSetInt(numCopyCore,numPC);
+                                        
+
                                         
                                         for(int i=maxCoreSize-1;i>=0;i-=1){
                                             int coreIndex = _Integer_value(Array_pop(GM->Thread.stack));//DEFINE_L
@@ -271,16 +334,10 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                                 // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
                                             }
                                         }
+                                        */
+
                                         getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
-                                    #if DEBUG
-                                        printf("==================\n");
-                                        printlnObject(GM->Thread.stack,1);
-                                        printf("==================\n");
-                                    #endif
                                         pc = relpos + pc_i;
-                                    #if DEBUG
-                                        SHICA_PRINTF("Trans to %d\n",pc);
-                                    #endif
                                         isTrans = 1;
                                         break;
                                     }

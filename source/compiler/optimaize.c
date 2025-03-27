@@ -945,7 +945,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                             fatal("line %d: too many arguments\n",exp->GetElement.line);
                         }
                         //get_l core #into stack
-                        emitOI(GET_L, _Integer_value(index));
+                        emitOI(GET_L, _Integer_value(index));//NEED TO FIX
                         //call_p X X X
                         emitOIII(CALL_P,prim->Primitive.lib_num,prim->Primitive.func_num,prim->Primitive.size_of_args_type_array);
                         break;
@@ -1324,18 +1324,14 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             }
         }
 
-        for(int i=0; i<get(STATE_GLOBAL_EVENT_LISTS,Array,size);i++){
-            oop id = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,a);
+        for(int i=0; i<get(STATE_EVENT_LISTS,Array,size);i++){
+            oop id = get(get(STATE_EVENT_LISTS,Array,elements)[i],Pair,a);
             if(id == stateName){
-                oop pairs = get(get(STATE_GLOBAL_EVENT_LISTS,Array,elements)[i],Pair,b);
-                // int numEvent = 0;//remove me
+                oop pairs = get(get(STATE_EVENT_LISTS,Array,elements)[i],Pair,b);
                 STATE_EVENT_LIST = pairs;
-                while(pairs!=nil){
-                    // numEvent++;//remove me
-                    pairs = get(pairs,Pair,b);
-                }
-                 
-                // Local_VNT->Array.size = numEvent;//remove me
+                // while(pairs!=nil){
+                //     pairs = get(pairs,Pair,b);
+                // }//remove me 
                 break;
             }
         }
@@ -1732,8 +1728,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             }
         }
         
-        int sizeOfStateTable = get(STATE_GLOBAL_EVENT_LISTS,Array,size);
-        oop *states = get(STATE_GLOBAL_EVENT_LISTS,Array,elements);
+        int sizeOfStateTable = get(STATE_EVENT_LISTS,Array,size);
+        oop *states = get(STATE_EVENT_LISTS,Array,elements);
         oop NextStateData = nil;
         oop CurrentStateData = nil;
         //search state data

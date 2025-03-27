@@ -1113,6 +1113,16 @@ oop Array_pop(oop obj){
     return element;
 };
 
+oop *Array_put_elements(oop *main,oop sub,int index){
+    assert(getType(sub)==Array);
+    int end = sub->Array.size;
+    for(int i = index; i < end; i++){
+        main[i] = sub->Array.elements[i - index];
+    }
+    return main;
+}
+
+
 oop _newThread(size_t size)
 {
     oop node = newObject(Thread);

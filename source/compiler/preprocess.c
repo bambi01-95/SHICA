@@ -4,40 +4,96 @@
 #include "object.c"
 
 //stateごとに実行定義されているグローバルイベントリスト
-oop STATE_GLOBAL_EVENT_LISTS  = 0;
+oop STATE_EVENT_LISTS  = 0;
 //stateごとに定義されているローカルイベントリスト
 oop STATE_DEF_LOCAL_EVENT_LISTS   = 0;
 
-/*
- STATE_GLOBAL_EVENT_LISTS
+oop EVENT_TABLE[32];      //use for colloect event id
+int sizeOfEventTable = 0;
 
-    Pair
-        a:stateName
-        b:Pair
-            event and index (PAIR)
-            Pair
-                event and index (PAIR)
-                Pair
-                    event and index (PAIR)
-                    nil
-    Pair
-        a:bstateName
-        b:Pair
-            event and index (PAIR)
-            Pair
-                event and index (PAIR)
-                Pair
-                    event and index (PAIR)
-                    nil
-*/
-oop findIdFromList(oop id,oop list){
-    oop tmp = list;
-    while(tmp!=nil){
-        oop eventId = get(tmp,Pair,a)->Pair.a;
-        if(id == eventId){
-            return get(tmp,Pair,a)->Pair.b;
+int insertEventTable(oop id){
+    for(int i=0;i<sizeOfEventTable;i++){
+        if(EVENT_TABLE[i]==id){
+            return i;
         }
-        tmp = get(tmp,Pair,b);
+    }
+    if(sizeOfEventTable==32){
+        fatal("event table is full\n");
+        return -1;
+    }
+    EVENT_TABLE[sizeOfEventTable] = id;
+    return sizeOfEventTable++;
+}
+
+//NEED TO BE MORE SMART
+struct State_Event_Binary_Data{
+    oop stateName;
+    int eventBinarylist;
+}*STATE_EVENT_BINARY_DATA;
+
+int sizeOfStateEventBinaryData = 0;
+int insertEventBinaryData(oop stateName,int eventbinarylist){
+    STATE_EVENT_BINARY_DATA = realloc(STATE_EVENT_BINARY_DATA,sizeof(struct State_Event_Binary_Data)*(sizeOfStateEventBinaryData+1));
+    STATE_EVENT_BINARY_DATA[sizeOfStateEventBinaryData].stateName = stateName;
+    STATE_EVENT_BINARY_DATA[sizeOfStateEventBinaryData].eventBinarylist = eventbinarylist;
+    return sizeOfStateEventBinaryData++;
+}
+
+oop sortEventListByStateTable(oop stateName,oop eventList){
+    oop new = newArray(get(eventList,Array,size));
+    oop *ele = get(eventList,Array,elements);
+    int eventBinaryData = 0;
+    for(int i=0;i<sizeOfEventTable;i++){
+        for(int j=0;j<get(eventList,Array,size);j++){
+            oop id = get(ele[j],Pair,a);
+            if(EVENT_TABLE[i]==id){
+                Array_push(new,get(eventList,Array,elements)[j]);
+                eventBinaryData |= (1<<i);
+            }
+        }
+    }
+    free(eventList);
+    insertEventBinaryData(stateName,eventBinaryData);
+    return new;
+}
+
+
+
+#if DEBUG
+void printBinary(int n){
+    for(int i=0;i<32;i++){
+        if(n & (1<<i)){
+            printf("1");
+        }else{
+            printf("0");
+        }
+    }
+    printf("\n");
+}
+void printEventTable(){
+    for(int i=0;i<sizeOfEventTable;i++){
+        printf("%s\n",get(EVENT_TABLE[i],Symbol,name));
+    }
+}
+void printEventBinaryData(){
+    printEventTable();
+    for(int i=0;i<sizeOfStateEventBinaryData;i++){
+        printf("%s\n",get(STATE_EVENT_BINARY_DATA[i].stateName,Symbol,name));
+        printBinary(STATE_EVENT_BINARY_DATA[i].eventBinarylist);
+    }
+}
+#endif
+
+
+oop findIdFromList(oop id,oop list){
+    oop *tmp = list->Array.elements;
+    int size = list->Array.size;
+    for(int i=0;i<size;i++){
+        oop pair = tmp[i];
+        oop eventId = get(pair,Pair,a)->Pair.a;
+        if(id == eventId){
+            return get(pair,Pair,a)->Pair.b;
+        }
     }
     return nil;
 }
@@ -49,7 +105,7 @@ oop preprocess(oop exp,oop trees){
 #if DEBUG
             DEBUG_LOG("SETVAR EVENT\n");
 #endif
-            oop varId = get(exp, SetVarEvent, id);
+            oop varId = get(exp, SetVarEvent, id);insertEventTable(varId);
             oop event = get(exp, SetVarEvent, rhs);
             oop eventFuncId = get(event, Event, id);
             oop eventFunc = get(eventFuncId,Symbol,value);
@@ -78,25 +134,22 @@ oop preprocess(oop exp,oop trees){
             oop stateName = get(exp,State,id);
             oop *events = get(exp,State,events);
 
-            oop globalEvent = nil;
+            oop globalEvent = newArray(1);
             oop sttLocalEvent = nil;
             int eventIndex = 0;
+            int eventPosIndex =0; 
             for(int i=0;i<size; i++){
                 oop statement = events[i];
                 switch(getType(statement)){
-                    case SetVarG:{
-#if DEBUG
-                    DEBUG_ERROR("this is not support now\n");
-#endif
-                        break;
-                    }
                     case SetVarL:{
+                        eventPosIndex++;
 #if DEBUG
                         DEBUG_LOG("->SetVarL\n");
 #endif
                         break;
                     }
                     case SetVarEvent:{//local event
+                        eventPosIndex++;
                     #if DEBUG   
                         DEBUG_LOG("->SETVAR EVENT\n");
                     #endif
@@ -125,6 +178,7 @@ oop preprocess(oop exp,oop trees){
 #endif
                         oop id = get(statement,Event,id);
                         oop eveFunc = nil;
+
                         if(id == entry_sym){//need to optimize
                             oop body = get(statement,Event,body);
                             int size = get(body,Block,size);
@@ -132,34 +186,39 @@ oop preprocess(oop exp,oop trees){
                                 oop stm = get(body,Block,statements)[i];
                                 if(getType(stm)==Call && get(stm,Call,callType)==1){//init eventFunc()
                                     oop function = get(stm,Call,function);//id
-                                    globalEvent = newPair(newPair(function,_newInteger(eventIndex)),globalEvent);
+                                    Array_push(globalEvent,newPair(function,_newInteger(eventIndex)));
                                     eventIndex++;
                                 }
                             }
                         }else{
                             if(getType(get(id,Symbol,value))==DupEvent){//global event
+
                                 oop judge = findIdFromList(id,globalEvent);
                                 if(judge==nil){
-                                    globalEvent = newPair(newPair(id,_newInteger(eventIndex)),globalEvent);
+                                    Array_push(globalEvent,newPair(id,_newInteger(eventIndex)));
                                     eventIndex++;
                                 }
                                 eveFunc = get(get(id,Symbol,value),DupEvent,eventFunc);
                             }
                             else if(getType(get(id,Symbol,value))!=EventFunc){//local event
-                            oop dupEve = findIdFromList(id,sttLocalEvent);
-                            if(dupEve!=nil){
-                                eveFunc = get(dupEve,DupEvent,eventFunc);
-                            }
-                            }else{//global event
+#if DEBUG
+                                DEBUG_ERROR("line %d: %s is not EventFunc\n",__LINE__,get(id,Symbol,name));
+                                exit(1);
+#endif
+                                oop dupEve = findIdFromList(id,sttLocalEvent); //it shluld be change: 
+                                if(dupEve!=nil){
+                                    eveFunc = get(dupEve,DupEvent,eventFunc);
+                                }
+                            }else{//normal event
                                 oop judge = findIdFromList(id,globalEvent);
                                 if(judge==nil){
-                                    globalEvent = newPair(newPair(id,_newInteger(eventIndex)),globalEvent);
+                                    insertEventTable(id);
+                                    Array_push(globalEvent,newPair(id,_newInteger(eventIndex)));
                                     eventIndex++;
                                 }
                                 eveFunc = get(id,Symbol,value);
                             }
                         }
-
                         break;
                     }
                     case Call:{
@@ -183,11 +242,27 @@ oop preprocess(oop exp,oop trees){
                     }
                 }
             }
-            globalEvent = rePair(globalEvent,nil);
-            sttLocalEvent = rePair(sttLocalEvent,nil);
-            Array_push(STATE_GLOBAL_EVENT_LISTS   ,newPair(stateName,globalEvent));
-            Array_push(STATE_DEF_LOCAL_EVENT_LISTS,newPair(stateName,sttLocalEvent));
+            // sttLocalEvent = rePair(sttLocalEvent,nil);
+            globalEvent = sortEventListByStateTable(stateName,globalEvent);
+            exp->State.events = Array_put_elements(events,globalEvent,eventPosIndex);
+            printlnObject(exp,2);
+            // exp = Array_put_array(exp,sttLocalEvent,eventPosIndex+(globalEvent->Array.size));
+/*
+|definition of state local variable |
+|definition of state local event    |
+|definition of entry event function |
+|call of event function             | globalEvent
+|call of state local event function | sttLocalEvent
+*/
+
             Array_push(trees,exp);
+            break;
+        }
+        case Event:{
+
+            Array_push(trees,exp);
+            
+
             break;
         }
         case END:{

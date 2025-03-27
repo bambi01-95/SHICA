@@ -1,27 +1,18 @@
-trans a , b{
-	print("a->b")
-}
 
-trans * , b{
-	print("entry")
-}
-
-trans a , *{
-	print("exit")
-}
-
-trans *,*{
-	print("all")
-}
-
-state a{
-	timerSec(int s:s%2==0){
-		state b
+state default{
+	event(int s,int b){
+		print(s)
+	}
+	timerSec(int t){
+		state state1
 	}
 }
 
-state b{
-	timerSec(int s:s%2==0){
-		state a
+state state1{
+	timerSec(int t:t%3==0){
+		state deault
+	}
+	event(int s,int b){
+		print(s)
 	}
 }

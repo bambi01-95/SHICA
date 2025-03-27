@@ -13,9 +13,12 @@
 #if SBC //event()
 oop eve_test(oop core,oop GM){
     time_t current_time = time(NULL);
-    if(current_time - core->Core.vd->VarTI.v_t1 >= core->Core.vd->VarTI.v_i2){
-        core->Core.vd->VarTI.v_t1 = current_time;
-        core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
+    oop *elements = core->Core.var->FixArray.elements;
+    if(current_time - _Integer_value(elements[0]) >= _Integer_value(elements[2])){
+        int past_time = _Integer_value(elements[1]) + _Integer_value(elements[2]);
+        
+        elements[0] = _newInteger((int)current_time);
+        elements[1] = _newInteger(past_time);
 
         int isOnce = 0;
         evalEventArgsThread->Thread.stack->Array.size = 1;//1:basepoint
@@ -25,8 +28,8 @@ oop eve_test(oop core,oop GM){
             //<引数の評価>/<Evaluation of arguments>
             if(thread->Thread.condRelPos != 0){
                 if(isOnce == 0){
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(past_time));
+                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(past_time));
                     isOnce = 1;
                 }else
                 {
@@ -50,8 +53,8 @@ oop eve_test(oop core,oop GM){
                 //protect t:thread
                 gc_pushRoot((void*)&core);//CHECKME: is it need?
                 oop data = newArray(2);
-                Array_push(data,_newInteger(core->Core.vd->VarTI.v_i1));
-                Array_push(data,_newInteger(core->Core.vd->VarTI.v_i1));
+                Array_push(data,_newInteger(past_time));
+                Array_push(data,_newInteger(past_time));
                 gc_popRoots(1);
                 enqueue(thread->Thread.queue,data);
             }
@@ -93,9 +96,12 @@ oop eve_loop(oop core,oop GM){
 #if SBC
 oop eve_timer(oop core,oop GM){
     time_t current_time = time(NULL);
-    if(current_time - core->Core.vd->VarTI.v_t1 >= core->Core.vd->VarTI.v_i2){
-        core->Core.vd->VarTI.v_t1 = current_time;
-        core->Core.vd->VarTI.v_i1  += core->Core.vd->VarTI.v_i2;
+    oop *elements = core->Core.var->FixArray.elements;
+    if(current_time - _Integer_value(elements[0]) >= _Integer_value(elements[2])){
+        int past_time = _Integer_value(elements[1]) + _Integer_value(elements[2]);
+        
+        elements[0] = _newInteger((int)current_time);
+        elements[1] = _newInteger(past_time);
 
         int isOnce = 0;
         evalEventArgsThread->Thread.stack->Array.size = 1;//1:basepoint
@@ -104,7 +110,7 @@ oop eve_timer(oop core,oop GM){
             oop t = core->Core.threads[thread_i];
             if(t->Thread.condRelPos != 0){
                 if(isOnce ==0){
-                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(core->Core.vd->VarTI.v_i1));
+                    Array_push(evalEventArgsThread->Thread.stack,_newInteger(past_time));
                     isOnce = 1;
                 }else{
                     evalEventArgsThread->Thread.stack->Array.size = 3;
@@ -124,7 +130,7 @@ oop eve_timer(oop core,oop GM){
                 //protect t:thread
                 gc_pushRoot((void*)&t);
                 oop data = newArray(2);
-                Array_push(data,_newInteger(core->Core.vd->VarTI.v_i1));
+                Array_push(data,_newInteger(past_time));
                 gc_popRoots(1);
                 enqueue(t->Thread.queue,data);
             }
@@ -245,43 +251,44 @@ oop Event_stdlib(int eve_num,oop stack){
     switch(eve_num){
         case TEST_E:{
 #if SBC     
-            core = newCore(VarTI);
-            core->Core.var = newFixArray(3);
-            core->Core.var->FixArray.elements[0] = _newInteger((int)time(NULL));
-            core->Core.vd->VarTI.v_t1 = time(NULL);
-            core->Core.vd->VarTI.v_i1  = 0;
-            core->Core.vd->VarTI.v_i2  = 1;
+            core = newCore(3);
+            oop *elements = core->Core.var->FixArray.elements;
+            elements[0] = _newInteger((int)time(NULL)); //time
+            elements[1] = _newInteger(0);               //count
+            elements[2] = _newInteger(1);               //interval
+            core->Core.var->FixArray.elements = elements;
             core->Core.func = &eve_test;
 #else
-            core = newCore(Default);
-            core->Core.vd->Default.count = 0;
+            core = newCore();
             core->Core.func = &eve_test;
 #endif
             break;
         }
         case LOOP_E:{
-            core = newCore(Default);
-            core->Core.vd->Default.count = 0;
+            core = newCore(1);
+            core->Core.var->FixArray.elements[0] = 0; //count
             core->Core.func = &eve_loop;
             break;
         }
         case TIMERSEC_E:{
 #if SBC     
-            core = newCore(VarTI);
-            core->Core.vd->VarTI.v_t1 = time(NULL);
-            core->Core.vd->VarTI.v_i1  = 0;
+            core = newCore(3);
+            oop *elements = core->Core.var->FixArray.elements;
+            elements[0] = _newInteger((int)time(NULL)); //time
+            elements[1] = _newInteger(0);               //count
             int interval = _Integer_value(Array_pop(stack));
-            core->Core.vd->VarTI.v_i2  = (interval > 0) ? interval : 1;
+            elements[2] = (interval > 0) ? _newInteger(interval) : _newInteger(1); //interval
+            core->Core.var->FixArray.elements = elements;
             core->Core.func = &eve_timer;
 #else
-            core = newCore(Default);
-            core->Core.vd->Default.count = 0;
-            core->Core.func = &eve_timer;
+            core = newCore();
+            core = newCore();
+            core->Core.func = &eve_test;
 #endif
             break;
         }
         case KEYGET_E:{
-            core = newCore(Default);
+            core = newCore(0);
             core->Core.func = &eve_keyget;
             //clear key buffer
             while(0!=core->Core.func(core,nil))dequeue(core);
@@ -342,10 +349,11 @@ void stdlib_appendchar(oop process,oop GM){
 void stdlib_timersec_reset(oop process,oop GM){
     oop core = Array_pop(mstack);
     getInt(mpc);int size_args = int_value;
-
-    core->Core.vd->VarTI.v_t1 = time(NULL);
-    core->Core.vd->VarTI.v_i1  = 0;
-    core->Core.vd->VarTI.v_i2  = 1;
+    oop *elements = core->Core.var->FixArray.elements;
+    elements[0] = _newInteger((int)time(NULL));
+    elements[1] = _newInteger(0);
+    elements[2] = _newInteger(1);
+    core->Core.var = *elements;
     return;
 }
 

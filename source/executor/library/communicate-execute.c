@@ -381,8 +381,8 @@ oop eve_wifi_receive(oop core,oop GM){
 
 // Function to receive a message from a specific address and port
 oop  wifiReceived(oop core) {
-    char* from_addr = core->Core.vd->VarIS.v_s1;
-    int port        = core->Core.vd->VarIS.v_i1;
+    char* from_addr = core->Core.var->FixArray.elements[0]->_String.value;
+    int port        = _Integer_value(core->Core.var->FixArray.elements[1]);
 
     int sockfd;
     struct sockaddr_in recv_addr, sender_addr;
@@ -439,26 +439,31 @@ oop Event_communicate(int eve_num,oop stack){
     GC_PUSH(oop,core,0);
     switch(eve_num){
         case COMMUNICATE_WiFi_RECEIVE_E:{
-            core = newCore(VarIS);
-            core->Core.vd->VarIS.v_s1 = 0;
-            core->Core.vd->VarIS.v_i1 = 0;
+            core = newCore(2);
+            oop *elements = core->Core.var->FixArray.elements;
+            elements[0] = 0; // IP address
+            elements[1] = 0; // Port number
+            core->Core.var->FixArray.elements = elements;
             core->Core.func = &eve_wifi_receive;
             break;
         }
         case COMMUNICATE_WiFi_BROADCAST_RECEIVE_E:{
-            core = newCore(VarIS);
-            core->Core.vd->VarIS.v_s1 = 0;
-            core->Core.vd->VarIS.v_i1 = 0;
+            core = newCore(2);
+            oop *elements = core->Core.var->FixArray.elements;
+            elements[0] = 0; // IP address
+            elements[1] = 0; // Port number
+            core->Core.var->FixArray.elements = elements;
             core->Core.func = &eve_wifi_receive;
             break;
         }
         case COMMUNICATE_WiFi_GROUP_RECEIVE_E:{
-            oop subcore = newSubCore();
-            subcore->SubCore.var = newFixArray(4);
-            subcore->SubCore.var->FixArray.elements[0] = Array_pop(stack);//String  address
-            subcore->SubCore.var->FixArray.elements[1] = Array_pop(stack);//Integer port
-            subcore->SubCore.var->FixArray.elements[2] = Array_pop(stack);//Integer groupID
-            subcore->SubCore.var->FixArray.elements[3] = Array_pop(stack);//String  groupKey
+            oop subcore = newSubCore(4);
+            oop *elements = subcore->SubCore.var->FixArray.elements;
+            elements[0] = Array_pop(stack);//String  address
+            elements[1] = Array_pop(stack);//Integer port
+            elements[2] = Array_pop(stack);//Integer groupID
+            elements[3] = Array_pop(stack);//String  groupKey
+            subcore->SubCore.var->FixArray.elements = elements;
             init_eve_wifi_receive(subcore,stack);
             subcore->SubCore.func = &eve_wifi_receive;
             core = subcore;

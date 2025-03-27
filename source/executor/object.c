@@ -175,70 +175,6 @@ enum Type {
     };
 #endif
 
-struct Default{
-    unsigned int count;
-};
-
-struct VarI{
-    int v_i1;
-};
-
-struct VarII{
-    int v_i1;
-    int v_i2;
-};
-
-struct VarF{
-    float v_f1;
-};
-
-struct VarFF{
-    float v_f1;
-    float v_f2;
-};
-
-struct VarS{
-    char *v_s1;
-};
-struct VarSS{
-    char *v_s1;
-    char *v_s2;
-};
-
-struct VarIS{
-    int v_i1;
-    char *v_s1;
-};
-
-#if SBC
-struct VarT{
-    time_t v_t1;
-};
-
-struct VarTI{
-    time_t v_t1;
-    int    v_i1;
-    int    v_i2;
-};
-#endif
-
-union VarData{
-    struct Default Default;
-    struct VarI  VarI;
-    struct VarII VarII;
-    struct VarF  VarF; 
-    struct VarFF VarFF;  
-    struct VarS  VarS;
-    struct VarSS VarSS;
-    struct VarIS VarIS; 
-#if SBC 
-    struct VarT  VarT; 
-    struct VarTI VarTI;
-#endif
-};
-
-//using for variable of Event
-
 struct Undefined { enum Type type; };
 struct _BasePoint{ enum Type type; int adress; };
 struct _Undefined{ enum Type type; };
@@ -258,7 +194,6 @@ struct Core      {
     Func func;
     oop   var;
     oop *threads; /*gc_mark*/
-    union VarData*  vd;/*gc_mark*/
 };
 #include "./library/communicate-execute.h"
 
@@ -1000,54 +935,49 @@ oop *mkCores(int size)
     return cores;
 }
 
-oop _newCore(size_t vdMemSize)
+oop newCore(int variableSize)
 {
 #if MSGC
     GC_PUSH(oop, node, newObject(Core));
-    // node->Core.func = 0; //after calling this function, set function
-    VD vd = gc_beAtomic(gc_alloc(vdMemSize));
-    node->Core.vd   = vd;
+    node->Core.func = 0; //after calling this function, set function
+    node->Core.var = newFixArray(variableSize);
     node->Core.size = 0;
     GC_POP(node);
 #else
     oop node = newObject(Core);
-    // node->Core.func = 0; //after calling this function, set function
-    node->Core.vd = calloc(1,vdMemSize);
+    node->Core.func = 0; //after calling this function, set function
+    node->Core.var = newFixArray(variableSize);
     node->Core.size = 0;
 #endif
     return node;
 }
-#define newCore(VD_TYPE)	_newCore(sizeof(struct VD_TYPE))
 
-oop _newSubCore()
+oop newSubCore(int variableSize)
 {
 #if MSGC
     GC_PUSH(oop, node, newObject(SubCore));
-    // node->Core.func = 0; //after calling this function, set function
-    node->SubCore.var   = 0;
+    node->Core.func = 0; //after calling this function, set function
+    node->SubCore.var   = newFixArray(variableSize);
     node->SubCore.size = 0;
     GC_POP(node);
 #else
     oop node = newObject(SubCore);
-    // node->Core.func = 0; //after calling this function, set function
-    node->SubCore.var =   0;
+    node->Core.func = 0; //after calling this function, set function
+    node->SubCore.var =   newFixArray(variableSize);
     node->SubCore.size = 0;
 #endif
     return node;
 }
-#define newSubCore()	_newSubCore()
 
 oop _remkSubCore(oop core,size_t vdMemSize,int numThread)
 {
 #if MSGC
-    // node->Core.func = 0; //after calling this function, set function
+    node->Core.func = 0; //after calling this function, set function
     VD vd = gc_beAtomic(gc_alloc(vdMemSize));
-    core->Core.vd   = vd;
     core->Core.size = 0;
     core->Core.threads = gc_alloc(numThread * sizeof(oop));
 #else
-    // core->Core.func = 0; //after calling this function, set function
-    core->Core.vd = calloc(1,vdMemSize);
+    core->Core.func = 0; //after calling this function, set function
     core->Core.size = 0;
     core->Core.threads = calloc(numThread, sizeof(oop));
 #endif

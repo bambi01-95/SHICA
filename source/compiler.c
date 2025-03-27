@@ -54,7 +54,7 @@ int main(int argc, char const *argv[])
 
         oop program = newArray(0);
         oop programTrees = newArray(0);
-        STATE_GLOBAL_EVENT_LISTS = newArray(0);
+        STATE_EVENT_LISTS = newArray(0);
         // STATE_SUBCORE_LISTS      = newArray(0);//REMOVE ME
         STATE_DEF_LOCAL_EVENT_LISTS = newArray(0);
         Local_VNT   = newArray(0);
@@ -66,10 +66,12 @@ int main(int argc, char const *argv[])
         while(yyparse()){
             if(sys_false == preprocess(result,programTrees))break;
         }
-#if DEBUG
+        return 0;
+#if DEBUG            
+        printEventBinaryData();
         printf("\n \x1b[31m check ******************\x1b[0m\n\n");
-        printf("STATE_GLOBAL_EVENT_LISTS\n");
-        printlnObject(STATE_GLOBAL_EVENT_LISTS,1);
+        printf("STATE_EVENT_LISTS\n");
+        printlnObject(STATE_EVENT_LISTS,1);
         printf("STATE_DEF_LOCAL_EVENT_LISTS\n");
         printlnObject(STATE_DEF_LOCAL_EVENT_LISTS,1);
         printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
