@@ -131,10 +131,15 @@ void printlnObject(oop node, int indent){
         break;
     }
     case State:{putIndent(indent);
-        printf("State\n");
+        printf("State %d\n",get(node,State,size));
         for(int i = 0;i<node->State.size;i++){
             printlnObject(node->State.events[i],indent+1);
         }
+        break;
+    }
+    case SetVarEvent:{
+        putIndent(indent);
+        printf("SVEvent %s()\n",get(node,SetVarEvent,id)->Symbol.name);
         break;
     }
     case Run:{putIndent(indent);

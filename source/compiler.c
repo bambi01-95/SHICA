@@ -50,6 +50,7 @@ int main(int argc, char const *argv[])
 
         setting_lib();
         entry_sym = intern("entry");
+        exit_sym = intern("exit");
         
 
         oop program = newArray(0);
@@ -66,16 +67,12 @@ int main(int argc, char const *argv[])
         while(yyparse()){
             if(sys_false == preprocess(result,programTrees))break;
         }
-        return 0;
-#if DEBUG            
-        printEventBinaryData();
+#if DEBUG           
         printf("\n \x1b[31m check ******************\x1b[0m\n\n");
-        printf("STATE_EVENT_LISTS\n");
-        printlnObject(STATE_EVENT_LISTS,1);
-        printf("STATE_DEF_LOCAL_EVENT_LISTS\n");
-        printlnObject(STATE_DEF_LOCAL_EVENT_LISTS,1);
-        printf("\n \x1b[31m parsing ******************\x1b[0m\n\n");
+        printlnObject(programTrees,2);
+        printEventBinaryData();
 #endif
+        return 0;
         
         emitOI(MSET,0);
         oop *elements  = get(programTrees,Array,elements);

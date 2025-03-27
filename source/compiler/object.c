@@ -59,6 +59,7 @@ void debug_error_1ref(char* file,int line,const char *format, ...) {
     vprintf(format, args); 
     SHICA_FPRINTF(stderr, "\n");
     va_end(args);
+    exit(1);
 }
 #define DEBUG_ERROR(...) debug_error_1ref(__FILE__, __LINE__,__VA_ARGS__)
 #define DEBUG_ERROR_COND(COND,...) ({ \
@@ -75,6 +76,7 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
     vprintf(format, args); 
     SHICA_FPRINTF(stderr, "\n");
     va_end(args);
+    exit(1);
 }
 #define DEBUG_ERROR_REF(...) debug_error_2ref(__FILE__, __LINE__,file,line, __VA_ARGS__)
 #define DEBUG_ERROR_COND_REF(COND,...) ({ \
@@ -104,6 +106,11 @@ void _fatal(char*s, int line,char *msg, ...)
     exit(1);
 }
 #define fatal(...) _fatal(__FILE__,__LINE__,__VA_ARGS__)
+#define fatal_cond(COND,...) ({ \
+    if(COND){ \
+        _fatal(__FILE__,__LINE__,__VA_ARGS__); \
+    } \
+})
 
 #define out(A) printf("line %4d: %s\n",__LINE__,A)
 #define line() printf("         line %4d: ",__LINE__)
@@ -116,6 +123,7 @@ oop sys_false = 0;
 oop sys_true  = 0;
 oop none  = 0;
 oop entry_sym = 0;
+oop exit_sym = 0;
 
 oop wildcard_aop = 0;//for transAspect
 oop specific_aop = 0;//for transAspect

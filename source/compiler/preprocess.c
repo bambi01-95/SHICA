@@ -32,32 +32,6 @@ struct State_Event_Binary_Data{
 }*STATE_EVENT_BINARY_DATA;
 
 int sizeOfStateEventBinaryData = 0;
-int insertEventBinaryData(oop stateName,int eventbinarylist){
-    STATE_EVENT_BINARY_DATA = realloc(STATE_EVENT_BINARY_DATA,sizeof(struct State_Event_Binary_Data)*(sizeOfStateEventBinaryData+1));
-    STATE_EVENT_BINARY_DATA[sizeOfStateEventBinaryData].stateName = stateName;
-    STATE_EVENT_BINARY_DATA[sizeOfStateEventBinaryData].eventBinarylist = eventbinarylist;
-    return sizeOfStateEventBinaryData++;
-}
-
-oop sortEventListByStateTable(oop stateName,oop eventList){
-    oop new = newArray(get(eventList,Array,size));
-    oop *ele = get(eventList,Array,elements);
-    int eventBinaryData = 0;
-    for(int i=0;i<sizeOfEventTable;i++){
-        for(int j=0;j<get(eventList,Array,size);j++){
-            oop id = get(ele[j],Pair,a);
-            if(EVENT_TABLE[i]==id){
-                Array_push(new,get(eventList,Array,elements)[j]);
-                eventBinaryData |= (1<<i);
-            }
-        }
-    }
-    free(eventList);
-    insertEventBinaryData(stateName,eventBinaryData);
-    return new;
-}
-
-
 
 #if DEBUG
 void printBinary(int n){
@@ -71,28 +45,62 @@ void printBinary(int n){
     printf("\n");
 }
 void printEventTable(){
+    printf("Event Table\n");
     for(int i=0;i<sizeOfEventTable;i++){
-        printf("%s\n",get(EVENT_TABLE[i],Symbol,name));
+        printf("%02d: %s()\n",i,get(EVENT_TABLE[i],Symbol,name));
     }
+    putchar('\n');
 }
 void printEventBinaryData(){
     printEventTable();
+    printf("State Event Binary Data\n");
     for(int i=0;i<sizeOfStateEventBinaryData;i++){
         printf("%s\n",get(STATE_EVENT_BINARY_DATA[i].stateName,Symbol,name));
+        printf("--> ");
         printBinary(STATE_EVENT_BINARY_DATA[i].eventBinarylist);
     }
+    putchar('\n');
 }
 #endif
 
+int insertEventBinaryData(oop stateName,int eventbinarylist){
+    STATE_EVENT_BINARY_DATA = realloc(STATE_EVENT_BINARY_DATA,sizeof(struct State_Event_Binary_Data)*(sizeOfStateEventBinaryData+1));
+    STATE_EVENT_BINARY_DATA[sizeOfStateEventBinaryData].stateName = stateName;
+    STATE_EVENT_BINARY_DATA[sizeOfStateEventBinaryData].eventBinarylist = eventbinarylist;
+    return sizeOfStateEventBinaryData++;
+}
+
+oop sortEventListByStateTable(oop stateName,oop eventList){
+    oop new = newArray(get(eventList,Array,size));
+    oop *ele = get(eventList,Array,elements);
+    int eventBinaryData = 0;
+    for(int i=0;i<sizeOfEventTable;i++){
+        for(int j=0;j<get(eventList,Array,size);j++){
+            oop eventId = get(ele[j],Pair,a);
+            if(EVENT_TABLE[i]==eventId){
+                Array_push(new,ele[j]->Pair.b);
+                eventBinaryData |= (1<<i);
+            }
+        }
+    }
+    printBinary(eventBinaryData);
+    free(eventList);
+    insertEventBinaryData(stateName,eventBinaryData);
+    return new;
+}
+
+
+
+
+
 
 oop findIdFromList(oop id,oop list){
-    oop *tmp = list->Array.elements;
-    int size = list->Array.size;
+    assert(getType(list)==Array);
+    oop *elements = get(list,Array,elements);
+    int size = get(list,Array,size);
     for(int i=0;i<size;i++){
-        oop pair = tmp[i];
-        oop eventId = get(pair,Pair,a)->Pair.a;
-        if(id == eventId){
-            return get(pair,Pair,a)->Pair.b;
+        if(get(elements[i],Pair,a)==id){
+            return get(elements[i],Pair,b);
         }
     }
     return nil;
@@ -101,27 +109,26 @@ oop findIdFromList(oop id,oop list){
 oop preprocess(oop exp,oop trees){
     switch(getType(exp)){
 
-        case SetVarEvent:{
+        case SetVarEvent:{ // global event funciton
 #if DEBUG
             DEBUG_LOG("SETVAR EVENT\n");
 #endif
             oop varId = get(exp, SetVarEvent, id);insertEventTable(varId);
-            oop event = get(exp, SetVarEvent, rhs);
-            oop eventFuncId = get(event, Event, id);
+            oop eventhandler = get(exp, SetVarEvent, rhs);
+            oop eventFuncId = get(eventhandler, Event, id);
             oop eventFunc = get(eventFuncId,Symbol,value);
             if(getType(eventFunc)!=EventFunc){
                 fatal("line %d: [%s] is not Event Funciton",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
             }
-            oop params    = get(event, Event, parameters);
-            oop body      = get(event, Event, body);
-            if(params==nil && body==nil){
-                oop dupEventFunc = copyEventFunc(eventFunc);
-                get(varId,Symbol,value) = newDupEvent(dupEventFunc,nil); 
-            }else if(params==nil || body==nil){
-                fatal("line %d: definition error: %s\n",get(exp,SetVarEvent,line),get(eventFuncId,Symbol,name));
-            }else{
-                get(event,Event,id) = varId;
-                get(varId,Symbol,value) = newDupEvent(copyEventFunc(eventFunc),event); 
+
+            oop params    = get(eventhandler, Event, parameters);
+            oop body      = get(eventhandler, Event, body);
+
+            if(params==nil && body==nil){                //event e = event();
+                get(varId,Symbol,value) = newDupEvent(copyEventFunc(eventFunc),nil);
+            }else{                                      //event e = event(params){body};
+                get(eventhandler,Event,id) = varId;
+                get(varId,Symbol,value) = newDupEvent(copyEventFunc(eventFunc),eventhandler); 
             }
             return 0;
         }
@@ -134,37 +141,32 @@ oop preprocess(oop exp,oop trees){
             oop stateName = get(exp,State,id);
             oop *events = get(exp,State,events);
 
-            oop globalEvent = newArray(1);
-            oop sttLocalEvent = nil;
-            int eventIndex = 0;
-            int eventPosIndex =0; 
+            oop globalEvent   = newArray(1);
+            oop localEvent    = newArray(0);
+            oop defLocalEvent = newArray(0);
+
+            int eventPosIndex =0;  //point to starting postion of eventhandler
+
             for(int i=0;i<size; i++){
                 oop statement = events[i];
+
                 switch(getType(statement)){
-                    case SetVarL:{
+                    case SetVarL:{//int a = 10;
                         eventPosIndex++;
-#if DEBUG
-                        DEBUG_LOG("->SetVarL\n");
-#endif
                         break;
                     }
-                    case SetVarEvent:{//local event
+                    case SetVarEvent:{//event e = event();
                         eventPosIndex++;
-                    #if DEBUG   
-                        DEBUG_LOG("->SETVAR EVENT\n");
-                    #endif
                         oop varId = get(statement, SetVarEvent, id);
-                        oop event = get(statement, SetVarEvent, rhs);
-                        oop eventFuncId = get(event, Event, id);
+                        oop eventhandler = get(statement, SetVarEvent, rhs);
+                        oop eventFuncId = get(eventhandler, Event, id);
                         oop eventFunc = get(eventFuncId,Symbol,value);
-                        if(getType(eventFunc)!=EventFunc){
-                            fatal("line %d: [%s] is not Event Funciton",get(statement,SetVarEvent,line),get(eventFuncId,Symbol,name));
-                        }
-                        oop params    = get(event, Event, parameters);
-                        oop body      = get(event, Event, body);
+                        fatal_cond(getType(eventFunc)!=EventFunc,"line %d: %s is not Event Funciton\n", get(statement,SetVarEvent,line),get(eventFuncId,Symbol,name));
+                        oop params    = get(eventhandler, Event, parameters);
+                        oop body      = get(eventhandler, Event, body);
                         if(params==nil && body==nil){
                             oop dupEventFunc = copyEventFunc(eventFunc);
-                            sttLocalEvent = newPair(newPair(varId,newDupEvent(dupEventFunc,nil)),sttLocalEvent);
+                            Array_push(defLocalEvent,newPair(varId,newDupEvent(dupEventFunc,nil)));
                         }else if(params==nil || body==nil){
                             fatal("line %d: definition error: %s\n",get(statement,SetVarEvent,line),get(eventFuncId,Symbol,name));
                         }else{
@@ -172,81 +174,74 @@ oop preprocess(oop exp,oop trees){
                         }
                         break;
                     }
+                    
                     case Event:{
 #if DEBUG
                         DEBUG_LOG("->Event\n");
 #endif
-                        oop id = get(statement,Event,id);
+                        oop eventId = get(statement,Event,id);
                         oop eveFunc = nil;
 
-                        if(id == entry_sym){//need to optimize
+                        if(eventId == entry_sym){
+                            //FIXME: to optimize this, it should deal 'init event()' inside some scope!
                             oop body = get(statement,Event,body);
                             int size = get(body,Block,size);
                             for(int i=0;i<size;i++){
                                 oop stm = get(body,Block,statements)[i];
                                 if(getType(stm)==Call && get(stm,Call,callType)==1){//init eventFunc()
-                                    oop function = get(stm,Call,function);//id
-                                    Array_push(globalEvent,newPair(function,_newInteger(eventIndex)));
-                                    eventIndex++;
+                                    oop functionId = get(stm,Call,function);
+                                    Array_push(globalEvent,newPair(eventId,functionId));
                                 }
                             }
-                        }else{
-                            if(getType(get(id,Symbol,value))==DupEvent){//global event
-
-                                oop judge = findIdFromList(id,globalEvent);
-                                if(judge==nil){
-                                    Array_push(globalEvent,newPair(id,_newInteger(eventIndex)));
-                                    eventIndex++;
-                                }
-                                eveFunc = get(get(id,Symbol,value),DupEvent,eventFunc);
-                            }
-                            else if(getType(get(id,Symbol,value))!=EventFunc){//local event
+                            eventPosIndex++;
+                        }
+                        else if(eventId == exit_sym){
 #if DEBUG
-                                DEBUG_ERROR("line %d: %s is not EventFunc\n",__LINE__,get(id,Symbol,name));
-                                exit(1);
+                            DEBUG_ERROR("this is not happen\n");
 #endif
-                                oop dupEve = findIdFromList(id,sttLocalEvent); //it shluld be change: 
-                                if(dupEve!=nil){
-                                    eveFunc = get(dupEve,DupEvent,eventFunc);
+                        }
+                        else
+                        { 
+                            switch(getType(get(eventId,Symbol,value))){
+                                case DupEvent:{
+                                    insertEventTable(eventId);
+                                    Array_push(globalEvent,newPair(eventId,statement));break;
                                 }
-                            }else{//normal event
-                                oop judge = findIdFromList(id,globalEvent);
-                                if(judge==nil){
-                                    insertEventTable(id);
-                                    Array_push(globalEvent,newPair(id,_newInteger(eventIndex)));
-                                    eventIndex++;
+                                case EventFunc:{
+                                    insertEventTable(eventId);
+                                    Array_push(globalEvent,newPair(eventId,statement));break;
                                 }
-                                eveFunc = get(id,Symbol,value);
+                                default:{
+                                    oop dupEve = findIdFromList(eventId,defLocalEvent); //it shluld be change: 
+                                    fatal_cond(dupEve==nil,"%s is not defined\n",get(eventId,Symbol,name));
+                                    Array_push(localEvent,dupEve);
+                                    break;
+                                }
                             }
                         }
                         break;
                     }
-                    case Call:{
+                    case Call:{//Event()
 #if DEBUG
                         DEBUG_LOG("->Call\n");
 #endif
-                        oop id = get(statement,Call,function);
-                        oop function = get(id,Symbol,value);
-                        if(getType(function)!=DupEvent){
-                            fatal("line %d: %s is not DupEvent\n",get(id,Symbol,name));
-                        }
-                        oop eveFunc = get(function,DupEvent,eventFunc);
-                        globalEvent = newPair(newPair(id,_newInteger(eventIndex)),globalEvent);
-                        eventIndex++;
+                        oop eventId = get(statement,Call,function);
+                        oop function = get(eventId,Symbol,value);
+                        fatal_cond(getType(function)!=DupEvent,"%s is not Event funciton\n",get(eventId,Symbol,name));
+                        Array_push(globalEvent,newPair(eventId,function));
                         break;
                     }
                     default:{
 #if DEBUG
-                    DEBUG_ERROR("line %d not apper type %s\n",__LINE__,TYPENAME[getType(statement)]);
+                        DEBUG_ERROR("line %d not apper type %s\n",__LINE__,TYPENAME[getType(statement)]);
 #endif
                     }
                 }
             }
-            // sttLocalEvent = rePair(sttLocalEvent,nil);
+
             globalEvent = sortEventListByStateTable(stateName,globalEvent);
-            exp->State.events = Array_put_elements(events,globalEvent,eventPosIndex);
-            printlnObject(exp,2);
-            // exp = Array_put_array(exp,sttLocalEvent,eventPosIndex+(globalEvent->Array.size));
+            events = Array_put_elements(events,globalEvent,eventPosIndex);
+            exp->State.events = Array_put_elements(events,localEvent,eventPosIndex+(globalEvent->Array.size));
 /*
 |definition of state local variable |
 |definition of state local event    |
