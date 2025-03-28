@@ -347,47 +347,6 @@ struct _Float    { enum Type _type_; float _value; };
 struct _Double   { enum Type _type_; double value; };
 struct _Char     { enum Type _type_; char _value; };
 
-struct Default{
-    unsigned int count;
-};
-
-struct VarI{
-    int v_i1;
-};
-
-struct VarII{
-    int v_i1;
-    int v_i2;
-};
-
-struct VarF{
-    float v_f1;
-};
-
-struct VarFF{
-    float v_f1;
-    float v_f2;
-};
-
-struct VarT{
-    time_t v_t1;
-};
-
-struct VarTI{
-    time_t v_t1;
-    int    v_i1;
-    int    v_i2;
-};
-
-union VarData{
-    struct Default Default;
-    struct VarI  VarI;
-    struct VarII VarII;
-    struct VarF  VarF; 
-    struct VarFF VarFF;    
-    struct VarT  VarT; 
-    struct VarTI VarTI;
-};
 
 
 
@@ -462,20 +421,7 @@ union Object {
     struct _Float     _Float    ;
     struct _Double    _Double   ;
     struct _Char      _Char     ;
-
-    struct _IntegerArray {enum Type __type_;oop* array; int size, capacity;}_IntegerArray;
-    struct Thread     Thread;
 };
-
-// union OBJECT{
-//     struct BasePoint { enum Type _type_; int adress; }BasePoint;
-//     struct Undefined{ enum Type _type_; }Undefined;
-//     struct Integer  { enum Type _type_; int _value; }Integer;
-//     struct Long     { enum Type _type_; long long int value; }Long;
-//     struct Float    { enum Type _type_; float _value; };
-//     struct Double   { enum Type _type_; double value; };
-//     struct Char     { enum Type _type_; char _value; };
-// };
 
 
 int getType(oop o)
@@ -602,14 +548,6 @@ oop _newStrChar(char* number)
 // }
 
 
-
-oop _newIntegerArray(int size){
-    oop node = newObject(_IntegerArray);
-    node->_IntegerArray.capacity = size;/*Free size*/
-    node->_IntegerArray.size     = size;
-    node->_IntegerArray.array    = calloc(size, sizeof(oop));
-    return node;
-}
 
 
 
@@ -1129,78 +1067,6 @@ oop *Array_put_elements(oop *main,oop sub,int index){
         printlnObject(main[i],0);
     }
     return main;
-}
-
-
-oop _newThread(size_t size)
-{
-    oop node = newObject(Thread);
-    node->Thread.flag       =  0;
-    node->Thread.queue_head =  0;
-    node->Thread.queue_num  =  0;
-    node->Thread.pc         =  0;
-    node->Thread.base       =  0;
-    node->Thread.rbp        =  1;//1st rbp, 2nd.. event args,
-    node->Thread.stack      = newArray(0);
-    VD       vd = calloc(1,size);
-    node->Thread.vd         = vd;
-    return node;
-}
-#define newThread(TYPE)	_newThread(sizeof(struct TYPE))
-
-oop _setThread(oop t,size_t size)
-{
-    t->Thread.flag       =  0;
-    t->Thread.queue_head =  0;
-    t->Thread.queue_num  =  0;
-    t->Thread.pc         =  0;
-    t->Thread.base       =  0;
-    t->Thread.rbp        =  0;
-    t->Thread.stack      = newArray(0);
-    VD       vd = calloc(1,size);
-    t->Thread.vd         = vd;
-    return t;
-}
-#define setThread(T,TYPE)	_setThread(T,sizeof(struct TYPE))
-
-
-
-void printThread(oop t){
-    int i = getType(t->Thread.stack);
-    printf("stack == %s\n",TYPENAME[i]);
-    printf("pc     %d\n",t->Thread.pc);
-    printf("rbp    %d\n",t->Thread.rbp);
-    printf("q head %d\n",t->Thread.queue_head);
-    printf("q num  %d\n",t->Thread.queue_num);
-    printf("flag   %d\n",t->Thread.flag);
-}
-
-// QUEUE
-#define SUCCESS     1       /* 成功 */
-#define FAILURE     0       /* 失敗 */
-#define QUEUE_SIZE 5          /* 待ち行列に入るデータの最大数 */
-
-int enqueue(oop t,oop data)
-{
-    if (t->Thread.queue_num < QUEUE_SIZE) {
-        t->Thread.queue[(t->Thread.queue_head + t->Thread.queue_num) % QUEUE_SIZE] = data;
-        t->Thread.queue_num++;
-        return SUCCESS;
-    } else {
-        return FAILURE;
-    }
-}
-
-oop dequeue(oop t)
-{
-    if (t->Thread.queue_num > 0) {
-        oop data = t->Thread.queue[t->Thread.queue_head];
-        t->Thread.queue_head = (t->Thread.queue_head + 1) % QUEUE_SIZE;
-        t->Thread.queue_num--;
-        return data;
-    } else {
-        return 0;
-    }
 }
 
 #endif
