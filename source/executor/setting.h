@@ -2,15 +2,45 @@
 #define SETTING_H
 //TEST:1 instを表示する
 
+#ifndef TEST
+//TEST:1 instを表示する
 #define TEST 0
-//MSGC:1 独自GCを使用する
-#define MSGC 0
-//QUEUE_SIZE:10 キューサイズ event関数の最大Stock数
-#define MAXTHREADSIZE 10
-//SBC:1 PC or single board computerの時
-#define SBC 1
+#endif
+
+#ifndef DEBUG
 //DEBUG:1 デバッグモード
 #define DEBUG 0
+#endif
+
+#ifndef MSGC
+//MSGC:1 独自GCを使用する
+#define MSGC 0
+#endif
+
+#ifndef MAXTHREADSIZE
+//QUEUE_SIZE:10 キューサイズ event関数の最大Stock数
+#define MAXTHREADSIZE 10
+#endif
+
+#ifndef SBC
+//SBC:1 PC or single board computerの時
+#define SBC 1
+#endif
+
+
+#ifndef UNMARK
+#define UNMARK 1
+#endif
+
+#ifndef RPI
+//RPI:1 RaspberryPiの時
+#define RPI 0
+#endif
+
+#ifndef ROS
+//Library
+#define ROS 0
+#endif
 
 #if SBC
     #define SHICA_PRINTF(...) printf(__VA_ARGS__)
@@ -21,12 +51,4 @@
     #define SHICA_FPRINTF(S,...) Serial.printf(__VA_ARGS__)
 #endif
 
-#define UNMARK 1
-
-//Device
-#define RPI 0 // 1:RaspberryPi 0:Other
-
-//Library
-#define ROS 0 // 1:ROS 0:Other
-
-#endif
+#endif //SETTING_H

@@ -1,14 +1,13 @@
+all: leg com vm
+
 leg: 
 	leg -o ./compiler/parser/parser.c  ./compiler/parser/parser.leg
 
 com:
 	gcc -o shica ./compiler.c
 
-all:
-	gcc -o vm executor.c
-	./vm
 
-vms:
+vm:
 	gcc -o vm executor.c
 
 	
@@ -37,3 +36,5 @@ gitKillUpdata:
 	git reset --hard
 	git fetch origin
 	git reset --hard origin/main
+
+.PHONY: 

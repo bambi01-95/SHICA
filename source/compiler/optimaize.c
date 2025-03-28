@@ -212,8 +212,6 @@ oop kill_assoc(oop vnt,int end){
 }
 
 
-
-
 void manage(oop program,enum Type type){
     int size  = 0;
     switch(type){
@@ -300,7 +298,6 @@ int compArgs(oop program,oop params,oop args,oop vnt){
     if(args->_type_ == Pair)fatal("argument error: too many argument");
     return 0;
 }
-
 
 
 //Returns the leftmost type in the tree. (condition)
@@ -1065,7 +1062,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     DEBUG_ERROR("type %s\n",TYPENAME[getType(function)]);
 #endif
                 }
-
                 default:{
                     printf("type %s\n",TYPENAME[getType(function)]);
                     printlnObject(function,2);fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
@@ -1140,7 +1136,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             // size = vnt->Array.size;//kill
             // compOT(stmt2,type);
             // kill_assoc(vnt,size);//kill
-
 
             int p_done = program->Array.number;/* done */
             Array_put(program, jump1_i- 1, _newInteger(p_else - jump1));/* jumpf -> else */
@@ -1304,7 +1299,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         oop *events = get(exp,State,events);
         stateNameG = stateName;//for aop (case TRANS)
         stateName->Symbol.value = exp;
-
 
         //ローカル変数の初期化
         Local_VNT = newArray(0);
@@ -1571,7 +1565,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     case AFTER:break;
                     case BEFORE:
                     case AROUND:{
-                        DEBUG_LOG("WILD\n");
                         int pos = get(jointp,Jointp,position);
                         int cpc = program->Array.number;
                         emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
@@ -1591,7 +1584,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     case AFTER:  break;
                     case BEFORE:
                     case AROUND:{
-                        DEBUG_LOG("BEFORE\n");
                         int pos = get(jointp,Jointp,position);
                         int cpc = program->Array.number;
                         emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
@@ -1681,7 +1673,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     case BEFORE:break;
                     case AFTER:  
                     case AROUND:{ 
-                        DEBUG_LOG("AFTER\n");
                         //(stateNameG == CURRENT && id == NEXT) do *,*{ process }
                         int pos = get(jointp,Jointp,position);
                         int cpc = program->Array.number;
@@ -1701,7 +1692,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             printf("from %s to %s\n",get(from,Symbol,name),get(to,Symbol,name));
             printf("from %s to %s\n",get(stateNameG,Symbol,name),get(id,Symbol,name));
             if(stateNameG == from && id == to){
-                DEBUG_LOG("SPECIFIC\n");
                 int pos = get(jointp,Jointp,position);
                 int cpc = program->Array.number;
                 emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
@@ -1747,24 +1737,16 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 
 
     //prepare state transision
-    printlnObject(fromId,2);
-    printlnObject(toId,2);
         if(fromId==nil){
             if(toId==nil){//  *,* all
-                DEBUG_LOG("*,*\n");
                 wildcard_aop = setTrans(BEFORE,wildcard_aop,pos);
             }else{//  *,I before 
-                DEBUG_LOG("*,I\n");
                 toId = setTrans(BEFORE,toId,pos);
-                DEBUG_LOG("%s\n",get(toId,Symbol,name));
             }
         }else{
             if(toId==nil){//  I,* after
-                DEBUG_LOG("I,*\n");
                 fromId = setTrans(AFTER,fromId,pos);
-                DEBUG_LOG("%s\n",get(fromId,Symbol,name));
             }else{//  I,I specific
-                DEBUG_LOG("I,I\n");
                 oop jointp = newJointp(AROUND,newPair(fromId,toId));
                 jointp->Jointp.position = pos;
                 Array_push(specific_aop,jointp);

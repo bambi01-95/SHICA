@@ -89,7 +89,9 @@ oop sortEventListByStateTable(oop stateName,oop eventList){
             }
         }
     }
+#if DEBUG
     printBinary(eventBinaryData);
+#endif
     free(eventList);
     insertEventBinaryData(stateName,eventBinaryData);
     return new;

@@ -55,9 +55,9 @@ void debug_log_ref(char *file1,int line1,char* file2,int line2,const char *forma
 void debug_error_1ref(char* file,int line,const char *format, ...) {
     va_list args;
     va_start(args, format);
-    SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file,line);
+    SHICA_FPRINTF(stderr, "\x1b[31m[ERROR] %s line %d\n",file,line);
     vprintf(format, args); 
-    SHICA_FPRINTF(stderr, "\n");
+    SHICA_FPRINTF(stderr, "\x1b[0m\n");
     va_end(args);
     exit(1);
 }
@@ -71,10 +71,10 @@ void debug_error_1ref(char* file,int line,const char *format, ...) {
 void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *format, ...) {
     va_list args;
     va_start(args, format);
-    SHICA_FPRINTF(stderr, "[ERROR] %s line %d\n",file1,line1);//that call function that include debug_error()
+    SHICA_FPRINTF(stderr, "\x1b[31m[ERROR] %s line %d\n",file1,line1);//that call function that include debug_error()
         SHICA_FPRINTF(stderr, "        %s line %d:\t",file2,line2);//that call debug_error()
     vprintf(format, args); 
-    SHICA_FPRINTF(stderr, "\n");
+    SHICA_FPRINTF(stderr, "\x1b[0m\n");
     va_end(args);
     exit(1);
 }
@@ -96,12 +96,12 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
 
 void _fatal(char*s, int line,char *msg, ...)
 {   
-    printf("%s line %d:\n",s,line);
+    printf("\x1b[31m%s line %d:\n",s,line);
     va_list ap;
     va_start(ap, msg);
     fprintf(stderr, "\n d-.-b ERROR:");
     vfprintf(stderr, msg, ap);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\x1b[0m\n");
     va_end(ap);
     exit(1);
 }
@@ -1064,7 +1064,6 @@ oop *Array_put_elements(oop *main,oop sub,int index){
     int end = sub->Array.size;
     for(int i = index; i < end + index; i++){
         main[i] = sub->Array.elements[i - index];
-        printlnObject(main[i],0);
     }
     return main;
 }

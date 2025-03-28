@@ -71,14 +71,12 @@ int main(int argc, char const *argv[])
 #if DEBUG           
         printf("\n \x1b[31m check ******************\x1b[0m\n\n");
         printlnObject(programTrees,2);
-
         printEventBinaryData();
 #endif  
         emitOI(MSET,0);
         oop *elements  = get(programTrees,Array,elements);
         int size = get(programTrees,Array,size);
         for(int i = 0; i<size; i++){
-            printf("\n \x1b[31m tree process \x1b[0m\n\n");
             compile(program,elements[i],nil,Undefined);
         }
         emitO(HALT);
@@ -88,7 +86,6 @@ int main(int argc, char const *argv[])
         printCode(program);
 #endif
         CodeWrite(program);
-
         char outputFileName[32];
         if(strcmp(inputFineName,"input.txt")!=0){
             change_extension(inputFineName,"stt",outputFileName,32);
