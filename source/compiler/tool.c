@@ -14,7 +14,9 @@ void printlnObject(oop node, int indent){
     switch (getType(node)) {
 	case Undefined:	putIndent(indent);printf("nil\n");				break;
 	case Integer:	putIndent(indent);printf("%s\n", get(node, Integer,number));	break;
-	case Symbol :	putIndent(indent);printf("%s\n", get(node, Symbol,name));		break;
+	case Symbol :{	putIndent(indent);printf("[%s]\n", get(node, Symbol,name));		
+        break;
+    }
     case Float :    putIndent(indent);printf("%s\n",get(node,   Float,number));     break;
     case String :   putIndent(indent);printf("%s\n", get(node, String, value));   break;// c5
     case Key:       putIndent(indent);printf("%s\n", get(node, Key,    pass));    break;

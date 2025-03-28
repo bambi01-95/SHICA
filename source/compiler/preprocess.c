@@ -3,8 +3,6 @@
 
 #include "object.c"
 
-//stateごとに実行定義されているグローバルイベントリスト
-oop STATE_EVENT_LISTS  = 0;
 //stateごとに定義されているローカルイベントリスト
 oop STATE_DEF_LOCAL_EVENT_LISTS   = 0;
 
@@ -23,6 +21,14 @@ int insertEventTable(oop id){
     }
     EVENT_TABLE[sizeOfEventTable] = id;
     return sizeOfEventTable++;
+}
+int getEventTableIndex(oop id){
+    for(int i=0;i<sizeOfEventTable;i++){
+        if(EVENT_TABLE[i]==id){
+            return i;
+        }
+    }
+    return -1;
 }
 
 //NEED TO BE MORE SMART
@@ -205,16 +211,18 @@ oop preprocess(oop exp,oop trees){
                             switch(getType(get(eventId,Symbol,value))){
                                 case DupEvent:{
                                     insertEventTable(eventId);
-                                    Array_push(globalEvent,newPair(eventId,statement));break;
+                                    Array_push(globalEvent,newPair(eventId,statement));
+                                    break;
                                 }
                                 case EventFunc:{
                                     insertEventTable(eventId);
-                                    Array_push(globalEvent,newPair(eventId,statement));break;
+                                    Array_push(globalEvent,newPair(eventId,statement));
+                                    break;
                                 }
                                 default:{
                                     oop dupEve = findIdFromList(eventId,defLocalEvent); //it shluld be change: 
                                     fatal_cond(dupEve==nil,"%s is not defined\n",get(eventId,Symbol,name));
-                                    Array_push(localEvent,dupEve);
+                                    Array_push(localEvent,statement);
                                     break;
                                 }
                             }
@@ -228,7 +236,7 @@ oop preprocess(oop exp,oop trees){
                         oop eventId = get(statement,Call,function);
                         oop function = get(eventId,Symbol,value);
                         fatal_cond(getType(function)!=DupEvent,"%s is not Event funciton\n",get(eventId,Symbol,name));
-                        Array_push(globalEvent,newPair(eventId,function));
+                        Array_push(globalEvent,newPair(eventId,statement));
                         break;
                     }
                     default:{
@@ -238,7 +246,7 @@ oop preprocess(oop exp,oop trees){
                     }
                 }
             }
-
+            Array_push(STATE_DEF_LOCAL_EVENT_LISTS,newPair(stateName,defLocalEvent));
             globalEvent = sortEventListByStateTable(stateName,globalEvent);
             events = Array_put_elements(events,globalEvent,eventPosIndex);
             exp->State.events = Array_put_elements(events,localEvent,eventPosIndex+(globalEvent->Array.size));

@@ -10,7 +10,7 @@ state default{
 		print(10)
 	}
 	timerSec(int t:t%3==0){
-		state state1
+		print(t)
 	}
 	event(int s,int b){
 		print(s)
@@ -29,7 +29,7 @@ state state1{
 		print(d)
 	}
 	timerSec(int t:t%3==0){
-		state deault
+		state default
 	}
 	event(int s,int b){
 		print(s)

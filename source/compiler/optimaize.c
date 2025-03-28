@@ -1161,9 +1161,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         int L1 = program->Array.number;/*cond*/
         int size = 0;
         compStatement(get(exp,While,condition),_Integer);
-        // size = vnt->Array.size;//kill
-        // compOT(get(exp, While,condition),_Integer);
-        // kill_assoc(vnt,size);
 
         emitOI(JUMPF,0);
         int L2 = program->Array.number;
@@ -1171,12 +1168,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         
 
         compStatement(get(exp,While,statement),type);
-        // size = vnt->Array.size;//kill
-        // compOT(get(exp, While,statement),type);//err
-        // kill_assoc(vnt,size);
         
-
-
         emitOI(JUMP, 0);
         int L4 = program->Array.number;/*done*/
         int L4_i = program->Array.size;/*done*/
@@ -1311,27 +1303,16 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         oop stateName = get(exp,State,id);
         oop *events = get(exp,State,events);
         stateNameG = stateName;//for aop (case TRANS)
+        stateName->Symbol.value = exp;
+
+
         //ローカル変数の初期化
         Local_VNT = newArray(0);
-        //subcore size
-        //Local_VNT->Array.size = 0;
 
         for(int i=0; i<STATE_DEF_LOCAL_EVENT_LISTS->Array.size; i++){
             oop id = get(get(STATE_DEF_LOCAL_EVENT_LISTS,Array,elements)[i],Pair,a);
             if(id==stateName){
                 DEF_LOCAL_EVENT_LIST = get(get(STATE_DEF_LOCAL_EVENT_LISTS,Array,elements)[i],Pair,b);
-                break;
-            }
-        }
-
-        for(int i=0; i<get(STATE_EVENT_LISTS,Array,size);i++){
-            oop id = get(get(STATE_EVENT_LISTS,Array,elements)[i],Pair,a);
-            if(id == stateName){
-                oop pairs = get(get(STATE_EVENT_LISTS,Array,elements)[i],Pair,b);
-                STATE_EVENT_LIST = pairs;
-                // while(pairs!=nil){
-                //     pairs = get(pairs,Pair,b);
-                // }//remove me 
                 break;
             }
         }
@@ -1358,7 +1339,14 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     compO(statement);
                     break;
                 }
+                case SetVarEvent:{
+                    stt_val_c++;
+                    break;
+                }
                 case Call:{
+#if DEBUG
+                    SHICA_PRINTF("      > Call\n");
+#endif
                     oop id = get(statement,Call,function);
                     oop function = get(id,Symbol,value);
                     if(getType(function)!=DupEvent){
@@ -1366,24 +1354,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     }
                     statement = function->DupEvent.event;
                 }
-                case SetVarEvent:{
-                    stt_val_c++;
-                    break;
-                }
                 case Event:{
-/*
-FIXME: Do not allow this code?
-
-event sec = timerSec(int sec){
-    print(sec)
-}
-state default{
-    event sec(int sec){
-        print(sec * 2)
-    }
-}
-*/
-                        emitOI(JUMP,0);
+                    emitOI(JUMP,0);
                     int jump_i = program->Array.size;
                     int jump = program->Array.number;
                     //init stt local variable
@@ -1503,21 +1475,17 @@ state default{
         
         unsigned char num_of_core = 0;
         struct CoreData *tmp = core;
-        // while(tmp!=0){
-        //     if(tmp->id!=entry_sym){
-        //         num_of_core++;
-        //     }
-        //     tmp = tmp->next;
-        // }
-        oop pair = STATE_EVENT_LIST;
-        while(pair!=nil){
-            pair = get(pair,Pair,b);
+        while(tmp!=0){
+            if(tmp->id==entry_sym){
+                tmp = tmp->next;
+                continue;
+            }
             num_of_core++;
+            tmp = tmp->next;
         }
         
 
         emitOI(MKCORE,num_of_core);
-        // emitOI(THREAD,size - Entry_bool - stt_val_c);
         stt_loc = program->Array.number;
 
     // <3.イベント関数の呼び出し>/<Event function call>
@@ -1533,7 +1501,7 @@ state default{
             int jump_i = 0;
             if(getType(eveF)==DupEvent){//global dup event
                 // COPYCORE GMI JS: globalMemoryIndex, jumpSize
-                emitOII(COPYCORE,(globalMemoryIndex++),
+                emitOII(COPYCORE,1<<getEventTableIndex(tmp->id),
                     ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
                      + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
                 jump = program->Array.number;
@@ -1545,7 +1513,7 @@ state default{
                     eveF = isDup->DupEvent.eventFunc;
                 }
             }else{
-                emitOII(COPYCORE,(globalMemoryIndex++),0/*jump*//*pinNUM*//*SETCORE/SETSUBCORE*/);
+                emitOII(COPYCORE,1<<getEventTableIndex(tmp->id),0/*jump*//*pinNUM*//*SETCORE/SETSUBCORE*/);
                 jump = program->Array.number;
                 jump_i = program->Array.size;
             }
@@ -1584,22 +1552,25 @@ state default{
             }
             tmp = tmp->next;
         }
+
         //<AOPの呼び出し>/<AOP call> BEFORE OR AROUND
         //for BEFORE 
         // trans * -> stateName{ process }
         oop aspectArr = get(wildcard_aop,Symbol,aspect);
-        for(int i=0;i<aspectArr->Array.size;i++){
-            oop *jointps = get(aspectArr,Array,elements);
-            oop jointp = jointps[i];
-            switch(get(jointp,Jointp,point)){
-                case AFTER:break;
-                case BEFORE:
-                case AROUND:{
-                    DEBUG_LOG("WILD\n");
-                    int pos = get(jointp,Jointp,position);
-                    int cpc = program->Array.number;
-                    emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
-                    break;
+        if(getType(aspectArr)==Array){
+            for(int i=0;i<aspectArr->Array.size;i++){
+                oop *jointps = get(aspectArr,Array,elements);
+                oop jointp = jointps[i];
+                switch(get(jointp,Jointp,point)){
+                    case AFTER:break;
+                    case BEFORE:
+                    case AROUND:{
+                        DEBUG_LOG("WILD\n");
+                        int pos = get(jointp,Jointp,position);
+                        int cpc = program->Array.number;
+                        emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
+                        break;
+                    }
                 }
             }
         }
@@ -1631,7 +1602,6 @@ state default{
         }
 
         emitO(STARTIMP);
-        stateName->Symbol.value = exp;
 #if DEBUG
         SHICA_PRINTF("  > end of state\n\n");
 #endif
@@ -1686,8 +1656,12 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
     }
 
     case Run:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
+
         oop id = get(exp,Run,state);
-        
+        oop state = get(id,Symbol,value);
         //<AOPの呼び出し>/<AOP call> AFTER OR AROUND
         //trans stateName -> *{ process }
         //trans * -> * { process }
@@ -1727,52 +1701,24 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 emitOII(CALL,0,pos - cpc -(OPESIZE + INTSIZE*2));
             }
         }
-        
-        int sizeOfStateTable = get(STATE_EVENT_LISTS,Array,size);
-        oop *states = get(STATE_EVENT_LISTS,Array,elements);
-        oop NextStateData = nil;
-        oop CurrentStateData = nil;
-        //search state data
-        for(int i=0;i<sizeOfStateTable;i++){
-            oop _state = get(states[i],Pair,a);
-            if(_state==id){
-                NextStateData = get(states[i],Pair,b);//for DEFINE_L
-            }else if(_state==stateNameG){
-                CurrentStateData = get(states[i],Pair,b);
-            }
-        }
-        int sizeOfNextStateEvent = 0;
-        //put state data to GM stack
-        if(NextStateData!=nil){
-            while(NextStateData!=nil){
-                oop tmp = CurrentStateData;
-                oop pairIdEveIndex = NextStateData->Pair.a;
-                oop nId = pairIdEveIndex->Pair.a;
-                oop nEve = pairIdEveIndex->Pair.b;
-                int gIndex = 0;
-                while(tmp!=nil){
-                    oop cId = get(tmp->Pair.a,Pair,a);
-                    if(cId==nId){
-                        gIndex = _Integer_value(get(get(tmp,Pair,a),Pair,b));
-                        break;
-                    }
-                    tmp = tmp->Pair.b;
-                }
-                if(tmp==nil){emitOI(i_load,-1);}
-                else{        emitOI(i_load,gIndex);}
-                emitOI(DEFINE_L, MAXTHREADSIZE + get(Local_VNT,Array,size) + sizeOfNextStateEvent );
-                sizeOfNextStateEvent++;
-                NextStateData =  NextStateData->Pair.b;
-            }
-        }
+
         emitOI(TRANS,0);
         int L = program->Array.number;
         int L_i = program->Array.size;
-        emitI(sizeOfNextStateEvent); //<-- this is a member of Trans Instreuction
+        for(int i=0; i<sizeOfStateEventBinaryData; i++){
+            if(STATE_EVENT_BINARY_DATA[i].stateName == id){
+                emitI(STATE_EVENT_BINARY_DATA[i].eventBinarylist);
+                break;
+            }
+#if DEBUG
+            DEBUG_ERROR_COND(i!=sizeOfStateEventBinaryData,"line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
+        }
         //MAKEME: need to make sturct of TRANSITION
         state_Pair = newPair(newPair(id,newPair(_newInteger(L_i),_newInteger(L))),state_Pair);
         break;
     }
+
     case TransAspect:{
         oop fromId = get(exp,TransAspect,from);
         oop toId = get(exp,TransAspect,to);
@@ -1824,16 +1770,20 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-        while(state_Pair->_type_ == Pair){
+        while(getType(state_Pair) == Pair){
+            
             oop node = state_Pair->Pair.a;
-            oop id = node->Pair.a;//state that is called
-            int to_index = id->Symbol.value->State.index;//†††
+            oop state = get(node->Pair.a,Symbol,value);
+            if(getType(state)!=State){
+                fatal("Undefined state %s\n",get(node->Pair.a,Symbol,name));
+            }
+            int to_index = get(state,State,index);
             oop index = node->Pair.b;//index that state call
             int from_index_i = _Integer_value(index->Pair.a);
             int from_index = _Integer_value(index->Pair.b);
-            //†††
             Array_put(program,from_index_i - 1,_newInteger(to_index - from_index));
             state_Pair = state_Pair->Pair.b;
+            
         }
         return sys_false;
     }

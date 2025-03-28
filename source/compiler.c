@@ -51,11 +51,12 @@ int main(int argc, char const *argv[])
         setting_lib();
         entry_sym = intern("entry");
         exit_sym = intern("exit");
+        state_Pair = nil;
+        stateNameG = nil;
         
 
         oop program = newArray(0);
         oop programTrees = newArray(0);
-        STATE_EVENT_LISTS = newArray(0);
         // STATE_SUBCORE_LISTS      = newArray(0);//REMOVE ME
         STATE_DEF_LOCAL_EVENT_LISTS = newArray(0);
         Local_VNT   = newArray(0);
@@ -70,14 +71,14 @@ int main(int argc, char const *argv[])
 #if DEBUG           
         printf("\n \x1b[31m check ******************\x1b[0m\n\n");
         printlnObject(programTrees,2);
+
         printEventBinaryData();
-#endif
-        return 0;
-        
+#endif  
         emitOI(MSET,0);
         oop *elements  = get(programTrees,Array,elements);
         int size = get(programTrees,Array,size);
         for(int i = 0; i<size; i++){
+            printf("\n \x1b[31m tree process \x1b[0m\n\n");
             compile(program,elements[i],nil,Undefined);
         }
         emitO(HALT);

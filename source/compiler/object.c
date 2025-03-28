@@ -1124,8 +1124,9 @@ oop Array_pop(oop obj){
 oop *Array_put_elements(oop *main,oop sub,int index){
     assert(getType(sub)==Array);
     int end = sub->Array.size;
-    for(int i = index; i < end; i++){
+    for(int i = index; i < end + index; i++){
         main[i] = sub->Array.elements[i - index];
+        printlnObject(main[i],0);
     }
     return main;
 }
