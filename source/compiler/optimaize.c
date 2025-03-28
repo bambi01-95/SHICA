@@ -1528,13 +1528,19 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     compile(program,eveF->EventFunc.pin_exps[pin_i],vnt,eveF->EventFunc.pin_num_type[pin_i]);  
                 }
             }
-
+            int eventBinaryPos = 0;
+            for(int i=0;i<sizeOfEventTable;i++){
+                if(EVENT_TABLE[i]==tmp->id){
+                    eventBinaryPos = 1<<i;
+                    break;
+                }
+            }
 
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){
-                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, globalMemoryIndex - 1);//FIXME: local event
+                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eventBinaryPos);//FIXME: local event
             }else{
-                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num,globalMemoryIndex - 1);//FIXME: local event
+                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num, eventBinaryPos);//FIXME: local event
             }
             if(jump!=0){
                 Array_put(program,jump_i - 1,_newInteger(program->Array.number - jump));//jump args

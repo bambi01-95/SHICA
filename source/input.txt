@@ -1,26 +1,27 @@
 event e = timerSec()
 event eve = timerSec(int t){
-	print(t)
+	print("eve")
 }
 
 
 state default{
 	event e1 = timerSec()
 	entry(){
-		print(10)
+		print("default")
 	}
 	timerSec(int t:t%3==0){
-		print(t)
+		print("timerSec")
+		state state1
 	}
 	event(int s,int b){
-		print(s)
+		print("event")
 	}
 	e(int s){
-		print(s)
+		print("e")
 	}
 	eve()
 	e1(int s){
-		print(s)
+		print("e1")
 	}
 }
 

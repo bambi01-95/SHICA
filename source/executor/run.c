@@ -69,30 +69,37 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 int parmanebtBinaryData = 0;
 int currentBinaryData = 0;
 
-int getIndexOfEvent(int i){
-    // 01010 c
-    // 00011 p
-    // 01011 m
-    // return 2
-    int mixBinaryData = parmanebtBinaryData | currentBinaryData;
-    int cBinaryData = currentBinaryData;
-    int count = 0; //2
-    int index = 0; //2
-    while(cBinaryData){
-        if(cBinaryData & 1){
-            if(count++ == i){
-                count = 0;
-                break;
-            }
-        }
-        index++;
-        cBinaryData >>= 1;
-    }
-    for(int i=0;i<index;i++){
-        if(mixBinaryData & 1){
+
+
+int countActiveBit(int binaryData,int list){
+    //00100 binaryData 
+    //00101 list
+    //return 2
+#if DEBUG
+    pirntBinary(binaryData);
+    pirntBinary(list);
+#endif
+    currentBinaryData = binaryData | currentBinaryData;
+    int count = 0;
+    while(binaryData){
+        if(list&1 && !(binaryData&1)){
             count++;
         }
-        mixBinaryData >>= 1;
+        list >>= 1;
+        binaryData >>= 1;
+    }
+    return count;
+}
+
+int countActiveCoreSize(int binaryData){
+    //00110 binaryData
+    //return 2
+    int count = 0;
+    while(binaryData){
+        if(binaryData&1){
+            count++;
+        }
+        binaryData >>= 1;
     }
     return count;
 }
@@ -104,6 +111,7 @@ void main_execute(){
 
     int gmRbp = 0;
     int maxCoreSize = 0;
+    int localCoreSize = 0;
 
 #if MSGC
     //CHECK ME: GMとstackの違いは？使い分けは？
@@ -170,11 +178,11 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
-                getSetInt(numCore,pc);
+                getSetInt(numCore,pc);//REMOVE numCore
                 if(numCore == 0)continue;
                 //init setting core
                 coreLoc = pc;
-                maxCoreSize = numCore;
+                maxCoreSize = countActiveCoreSize(parmanebtBinaryData | currentBinaryData);//numCore;REMOVE THIS COMMENT
                 coreSize = -1;//CHECKME AND REMOVE ME: coreSize -1
                 GM->Thread.stack->Array.size = gmRbp + MAXTHREADSIZE;//Event maximam size is 10
                 continue;
@@ -184,7 +192,9 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(grobalMemoryIndex,pc);
-                int index = getIndexOfEvent(grobalMemoryIndex);
+
+                int index = countActiveBit(grobalMemoryIndex,parmanebtBinaryData | currentBinaryData);
+                printf("                            index %d <- %d\n",index,grobalMemoryIndex);
                 coreSize = index;//should be rename
                 getSetInt(jumpRelPos,pc);
                 int rbp = getChild(GM,Thread,rbp);
@@ -204,12 +214,17 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
             case SETCORE:{
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
-#endif
+#endif          
                 getSetInt(libNum,pc);
                 getSetInt(eveNum,pc);
                 getSetInt(numInitVals,pc);
                 oop core = setCore(libNum,eveNum,stack);
-                getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
+                if(numInitVals){
+                    getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
+                }else{
+                    coreSize = countActiveCoreSize(parmanebtBinaryData | currentBinaryData) + (++localCoreSize) -1;
+                    getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
+                }
                 continue;
             }
             case SETSUBCORE:{
@@ -250,19 +265,21 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
-#if MSGC
-                oop *mainCore = (oop*)gc_alloc(sizeof(oop)*(coreSize+1));
-#else
-                oop mainCore[coreSize+1];
-#endif
+
 #if DEBUG
                 if(coreSize == -1){
-                    DEBUG_ERROR(stderr,"coreSize is -1\n");
+                    DEBUG_ERROR("coreSize is -1\n");
                     exit(1);
                 }
 #endif
-
-                for(int i=0;i<=coreSize;i++){
+                maxCoreSize  = countActiveCoreSize(parmanebtBinaryData | currentBinaryData) + localCoreSize;
+#if MSGC
+                oop *mainCore = (oop*)gc_alloc(sizeof(oop)*(maxCoreSize));
+#else
+                oop mainCore[coreSize+1];
+#endif
+                
+                for(int i=0;i<=maxCoreSize;i++){
                     mainCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                 }
                 for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
@@ -292,52 +309,53 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                                         getSetInt(relpos,pc_i);
                                         int numPC = pc_i;
                                         //binary list data
-                                        getSetInt(nextBinaryData,pc);
-                                        int mixBinaryData = nextBinaryData | parmanebtBinaryData;
+                                        getSetInt(nextBinaryData,numPC);
+#if DEBUG
+                                        printf("nextBinaryData %d\n",nextBinaryData);
+                                        pirntBinary(nextBinaryData);
+#endif
+
+                                        int realNextBinarydata    = parmanebtBinaryData | nextBinaryData;
                                         int realCurrentBinaryData = parmanebtBinaryData | currentBinaryData;
 
                                         int copy_index = 0;
                                         int current_index = 0;
+                                        int count = 0;
+                                        oop *stack = GM->Thread.stack->Array.elements;
+                                        for(int i=gmRbp; i<maxCoreSize;i++){
+                                            stack[i] = nil;
+                                        }
                                         for(;;){
-                                            if(realCurrentBinaryData&1 && mixBinaryData&1){ //c1 n1 => copy
+                                            if(realCurrentBinaryData&1 && realNextBinarydata&1){ //c1 n1 => copy
+                                                printf("copy_index %d to %d\n",current_index,copy_index);
                                                 getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index] = copyCore[current_index];
                                                 copy_index++;
                                                 current_index++;
                                             }
                                             else if(realCurrentBinaryData&1){ //c1 n0 => remove
+                                                printf("remove_index\n");
                                                 current_index++;
                                             }
-                                            else if(mixBinaryData&1){ //c0 n1 => add nil
+                                            else if(realNextBinarydata&1){ //c0 n1 => add nil
+                                                printf("add nil\n");
                                                 getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index] = nil;
                                                 copy_index++;
                                             }
-                                            else if(realCurrentBinaryData | mixBinaryData){ //c0 n0 => nothing
+                                            else if((realCurrentBinaryData | realNextBinarydata)==0){ //c0 n0 => nothing
                                                 break;
                                             }
+                                            count++;
                                             realCurrentBinaryData >>= 1;
-                                            mixBinaryData >>= 1;
+                                            realNextBinarydata >>= 1;
+                                        }
+                                        for(int i =0;i<localCoreSize;i++){
+                                            getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index+i] = nil;
                                         }
                                         currentBinaryData = nextBinaryData;
 
-                                        /*
-                                        getSetInt(numCopyCore,numPC);
-                                        
-
-                                        
-                                        for(int i=maxCoreSize-1;i>=0;i-=1){
-                                            int coreIndex = _Integer_value(Array_pop(GM->Thread.stack));//DEFINE_L
-                                            if(coreIndex==-1){
-                                                Array_put(GM->Thread.stack,gmRbp + i,nil);
-                                                // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = nil;
-                                            }else{
-                                                Array_put(GM->Thread.stack,gmRbp + i,copyCore[coreIndex]);
-                                                // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
-                                            }
-                                        }
-                                        */
-
                                         getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
                                         pc = relpos + pc_i;
+                                        localCoreSize = 0;
                                         isTrans = 1;
                                         break;
                                     }

@@ -8,6 +8,18 @@
 void m(int i){
     while(i--)putchar(' ');
 }
+void pirntBinary(int b){
+    int i = 1;
+    for(int j=0;j<32;j++){
+        if(b&i){
+            putchar('1');
+        }else{
+            putchar('0');
+        }
+        i <<= 1;
+    }
+    putchar('\n');
+}
 
 void printlnObject(oop node, int indent)
 {

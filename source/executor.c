@@ -26,7 +26,7 @@ int SHICA_MAIN()
         exit(1);
     }
 #if MSGC
-    int memSize = 1024  * 256;//8 * 10;//1024 * 2; // default memory size
+    int memSize = 1024  * 526;//520 KB
     gc_init(memSize);
     gc_collectFunction = (gc_collectFunction_t)collectObjects;
     gc_markFunction    = (gc_markFunction_t)markObject;
