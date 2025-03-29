@@ -858,7 +858,7 @@ oop copyEventFunc(oop func){
     node->EventFunc.args_type_array = strdup(get(func,EventFunc,args_type_array));
     node->EventFunc.size_of_pin_num = get(func,EventFunc,size_of_pin_num);
     node->EventFunc.pin_num_type = strdup(get(func,EventFunc,pin_num_type));
-    node->EventFunc.pin_exps = malloc(sizeof(oop)*get(func,EventFunc,size_of_pin_num));
+    node->EventFunc.pin_exps = calloc(get(func,EventFunc,size_of_pin_num),sizeof(oop));
     return node;
 }
 

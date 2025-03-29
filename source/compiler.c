@@ -77,6 +77,9 @@ int main(int argc, char const *argv[])
         oop *elements  = get(programTrees,Array,elements);
         int size = get(programTrees,Array,size);
         for(int i = 0; i<size; i++){
+#if DEBUG
+            printf("\n \x1b[31m%03d\x1b[0m\n",i);
+#endif
             compile(program,elements[i],nil,Undefined);
         }
         emitO(HALT);

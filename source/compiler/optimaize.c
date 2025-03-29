@@ -969,7 +969,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         oop function = get(id,Symbol,value);
         if(get(exp,Call,callType)){ //init EventFunction()
             if(function == sys_false){
-                function =  findIdFromList(id,DEF_LOCAL_EVENT_LIST);
+                function =  findIdFromList(id,DEF_LOCAL_EVENT_LIST)->Pair.a;
             }
             switch(getType(function)){
                 case DupEvent:{
@@ -986,12 +986,20 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                         eventFunc->EventFunc.pin_exps[i] =  args->Pair.a;
                         args = args->Pair.b;
                     }
-                    int eventPos =  _Integer_value(get(findIdFromList(id,STATE_EVENT_LIST),Pair,b));
+                    int eventBinaryPos = 0;
+                    for(int i=0;i<sizeOfEventTable;i++){
+                        if(EVENT_TABLE[i]==tmp->id){
+                            eventBinaryPos = 1<<i;
+                            break;
+                        }
+                    }
+
                     if(eventFunc->EventFunc.event_type == 0){
                         emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventPos);
                     }else{
                         emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventPos);
                     }
+                    exit(1);
                     break;
                 }
                 case EventFunc:{
@@ -1010,7 +1018,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                         args = args->Pair.b;
                     }
 
-                    int eventPos =  _Integer_value(findIdFromList(id,STATE_EVENT_LIST));
+                    int eventPos =  _Integer_value(findIdFromList(id,STATE_EVENT_LIST))->Pair.a;
                     if(eventFunc->EventFunc.event_type == 0){
                         emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventPos);
                     }else{
@@ -1322,7 +1330,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         char Entry_bool = 0; //for ...
         unsigned char stt_val_c = 0;  //for state variable 
 
-
+#if DEBUG
+        SHICA_PRINTF("  >s STEP1\n");
+#endif
     //<1.変数とイベントアクションの定義>/<Definition of variables and event actions> 
         for(int i=0;i<size; i++){
             oop statement = events[i];
@@ -1380,7 +1390,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                             eve = eve->DupEvent.eventFunc;
                         }
                         if(getType(eve)!=EventFunc){
-                            oop isDup = findIdFromList(id,DEF_LOCAL_EVENT_LIST);
+                            oop isDup = findIdFromList(id,DEF_LOCAL_EVENT_LIST)->Pair.a;
                             if(getType(isDup)==DupEvent){
                                 eve = isDup->DupEvent.eventFunc;
                             }else{
@@ -1461,7 +1471,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 }
             }
         }//end of definition of state variable and event 
-
+#if DEBUG
+        SHICA_PRINTF("  >s STEP2\n");
+#endif
     // <2.状態遷移の呼び出し>/<state transition call>
         int stt_loc = program->Array.number;
         exp->State.index = stt_loc;
@@ -1481,7 +1493,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 
         emitOI(MKCORE,num_of_core);
         stt_loc = program->Array.number;
-
+#if DEBUG
+        SHICA_PRINTF("  >s STEP3\n");
+#endif
     // <3.イベント関数の呼び出し>/<Event function call>
         tmp = core;
         int globalMemoryIndex = 0;//for sharing core
@@ -1502,7 +1516,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 jump_i = program->Array.size;
                 eveF = eveF->DupEvent.eventFunc;
             }else if(getType(eveF)!=EventFunc){ //Local dup event
-                oop isDup = findIdFromList(tmp->id,DEF_LOCAL_EVENT_LIST);
+                oop isDup = findIdFromList(tmp->id,DEF_LOCAL_EVENT_LIST)->Pair.a;
                 if(getType(isDup)==DupEvent){
                     eveF = isDup->DupEvent.eventFunc;
                 }
@@ -1553,6 +1567,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             tmp = tmp->next;
         }
 
+#if DEBUG
+        SHICA_PRINTF("  >s STEP4\n");
+#endif
         //<AOPの呼び出し>/<AOP call> BEFORE OR AROUND
         //for BEFORE 
         // trans * -> stateName{ process }

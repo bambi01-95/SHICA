@@ -108,11 +108,12 @@ oop findIdFromList(oop id,oop list){
     int size = get(list,Array,size);
     for(int i=0;i<size;i++){
         if(get(elements[i],Pair,a)==id){
-            return get(elements[i],Pair,b);
+            return newPair(get(elements[i],Pair,b),_newInteger(i));
         }
     }
-    return nil;
+    return newPair(nil,nil);
 }
+
 
 oop preprocess(oop exp,oop trees){
     switch(getType(exp)){
@@ -198,7 +199,11 @@ oop preprocess(oop exp,oop trees){
                                 oop stm = get(body,Block,statements)[i];
                                 if(getType(stm)==Call && get(stm,Call,callType)==1){//init eventFunc()
                                     oop functionId = get(stm,Call,function);
-                                    Array_push(globalEvent,newPair(eventId,functionId));
+                                    if(getType(get(functionId,Symbol,value))==EventFunc || getType(get(functionId,Symbol,value))==DupEvent){
+                                        Array_push(globalEvent,newPair(eventId,functionId));
+                                    }else if(findIdFromList(functionId,defLocalEvent)->Pair.a==nil){
+                                        fatal("%s is not defined\n",get(functionId,Symbol,name));
+                                    }
                                 }
                             }
                             eventPosIndex++;
@@ -222,7 +227,7 @@ oop preprocess(oop exp,oop trees){
                                     break;
                                 }
                                 default:{
-                                    oop dupEve = findIdFromList(eventId,defLocalEvent); //it shluld be change: 
+                                    oop dupEve = findIdFromList(eventId,defLocalEvent)->Pair.a; //it shluld be change: 
                                     fatal_cond(dupEve==nil,"%s is not defined\n",get(eventId,Symbol,name));
                                     Array_push(localEvent,statement);
                                     break;

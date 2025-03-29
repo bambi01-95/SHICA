@@ -5,6 +5,8 @@ leg:
 
 com:
 	gcc -o shica ./compiler.c
+comdt:
+	gcc -o shica ./compiler.c -g -DDEBUG=1 -DTEST=1
 
 
 vm:

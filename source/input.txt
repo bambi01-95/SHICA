@@ -1,38 +1,9 @@
-event e = timerSec()
-event eve = timerSec(int t){
-	print("eve")
-}
-
-
-state default{
-	event e1 = timerSec()
+state test{
+	event sec = timerSec()
 	entry(){
-		print("default")
+		init sec(3)
 	}
-	timerSec(int t:t%3==0){
-		print("timerSec")
-		state state1
-	}
-	event(int s,int b){
-		print("event")
-	}
-	e(int s){
-		print("e")
-	}
-	eve()
-	e1(int s){
-		print("e1")
-	}
-}
-
-state state1{
-	event(int s,int  d){
-		print(d)
-	}
-	timerSec(int t:t%3==0){
-		state default
-	}
-	event(int s,int b){
-		print(s)
+	sec(int t){
+		print(1)
 	}
 }
