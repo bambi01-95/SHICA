@@ -19,14 +19,14 @@ all:
 # 各 .txt ファイルに対して ./shica を実行
 process_all_com: $(SRC_FILES)
 	@for file in $^; do \
-		echo "Processing $$file"; \
+		echo "\n\033[0;34mProcessing $$file\033[0m"; \
 		../source/shica "$$file"; \
 	done
 
 # 各 .stt ファイルに対して ./vm を実行
 process_all_run: $(SRC_OUT_FILES)
 	@for file in $^; do \
-		echo "Processing $$file"; \
+		echo "\033[0;34mProcessing $$file\033[0m"; \
 		../source/vm "$$file"; \
 	done
 
