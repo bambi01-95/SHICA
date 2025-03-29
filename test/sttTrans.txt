@@ -1,24 +1,24 @@
-int fib(int n){
-    if(n<=1){
-        return n
-    }
-    return fib(n-1)+fib(n-2)
-}
-
+int count = 0
 state s{
-    event(int a:a%2==0,int b){
-        print(fib(17))
-        if(a>10){
-            state k
-        }
+    timerSec(int a:a%3==0){
+        print("s")
+        state k
     }
 }
 
 state k{
-    event(int a:a%3==0,int b){
-        print(fib(10))
-        if(a>12){
+    timerSec(int a:a%3==0){
+        print("3")
+        state a
+    }
+}
+
+state a{
+    timerSec(int a:a%3==0){
+        print("3")
+        if(count==0){
             state s
         }
+        stop(0)       
     }
 }

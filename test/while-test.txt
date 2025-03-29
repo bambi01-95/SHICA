@@ -6,5 +6,6 @@ state s1{
             print(a)
             a += 1
         }
+        stop(1)
     }
 }

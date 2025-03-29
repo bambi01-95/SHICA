@@ -1,0 +1,26 @@
+int LED = 17 // pin connected to LED
+int BTN = 27 // pin connected to button
+
+// event button = triReadGPIO() // event triggered when state of input pin changes
+
+state initial {
+  entry() {
+    int v = gpioInitialise()
+    if (v < 0) {
+      gpioDelay(20000)
+      state init
+    }
+    gpioSetMode(LED, 1)       // LED, output
+    gpioSetMode(BTN, 0)       // button, input
+    gpioSetPullUpDown(BTN, 2) // with internal pull-up
+    // init button(BTN)
+    init  wifiGroupReceived("192.168.1.255", 60000, 42, "secret") // build Group
+    gpioDelay(1000000)            // wait 1 second
+    state off                 // button is initially disengaged
+  }
+}
+
+state off {
+  entry() { gpioWrite(LED, 0) } // off
+  triReadGPIO(int value: value == 0) { state on } // button (pressed and then) released
+}

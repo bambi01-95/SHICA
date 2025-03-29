@@ -15,19 +15,16 @@ pointcut afterLog{
 }
 
 state s1{
-    event(int a,int b){
-        if(a>4){
-            print("s1->s2")
-            state s2
-        }
+    timerSec(int a:a%2==0){
+        state s2
     }
 }
 
 state s2{
-    event(int a,int b){
-        if(a>4){
-            print("s2->s1")
-            state s1
+    timerSec(int a:a%2==0){
+        if(a>10){
+            stop(1)
         }
+        state s1
     }
 }

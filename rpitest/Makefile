@@ -1,5 +1,5 @@
 # ソースディレクトリ
-SRC_DIR := ../test
+SRC_DIR := ../rpitest
 
 # コンパイラとVMのディレクトリ
 CODE_DIR := ../source
@@ -11,12 +11,9 @@ SRC_FILES := $(wildcard $(SRC_DIR)/*.txt)
 SRC_OUT_FILES := $(wildcard $(SRC_DIR)/*.stt)
 
 all: 
-	echo "\n\033[0;31mCompiling shica and vm\033[0m"
-	gcc -o $(CODE_DIR)/shica $(CODE_DIR)/compiler.c -DTEST=0 -DDEBUG=0
-	gcc -o $(CODE_DIR)/vm    $(CODE_DIR)/executor.c -DTEST=0 -DDEBUG=0
-	echo "\n\033[0;31mCompiling *.txt\033[0m"
+	gcc -o $(CODE_DIR)/shica $(CODE_DIR)/compiler.c -DTEST=0 -DDEBUG=0 -DRPI=1
+	gcc -o $(CODE_DIR)/vm    $(CODE_DIR)/executor.c -DTEST=0 -DDEBUG=0 -DRPI=1
 	make process_all_com
-	echo "\n\033[0;31mCleaning up\033[0m"
 	make clean
 
 # 各 .txt ファイルに対して ./shica を実行
