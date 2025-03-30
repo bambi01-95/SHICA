@@ -1,8 +1,21 @@
 #include "object.c"
+#include "binary.c"
 #include "../common/inst.c"
 #include "./preprocess.c"
 #ifndef OPTIMAIZE_C
 #define OPTIMAIZE_C
+
+
+oop state_Pair = 0; //state (id index)
+oop Global_VNT = 0; //Gloval variable name table
+oop Local_VNT  = 0; //STATE Local variable name table
+int isEntry    = 0; //if defining entry() event, it is 1, otherwise 0.
+
+oop stateNameG = 0;          //using process state name
+oop DEF_LOCAL_EVENT_LIST = 0;//a state loca event list
+oop STATE_EVENT_LIST     = 0;//a state event list
+oop SUBCORE_LIST = 0;        //PAIR
+
 
 enum instrac Binop_oprand(enum Type type,enum binop binop,int line){
     switch(type){
@@ -255,10 +268,7 @@ oop compile(oop,oop,oop,enum Type);
     } \
 })
 
-oop state_Pair = 0; //state (id index)
-oop Global_VNT = 0; //Gloval variable name table
-oop Local_VNT  = 0; //STATE Local variable name table
-int isEntry    = 0; //if defining entry() event, it is 1, otherwise 0.
+
 
 
 
@@ -450,10 +460,7 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
     return new;
 }
 
-oop stateNameG = 0;          //using process state name
-oop DEF_LOCAL_EVENT_LIST = 0;//a state loca event list
-oop STATE_EVENT_LIST     = 0;//a state event list
-oop SUBCORE_LIST = 0;        //PAIR
+
 
 
 oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
@@ -969,7 +976,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         oop function = get(id,Symbol,value);
         if(get(exp,Call,callType)){ //init EventFunction()
             if(function == sys_false){
-                function =  findIdFromList(id,DEF_LOCAL_EVENT_LIST)->Pair.a;
+                function =  findIdFromList(id,DEF_LOCAL_EVENT_LIST);
             }
             switch(getType(function)){
                 case DupEvent:{
@@ -986,20 +993,21 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                         eventFunc->EventFunc.pin_exps[i] =  args->Pair.a;
                         args = args->Pair.b;
                     }
-                    int eventBinaryPos = 0;
-                    for(int i=0;i<sizeOfEventTable;i++){
-                        if(EVENT_TABLE[i]==tmp->id){
-                            eventBinaryPos = 1<<i;
-                            break;
-                        }
-                    }
 
-                    if(eventFunc->EventFunc.event_type == 0){
-                        emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventPos);
-                    }else{
-                        emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventPos);
+                //search core index
+                    int eventBinaryPos = getEventTableIndex(id);
+
+                    if(eventBinaryPos == -1){
+                        eventBinaryPos = getEventListIndex(id,DEF_LOCAL_EVENT_LIST);
+                        if(eventBinaryPos == -1){
+                            fatal("line %d: event %s is not found in state %s\n",exp->Call.line,get(id,Symbol,name),stateNameG);
+                        }   
                     }
-                    exit(1);
+                    if(eventFunc->EventFunc.event_type == 0){
+                        emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventBinaryPos);
+                    }else{
+                        emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventBinaryPos);
+                    }   
                     break;
                 }
                 case EventFunc:{
@@ -1017,12 +1025,18 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                         function->EventFunc.pin_exps[i] =  args->Pair.a;
                         args = args->Pair.b;
                     }
-
-                    int eventPos =  _Integer_value(findIdFromList(id,STATE_EVENT_LIST))->Pair.a;
+                    //sarch core index 
+                    int eventBinaryPos = getEventTableIndex(id);
+                    if(eventBinaryPos == -1){
+                        eventBinaryPos = getEventListIndex(id,DEF_LOCAL_EVENT_LIST);
+                        if(eventBinaryPos == -1){
+                            fatal("line %d: event %s is not found in state %s\n",exp->Call.line,get(id,Symbol,name),stateNameG);
+                        }   
+                    }
                     if(eventFunc->EventFunc.event_type == 0){
-                        emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventPos);
+                        emitOIII(SETCORE,eventFunc->EventFunc.lib_num, eventFunc->EventFunc.eve_num, /* pos of this event func */eventBinaryPos);
                     }else{
-                        emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventPos);
+                        emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventBinaryPos);
                     }                    
                     break;
                 }
@@ -1390,7 +1404,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                             eve = eve->DupEvent.eventFunc;
                         }
                         if(getType(eve)!=EventFunc){
-                            oop isDup = findIdFromList(id,DEF_LOCAL_EVENT_LIST)->Pair.a;
+                            oop isDup = findIdFromList(id,DEF_LOCAL_EVENT_LIST);
                             if(getType(isDup)==DupEvent){
                                 eve = isDup->DupEvent.eventFunc;
                             }else{
@@ -1507,21 +1521,30 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             oop eveF = get(tmp->id,Symbol,value);
             int jump = 0;
             int jump_i = 0;
+
+            int coreIndex = getEventTableIndex(tmp->id);
+            if(coreIndex == -1){
+                coreIndex = getEventListIndex(tmp->id,DEF_LOCAL_EVENT_LIST);
+                if(coreIndex == -1){
+                    fatal("event %s is not found in state %s\n",get(tmp->id,Symbol,name),stateNameG);
+                }   
+            }
             if(getType(eveF)==DupEvent){//global dup event
                 // COPYCORE GMI JS: globalMemoryIndex, jumpSize
-                emitOII(COPYCORE,1<<getEventTableIndex(tmp->id),
-                    ((eveF->DupEvent.eventFunc->EventFunc.size_of_pin_num * (INTSIZE + OPESIZE))/*pinNUM*/
-                     + (OPESIZE + INTSIZE* 3) /*SETCORE/SETSUBCORE*/));
+                emitOII(COPYCORE,coreIndex,0);
                 jump = program->Array.number;
                 jump_i = program->Array.size;
                 eveF = eveF->DupEvent.eventFunc;
             }else if(getType(eveF)!=EventFunc){ //Local dup event
-                oop isDup = findIdFromList(tmp->id,DEF_LOCAL_EVENT_LIST)->Pair.a;
+                oop isDup = findIdFromList(tmp->id,DEF_LOCAL_EVENT_LIST);
                 if(getType(isDup)==DupEvent){
                     eveF = isDup->DupEvent.eventFunc;
                 }
+                emitOII(COPYCORE,coreIndex,0);
+                jump = program->Array.number;
+                jump_i = program->Array.size;
             }else{
-                emitOII(COPYCORE,1<<getEventTableIndex(tmp->id),0/*jump*//*pinNUM*//*SETCORE/SETSUBCORE*/);
+                emitOII(COPYCORE,coreIndex,0/*jump*//*pinNUM*//*SETCORE/SETSUBCORE*/);
                 jump = program->Array.number;
                 jump_i = program->Array.size;
             }
@@ -1536,19 +1559,13 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     compile(program,eveF->EventFunc.pin_exps[pin_i],vnt,eveF->EventFunc.pin_num_type[pin_i]);  
                 }
             }
-            int eventBinaryPos = 0;
-            for(int i=0;i<sizeOfEventTable;i++){
-                if(EVENT_TABLE[i]==tmp->id){
-                    eventBinaryPos = 1<<i;
-                    break;
-                }
-            }
+
 
             //SETCORE LN EN IN: library number, event number, initialzed variable number
             if(eveF->EventFunc.event_type == 0){
-                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, eventBinaryPos);//FIXME: local event
+                emitOIII(SETCORE,eveF->EventFunc.lib_num, eveF->EventFunc.eve_num, coreIndex);//FIXME: local event
             }else{
-                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num, eventBinaryPos);//FIXME: local event
+                emitOIII(SETSUBCORE,eveF->EventFunc.lib_num,eveF->EventFunc.eve_num, coreIndex);//FIXME: local event
             }
             if(jump!=0){
                 Array_put(program,jump_i - 1,_newInteger(program->Array.number - jump));//jump args
