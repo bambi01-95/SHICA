@@ -1540,9 +1540,6 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 if(getType(isDup)==DupEvent){
                     eveF = isDup->DupEvent.eventFunc;
                 }
-                emitOII(COPYCORE,coreIndex,0);
-                jump = program->Array.number;
-                jump_i = program->Array.size;
             }else{
                 emitOII(COPYCORE,coreIndex,0/*jump*//*pinNUM*//*SETCORE/SETSUBCORE*/);
                 jump = program->Array.number;

@@ -952,6 +952,11 @@ oop newCore(int variableSize)
 #endif
     return node;
 }
+oop copyCore(oop copy,oop core){
+    copy->Core.threads = core->Core.threads;    
+    copy->Core.size = core->Core.size;
+    return copy;            
+}
 
 oop newSubCore(int variableSize)
 {
@@ -968,6 +973,11 @@ oop newSubCore(int variableSize)
     node->SubCore.size = 0;
 #endif
     return node;
+}
+oop copySubCore(oop copy,oop SubCore){
+    copy->SubCore.threads = SubCore->SubCore.threads;    
+    copy->SubCore.size = SubCore->SubCore.size;
+    return copy;            
 }
 
 oop _remkSubCore(oop core,size_t vdMemSize,int numThread)

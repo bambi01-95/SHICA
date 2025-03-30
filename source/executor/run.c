@@ -69,7 +69,17 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 int parmanebtBinaryData = 0;
 int currentBinaryData = 0;
 
-
+int binaryToIndex(int binaryData){
+    int index = 0;
+    while(binaryData){
+        if(binaryData&1){
+            return index;   
+        }
+        index++;
+        binaryData >>= 1;
+    }
+    SHICA_FPRINTF(stderr,"binaryToIndex: this is not happen\n");
+}
 
 int countActiveBit(int binaryData,int list){
     //00100 binaryData 
@@ -192,8 +202,12 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(grobalMemoryIndex,pc);
-
-                int index = countActiveBit(grobalMemoryIndex,parmanebtBinaryData | currentBinaryData);
+                int index = 0;
+                if( (grobalMemoryIndex > 0) && ((grobalMemoryIndex & (grobalMemoryIndex - 1)) == 0)){
+                    index = countActiveBit(grobalMemoryIndex,parmanebtBinaryData | currentBinaryData);
+                }else{
+                    index = 
+                }
                 printf("                            index %d <- %d\n",index,grobalMemoryIndex);
                 coreSize = index;//should be rename
                 getSetInt(jumpRelPos,pc);
@@ -1260,8 +1274,15 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]
                 getInt(mpc);
                 int eve_num = int_value;
                 getSetInt(pos,mpc);
+                int index = 0;
+                if( (pos > 0) && ((pos & (pos - 1)) == 0)){//2^n
+                    index = countActiveBit(pos,parmanebtBinaryData | currentBinaryData);
+                }else{
+                    index = binaryToIndex(pos>>1) + countActiveCoreSize(parmanebtBinaryData|currentBinaryData);//remove local event bit 
+                }
                 oop result = setCore(lib_num,eve_num,mstack);
-                Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
+                result = copyCore(GM->Thread.stack->Array.elements[GM->Thread.rbp + index],result);               
+                Array_put(GM->Thread.stack,GM->Thread.rbp + index,result);
                 continue;
             }
             case SETSUBCORE:{
@@ -1273,8 +1294,15 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]
                 getInt(mpc);
                 int eve_num = int_value;
                 getSetInt(pos,mpc);
+                int index = 0;
+                if( (pos > 0) && ((pos & (pos - 1)) == 0)){//2^n
+                    index = countActiveBit(pos,parmanebtBinaryData | currentBinaryData);
+                }else{
+                    index = binaryToIndex(pos>>1) + countActiveCoreSize(parmanebtBinaryData|currentBinaryData);//remove local event bit 
+                }
                 oop result = setCore(lib_num,eve_num,mstack);
-                Array_put(GM->Thread.stack,GM->Thread.rbp + pos,result);
+                result = copySubCore(GM->Thread.stack->Array.elements[GM->Thread.rbp + index],result);               
+                Array_put(GM->Thread.stack,GM->Thread.rbp + index,result);
                 continue;
             }
             case HALT:{
