@@ -74,7 +74,7 @@ checkOffset();
         return 1;
     }
 #endif
-#if !RPI
+#if DEBUG
         printf("\n \x1b[31m print byte code after memory read ******************\x1b[0m\n\n");
         printByteCode();
         printf("\n \x1b[31m implement main()******************\x1b[0m\n\n");

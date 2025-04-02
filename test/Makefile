@@ -16,6 +16,8 @@ all:
 	gcc -o $(CODE_DIR)/vm    $(CODE_DIR)/executor.c -DTEST=0 -DDEBUG=0
 	echo "\n\033[0;31mCompiling *.txt\033[0m"
 	make process_all_com
+	echo "\n\033[0;31mRunning *.stt\033[0m"
+	make process_all_run
 	echo "\n\033[0;31mCleaning up\033[0m"
 	make clean
 

@@ -1,9 +1,0 @@
-state test{
-	event sec = timerSec()
-	entry(){
-		init sec(3)
-	}
-	sec(int t){
-		print(1)
-	}
-}

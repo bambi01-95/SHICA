@@ -249,7 +249,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (GCoreIndex)];
                 mainCore->Core.threads = newThreads(coreLoc,20,numThread);
                 mainCore->Core.size = 0;
-                DEBUG_LOG("mainCore size %d\n",mainCore->Core.size);
                 continue;
             }
             case SETTHREAD:{

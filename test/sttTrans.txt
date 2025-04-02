@@ -17,6 +17,7 @@ state a{
     timerSec(int a:a%3==0){
         print("3")
         if(count==0){
+            count += 1
             state s
         }
         stop(0)       
