@@ -448,7 +448,65 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                             break;
                         }
                         case F_TRANS:{
-//TODO: implement transision
+                            if(evalEventArgsThread->Thread.stack->Array.capacity>10){
+                                gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
+                                evalEventArgsThread->Thread.stack = newArray(10);
+                            }
+                            oop copyCore[maxCoreSize];
+                            for(int i=0;i<=maxCoreSize;i++){
+                                copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
+                            }
+
+                            int pc_i = code->Thread.pc;//location of thread[i]'s pc
+                            getSetInt(relpos,pc_i);
+                            int numPC = pc_i;
+                            //binary list data
+                            getSetInt(nextBinaryData,numPC);
+#if DEBUG
+                            printf("nextBinaryData %d\n",nextBinaryData);
+                            pirntBinary(nextBinaryData);
+#endif
+
+                            int realNextBinarydata    = parmanebtBinaryData | nextBinaryData;
+                            int realCurrentBinaryData = parmanebtBinaryData | currentBinaryData;
+
+                            int copy_index = 0;
+                            int current_index = 0;
+                            int count = 0;
+                            oop *stack = GM->Thread.stack->Array.elements;
+                            for(int i=gmRbp; i<maxCoreSize;i++){
+                                stack[i] = nil;
+                            }
+                            for(;;){
+                                if(realCurrentBinaryData&1 && realNextBinarydata&1){ //c1 n1 => copy
+                                    printf("copy_index %d to %d\n",current_index,copy_index);
+                                    getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index] = copyCore[current_index];
+                                    copy_index++;
+                                    current_index++;
+                                }
+                                else if(realCurrentBinaryData&1){ //c1 n0 => remove
+                                    printf("remove_index\n");
+                                    current_index++;
+                                }
+                                else if(realNextBinarydata&1){ //c0 n1 => add nil
+                                    printf("add nil\n");
+                                    getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index] = nil;
+                                    copy_index++;
+                                }
+                                else if((realCurrentBinaryData | realNextBinarydata)==0){ //c0 n0 => nothing
+                                    break;
+                                }
+                                count++;
+                                realCurrentBinaryData >>= 1;
+                                realNextBinarydata >>= 1;
+                            }
+                            for(int i =0;i<localCoreSize;i++){
+                                getChild(GM->Thread.stack,Array,elements)[gmRbp + copy_index+i] = nil;
+                            }
+                            currentBinaryData = nextBinaryData;
+                            getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
+                            pc = relpos + pc_i;
+                            localCoreSize = 0;
                             isStop = 1;
                             break;
                         }
