@@ -59,9 +59,6 @@ const unsigned int SIZE_DOUBLE = sizeof(double);         //size of double
 
 #include <unistd.h>//remove
 
-
-
-
 //should be one execute function
 // FLAG executor(oop thread,oop GM){
 
@@ -193,7 +190,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 //init setting core
                 coreLoc = pc;
                 maxCoreSize = countActiveCoreSize(parmanebtBinaryData | currentBinaryData);//numCore;REMOVE THIS COMMENT
-                coreSize = -1;//CHECKME AND REMOVE ME: coreSize -1
+                GCoreIndex = 0;
                 GM->Thread.stack->Array.size = gmRbp + MAXTHREADSIZE;//Event maximam size is 10
                 continue;
             }
@@ -206,10 +203,10 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                 if( (grobalMemoryIndex > 0) && ((grobalMemoryIndex & (grobalMemoryIndex - 1)) == 0)){
                     index = countActiveBit(grobalMemoryIndex,parmanebtBinaryData | currentBinaryData);
                 }else{
-                    index = 
+                    fatal("copycore: grobalMemoryIndex is not power of 2\n");
                 }
                 printf("                            index %d <- %d\n",index,grobalMemoryIndex);
-                coreSize = index;//should be rename
+                GCoreIndex = index;
                 getSetInt(jumpRelPos,pc);
                 int rbp = getChild(GM,Thread,rbp);
                 oop copyCore = getChild(GM,Thread,stack)->Array.elements[rbp + index];
@@ -225,43 +222,36 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #endif
                 continue;
             }
-            case SETCORE:{
+            case SETCORE:
+            case SETSUBCORE://remove this inst
+            {
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif          
                 getSetInt(libNum,pc);
                 getSetInt(eveNum,pc);
-                getSetInt(numInitVals,pc);
+                getSetInt(eventBinaryIndex,pc);
                 oop core = setCore(libNum,eveNum,stack);
-                if(numInitVals){
-                    getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
+                if( (eventBinaryIndex > 0) && ((eventBinaryIndex & (eventBinaryIndex - 1)) == 0)){
+                    getChild(GM->Thread.stack,Array,elements)[gmRbp + (GCoreIndex)] = core;
                 }else{
-                    coreSize = countActiveCoreSize(parmanebtBinaryData | currentBinaryData) + (++localCoreSize) -1;
-                    getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
+                    GCoreIndex = countActiveCoreSize(parmanebtBinaryData | currentBinaryData) + (localCoreSize++);
+                    getChild(GM->Thread.stack,Array,elements)[gmRbp + (GCoreIndex)] = core;
                 }
                 continue;
             }
-            case SETSUBCORE:{
-#if TEST
-if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
-#endif
-                getSetInt(libNum,pc);
-                getSetInt(eveNum,pc);
-                getSetInt(numInitVals,pc);//don't use
-                oop core = setCore(libNum,eveNum,stack);
-                getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)] = core;
-                continue;
-            }
+
             case MKTHREAD:{//FIXME: rechange the name of this instruction => SETCORE
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
                 getSetInt(numThread,pc);
-                oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)];
+                oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (GCoreIndex)];
                 mainCore->Core.threads = newThreads(coreLoc,20,numThread);
+                mainCore->Core.size = 0;
+                DEBUG_LOG("mainCore size %d\n",mainCore->Core.size);
                 continue;
             }
-
             case SETTHREAD:{
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
@@ -271,7 +261,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 
                 oop thread = newThread(coreLoc + aRelPos,20);
                 thread->Thread.condRelPos = cRelPos;
-                oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (coreSize)];
+                oop mainCore = getChild(GM->Thread.stack,Array,elements)[gmRbp + (GCoreIndex)];
                 mainCore->Core.threads[mainCore->Core.size++] = thread;
                 continue;
             }
@@ -279,25 +269,27 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
 #if TEST
 if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[inst]);}
 #endif
-
+                maxCoreSize  = countActiveCoreSize(parmanebtBinaryData | currentBinaryData) + localCoreSize;
 #if DEBUG
-                if(coreSize == -1){
-                    DEBUG_ERROR("coreSize is -1\n");
+                if(maxCoreSize <= 0){
+                    DEBUG_ERROR("maxCoreSize is 0\n");
                     exit(1);
+                }else{
+                    DEBUG_LOG("maxCoreSize %d\n",maxCoreSize);
                 }
 #endif
-                maxCoreSize  = countActiveCoreSize(parmanebtBinaryData | currentBinaryData) + localCoreSize;
+
 #if MSGC
                 oop *mainCore = (oop*)gc_alloc(sizeof(oop)*(maxCoreSize));
 #else
-                oop mainCore[coreSize+1];
+                oop mainCore[maxCoreSize];
 #endif
                 
                 for(int i=0;i<=maxCoreSize;i++){
                     mainCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
                 }
                 for(int isTrans=0;isTrans==0;){   //isActive: 1:not stt transision, 0->inac
-                    for(int core_i=0;core_i<=coreSize;core_i++){
+                    for(int core_i=0;core_i<maxCoreSize;core_i++){
                     //<イベントの確認>/<check event>
                         mainCore[core_i]->Core.func(mainCore[core_i],GM);
                     //<イベントアクションの実行>/<implement event action>
@@ -306,7 +298,6 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                             if(thread->Thread.flag == 1){
                                 //implement function of event
                                 FLAG flag = sub_execute(thread,GM);
-
                                 switch(flag){
                                     case F_TRANS:{
                                         //評価スレッドの初期化
@@ -458,48 +449,7 @@ if(1){SHICA_PRINTF("line %d: main pc    [%03d] %s\n",__LINE__,pc - 1,INSTNAME[in
                             break;
                         }
                         case F_TRANS:{
-                                        
-                            if(evalEventArgsThread->Thread.stack->Array.capacity>0){
-                                gc_unmarkOnly((void*)evalEventArgsThread->Thread.stack);
-                                evalEventArgsThread->Thread.stack = newArray(10);
-                            }
-                            int pc_i = code->Thread.pc;//location of thread[i]'s pc
-                            getSetInt(relpos,pc_i);
-                            int numPC = pc_i;
-                            getSetInt(numCopyCore,numPC);
-                            
-                            oop copyCore[maxCoreSize];
-                            for(int i=0;i<maxCoreSize;i++){
-                                copyCore[i] = getChild(GM->Thread.stack,Array,elements)[gmRbp + i];
-                            }
-#if DEBUG
-                            printlnObject(GM->Thread.stack,1);
-#endif
-                            for(int i=numCopyCore-1;i>=0;i-=1){
-                                oop data = Array_pop(GM->Thread.stack);
-#if DEBUG
-                                printlnObject(data,1);
-#endif
-                                int coreIndex = _Integer_value(data);//DEFINE_L
-                                if(coreIndex==-1){
-                                    Array_put(GM->Thread.stack,gmRbp + i,nil);
-                                    // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = nil;
-                                }else{
-                                    Array_put(GM->Thread.stack,gmRbp + i,copyCore[coreIndex]);
-                                    // getChild(GM->Thread.stack,Array,elements)[gmRbp + i] = copyCore[coreIndex];
-                                }
-                            }
-                            getChild(getChild(GM,Thread,stack),Array,size) = gmRbp + MAXTHREADSIZE;
-#if DEBUG
-                            printf("==================\n");
-                            printlnObject(GM->Thread.stack,1);
-                            printf("==================\n");
-#endif
-
-                            pc = relpos + pc_i;
-                        #if DEBUG
-                            SHICA_PRINTF("Trans to %d\n",pc);
-                        #endif
+//TODO: implement transision
                             isStop = 1;
                             break;
                         }
@@ -1281,8 +1231,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]
                     index = binaryToIndex(pos>>1) + countActiveCoreSize(parmanebtBinaryData|currentBinaryData);//remove local event bit 
                 }
                 oop result = setCore(lib_num,eve_num,mstack);
-                result = copyCore(GM->Thread.stack->Array.elements[GM->Thread.rbp + index],result);               
-                Array_put(GM->Thread.stack,GM->Thread.rbp + index,result);
+                copyCore(GM->Thread.stack->Array.elements[GM->Thread.rbp + index],result);               
                 continue;
             }
             case SETSUBCORE:{
@@ -1301,8 +1250,7 @@ if(1){SHICA_PRINTF("line %d: sub    [%03d] %s\n",__LINE__,mpc - 1,INSTNAME[inst]
                     index = binaryToIndex(pos>>1) + countActiveCoreSize(parmanebtBinaryData|currentBinaryData);//remove local event bit 
                 }
                 oop result = setCore(lib_num,eve_num,mstack);
-                result = copySubCore(GM->Thread.stack->Array.elements[GM->Thread.rbp + index],result);               
-                Array_put(GM->Thread.stack,GM->Thread.rbp + index,result);
+                copySubCore(GM->Thread.stack->Array.elements[GM->Thread.rbp + index],result);               
                 continue;
             }
             case HALT:{

@@ -11,7 +11,8 @@ comdt:
 
 vm:
 	gcc -o vm executor.c
-
+vmdt:
+	gcc -o vm executor.c -g -DDEBUG=1 -DTEST=1
 	
 run:
 	./vm

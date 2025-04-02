@@ -121,7 +121,7 @@ oop sys_true  = 0;
 oop none      = 0;
 
 // oop *mainCore   = 0;//Remove me
-int coreSize = 0;
+int GCoreIndex = 0;
 oop evalEventArgsThread = 0;
 
 typedef enum {Default, VarI, VarII, VarF, VarFF, VarT, VarTI} VAR;
@@ -953,8 +953,7 @@ oop newCore(int variableSize)
     return node;
 }
 oop copyCore(oop copy,oop core){
-    copy->Core.threads = core->Core.threads;    
-    copy->Core.size = core->Core.size;
+    copy->Core.var = core->Core.var;
     return copy;            
 }
 
@@ -975,8 +974,8 @@ oop newSubCore(int variableSize)
     return node;
 }
 oop copySubCore(oop copy,oop SubCore){
-    copy->SubCore.threads = SubCore->SubCore.threads;    
-    copy->SubCore.size = SubCore->SubCore.size;
+    copy->SubCore.var = SubCore->SubCore.var;
+    copy->SubCore.any = SubCore->SubCore.any;
     return copy;            
 }
 
