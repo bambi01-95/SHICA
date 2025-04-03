@@ -5,13 +5,18 @@
 #include <stdlib.h>
 
 //SHOULD BE APPLIED TO ALL FILES
+#define ERROR_DEV "DVELOPER ERROR:"
 #define ERROR_000 "unknown error:"
 #define ERROR_001 "syntax error:"
-#define ERROR_002 "undefined variable:"
-#define ERROR_003 "undefined function:"
-#define ERROR_004 "undefined type:"
-#define ERROR_005 "undefined event:"
-#define ERROR_006 "undefined state:"
+#define ERROR_002 "type error:"
+
+#define ERROR_UNDEF_01 "undefined variable:"
+#define ERROR_UNDEF_02 "undefined function:"
+#define ERROR_UNDEF_03 "undefined type:"
+#define ERROR_UNDEF_04 "undefined event:"
+#define ERROR_UNDEF_05 "undefined state:"
+
+
 
 //SHOULD BE APPLIED ABOVE
 void _fatal(char*s, int line,char *msg, ...)

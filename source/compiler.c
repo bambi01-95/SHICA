@@ -80,7 +80,11 @@ int main(int argc, char const *argv[])
 #if DEBUG
             printf("\n \x1b[31m%03d\x1b[0m\n",i);
 #endif
-            compile(program,elements[i],nil,Undefined);
+            int ret = compile(program,elements[i],nil,Undefined);
+            if(ret==END)break;
+            if(ret!=0){
+                fatal("%s",ERROR_000);
+            }
         }
         emitO(HALT);
         Array_put(program,1,_newInteger(Global_VNT->Array.size));// make a space for global value

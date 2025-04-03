@@ -13,6 +13,7 @@ void printlnObject(oop node, int indent){
     
     switch (getType(node)) {
 	case Undefined:	putIndent(indent);printf("nil\n");				break;
+    case Types: putIndent(indent);printf("Types %s\n",TYPENAME[node->Types.type]);break;
 	case Integer:	putIndent(indent);printf("%s\n", get(node, Integer,number));	break;
 	case Symbol :{	putIndent(indent);printf("[%s]\n", get(node, Symbol,name));		
         break;
@@ -174,15 +175,19 @@ void printlnObject(oop node, int indent){
         break;
     }
     case Assoc:{putIndent(indent);
-        printf("type %2d, index %3d",node->Assoc.type,node->Assoc.index);
-        printlnObject(node->Assoc.symbol,indent);
+        putIndent(indent+1);
+        if(node->Assoc.types->Types.isCount){
+            printf("Assoc:const %s %d\n",get(node, Assoc,symbol)->Symbol.name,get(node, Assoc,types)->Types.type);
+        }else{
+            printf("Assoc:%s %d\n",get(node, Assoc,symbol)->Symbol.name,get(node, Assoc,types)->Types.type);
+        }
         break;
     }
     case _Integer:putIndent(indent);printf("%d\n",_Integer_value(node));break;
     case _Long:   putIndent(indent);printf("%lld\n",get(node,_Long,value));break;
     case _Float:  putIndent(indent);printf("%f\n",_Float_value(node));break;
     case _Double: putIndent(indent);printf("%lf\n",get(node,_Double,value));break;
-	default:	printf("%s\n",TYPENAME[node->_type_]);assert(!"this cannot happen print");			break;
+	default:	fatal("HACK %s\n",TYPENAME[node->_type_]);
     }
 
 }

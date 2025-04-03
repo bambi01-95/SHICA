@@ -242,7 +242,7 @@ void manage(oop program,enum Type type){
 #define INTSIZE 4 
 #define OPESIZE 1 
 
-oop compile(oop,oop,oop,enum Type);
+enum Type compile(oop,oop,oop,enum Type);
 #define emit(X)         Array_push(program,X)
 #define emitO(A)        emit(_newInteger(A))
 #define emitI(A)        emitO(A); manage(program,_Integer)
@@ -252,131 +252,21 @@ oop compile(oop,oop,oop,enum Type);
 #define emitIO(OP,A,T)  emitO(OP); emit(A);  manage(program,T);
 #define emitIS(OP,A,S)  emitO(OP); emit(A);  program->Array.number+=S 
 
-#define compO(O)    compile(program,O,vnt,Undefined)
-#define compOT(O,T) compile(program,O,vnt,T)
-#define compPara(O,L)    compileParams(program,O,vnt,L)
 
-#define compStatement(A,T)({ \
-    if(isEntry==0){ \
-        size  = vnt->Array.size; \
-        compOT(A,T);/* if */ \
-        kill_assoc(vnt,size); \
-    }else{ \
-        size  = Local_VNT->Array.size; \
-        compOT(A,T);/* if */ \
-        kill_assoc(Local_VNT,size);/*kill*/ \
-    } \
-})
-
-
-
-
-
-void compileParams(oop program,oop params,oop vnt,int line){
-    int index = 0;
-    while(getType(params) == Pair){
-        oop para = params->Pair.a;
-        if(assoc(para->Pair.b,vnt)!=nil)
-            fatal("line %d type error: cannot apply same symbol in parameter\n",line);
-        if(assoc(para->Pair.b,Global_VNT)!=nil)
-            fatal("line %d variable error: %s parameter in Global variable\n",line,get(para->Pair.b,Symbol,name));
-        /* LOCAL VNT */           
-        oop ass  = newAssoc(para->Pair.b,getType(para->Pair.a),vnt->Array.size);
-        Array_push(vnt,ass);
-        /* +3: [stack]
-        arg_num　
-        ret_pc_num　
-        rbp　
-        */
-        //†††
-        emitOII(MPICK, index + 3, ass->Assoc.index);//rbp - (2:return adress & arg num)
-        params = params->Pair.b;
-        index++;
-    }
-}
-
-
+#define comp(EXP,VNT,TYPE) compile(program,EXP,VNT,TYPE)
 
 int compArgs(oop program,oop params,oop args,oop vnt){
     if(params->_type_ == Pair && args->_type_ == Pair){
         int size = compArgs(program,params->Pair.b,args->Pair.b,vnt);
         oop para = params->Pair.a; 
-        compOT(args->Pair.a,para->Pair.a->_type_);
+        if(comp(args->Pair.a,vnt,Undefined) != getType(para->Pair.a))
+            fatal("line type error: \n");//FIXME: 
         return size + 1;
     }
     if(params->_type_ == Pair)fatal("argument error: too few argument");
     if(args->_type_ == Pair)fatal("argument error: too many argument");
     return 0;
 }
-
-
-//Returns the leftmost type in the tree. (condition)
-int child_type(oop exp,oop vnt){
-    switch (getType(exp)) {
-	case Integer:return Integer;
-    case Float:return   Float;
-    case String:return String;
-	case Binop: {
-        int l = child_type(get(exp,Binop,lhs),vnt);
-        switch(l){
-            case _Integer:
-            case _Long:
-            case _Float:
-            case _Char:
-            case String:
-            case _Double:{
-                return l;
-            }
-            default:break;
-        }
-        int r = child_type(get(exp,Binop,rhs),vnt);
-        switch(l){
-            case _Integer:
-            case _Long:
-            case _Float:
-            case _Char:
-            case String:
-            case _Double:{
-                return l;
-            }
-            default:break;
-        }
-        return l;
-	}
-	case GetVar:{
-        oop sym = get(exp,GetVar,id);
-        oop ass = assoc(sym,Global_VNT);
-        if(ass==nil)ass = assoc(sym,Local_VNT);
-        if(ass==nil)ass = assoc(sym,vnt);
-        if(ass == nil){
-            fatal("line %d variable error: Undefine variable, %s\n",exp->GetVar.line,sym->Symbol.name);
-        }
-        return ass->Assoc.type;
-    }
-
-	case Call:{
-        oop id = exp->Call.function;
-        oop function = get(id,Symbol,value);
-	    switch (getType(function)) {
-            case Function:{
-                return  get(function,Function,type);
-            }
-            case Primitive:{
-                return get(function,Primitive,return_type);
-            }
-            default:fatal("line %d HACK: this cannot happen call\n",exp->Call.line);
-	    }
-	    break;
-    }
-	default:{
-        fatal("line %d HACK: this cannot happen inst %s",INSTNAME[getType(exp)]);
-    }
-    }
-    return Undefined;
-}
-
-
-
 
 
 struct Variable{
@@ -461,14 +351,11 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
 }
 
 
-
-
-oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
+enum Type compile(const oop program,const oop exp,oop vnt,const enum Type type) //add enum Type type
 {
     switch (getType(exp)) {
 	case Undefined:
 	case Integer:{
-
         switch(type){
             case _Integer:emitIO(i_load, _newCharInteger(get(exp,Integer,number)),_Integer);break;
             case _Long:   emitIO(l_load, _newCharLong(get(exp,Integer,number))   ,_Long);   break;
@@ -478,12 +365,12 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 break;
             }
             default:{
-                fprintf(stderr,"line %d type error: %s but %s, ",exp->Integer.line ,TYPENAME[type],TYPENAME[getType(exp)]);
+                fatal("line %d type error: %s but %s, ",exp->Integer.line ,TYPENAME[type],TYPENAME[getType(exp)]);
                 printlnObject(exp,0);
                 exit(1);
             }
         }
-        break;
+        return Integer;
     }
     case Float:{
         switch(type){
@@ -491,12 +378,12 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
             case _Double:emitIO(d_load,_newCharDouble(get(exp,Float,number)),_Double);break;
             case Float:emitIO(f_load,_newCharFloat(get(exp,Float,number)),_Float);break;//CHECK ME if double
             default:{
-                fprintf(stderr,"line %d type error: %s but %s, ",exp->Float.line, TYPENAME[type],TYPENAME[getType(exp)]);
+                fatal("line %d type error: %s but %s, ",exp->Float.line, TYPENAME[type],TYPENAME[getType(exp)]);
                 printlnObject(exp,0);
                 exit(1);
             }
         }
-        break;
+        return Float;
     }
     case String:{
         switch(type){
@@ -510,17 +397,7 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
                 fatal("line x type error: %s but %s",TYPENAME[type],TYPENAME[getType(exp)]);
             }
         }
-        break;
-    } 
-    case _Char:{
-        switch(type){
-            case _Char:   emitIO(c_load, exp   ,_Char);   break;
-            default:{
-                fatal("line x type error: %s but %s",TYPENAME[type],TYPENAME[getType(exp)]);
-                printlnObject(exp,0);
-                exit(1);
-            }
-        }
+        return String;
     } 
     case Key:{
         fprintf(stderr,"key and string does not allowed now\n");
@@ -534,24 +411,43 @@ oop compile(oop program,oop exp, oop vnt,enum Type type) //add enum Type type
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-	    compOT(get(exp, Binop,lhs),type);
-	    compOT(get(exp, Binop,rhs),type);
+	    enum Type lt = comp(get(exp, Binop,lhs), vnt, type);
+	    enum Type rt = comp(get(exp, Binop,rhs), vnt, type);
         emitO(Binop_oprand(type,get(exp,Binop,op),exp->Binop.line));
-        break;
+        switch(lt){
+            case _Integer:
+            case _Long:
+            case _Float:
+            case _Char:
+            case String:
+            case _Double:return lt;
+            default:break;
+        }
+        switch(rt){
+            case _Integer:
+            case _Long:
+            case _Float:
+            case _Char:
+            case String:
+            case _Double:return rt;
+            default:break;
+        }
+        fatal("line %d %s: %s but %s\n",exp->Binop.line,ERROR_000,TYPENAME[lt],TYPENAME[rt]);
+        return -1;
 	}
 	case Unyop:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-        compOT(get(exp, Unyop,rhs), type);
+        comp(get(exp, Unyop,rhs),vnt, type);
 	    switch (get(exp, Unyop,op)){
             case NEG:{
                 switch(type){
-                    case _Char:    emitIO(c_load,_newChar(-1),_Char)  ;emitO(c_MUL);break;
-                    case _Integer: emitOI(i_load,-1)           ;emitO(i_MUL);break;
-                    case _Long:    emitIO(l_load,_newLong(-1)  ,_Long)  ;emitO(l_MUL);break;
-                    case _Float:   emitIO(f_load,_newFloat(-1) ,_Float) ;emitO(f_MUL);break;
-                    case _Double:  emitIO(d_load,_newDouble(-1),_Double);emitO(d_MUL);break;
+                    case _Char:    emitIO(c_load,_newChar(-1),_Char)  ;emitO(c_MUL);return _Char;
+                    case _Integer: emitOI(i_load,-1)           ;emitO(i_MUL);return _Integer;
+                    case _Long:    emitIO(l_load,_newLong(-1)  ,_Long)  ;emitO(l_MUL);return _Long;
+                    case _Float:   emitIO(f_load,_newFloat(-1) ,_Float) ;emitO(f_MUL);return _Float;
+                    case _Double:  emitIO(d_load,_newDouble(-1),_Double);emitO(d_MUL);return _Double;
                     default:fatal("line %d type error: %s type cannnot apply convert negative value\n",exp->Unyop.line,TYPENAME[type]);
                 }
                 break;
@@ -560,8 +456,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 oop id = get(get(exp,Unyop,rhs),GetVar,id); 
                 struct Variable *var =  set_id_index(id,vnt);
                 switch(type){
-                    case _Integer: emitOI(i_load,1)          ;emitO(i_ADD);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_ADD);break;
+                    case _Integer: emitOI(i_load,1)          ;emitO(i_ADD);return _Integer;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_ADD);return _Long;
                     default: fatal("line %d type error: %s type cannot apply prefix increment, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
                 emitOI(DEFINE+var->variable_num,var->index);emitOI(GET+var->variable_num,var->index);
@@ -572,8 +468,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 oop id = get(get(exp,Unyop,rhs),GetVar,id); 
                 struct Variable *var = set_id_index(id,vnt);
                 switch(type){
-                    case _Integer: emitOI(i_load,1)          ;emitO(i_SUB);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_SUB);break;
+                    case _Integer: emitOI(i_load,1)          ;emitO(i_SUB);return _Integer;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_SUB);return _Long;
                     default: fatal("line %d type error: %s type cannot apply prefix decrement, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
                 emitOI(DEFINE+var->variable_num,var->index);emitOI(GET+var->variable_num,var->index);
@@ -584,8 +480,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 struct Variable * var = set_id_index(id,vnt);
                 emitOI(GET+var->variable_num,var->index);
                 switch(type){
-                    case _Integer: emitOI(i_load,         1) ;emitO(i_ADD);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long) ;emitO(l_ADD);break;
+                    case _Integer: emitOI(i_load,         1) ;emitO(i_ADD);return _Integer;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long) ;emitO(l_ADD);return _Long;
                     default: fatal("line %d type error: %s type cannot apply postfix increment, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
                 emitOI(DEFINE+var->variable_num,var->index);
@@ -596,16 +492,19 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 struct Variable * var = set_id_index(id,vnt);
                 emitOI(GET+var->variable_num,var->index);
                 switch(type){
-                    case _Integer: emitOI(i_load,         1) ;emitO(i_SUB);break;
-                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_SUB);break;
+                    case _Integer: emitOI(i_load,         1) ;emitO(i_SUB);return _Integer;
+                    case _Long:    emitIO(l_load,_newLong(1),_Long);emitO(l_SUB);return _Long;
                     default: fatal("line %d type error: %s type cannot apply postfix decrement, %s\n",exp->Unyop.line,TYPENAME[type],get(id,Symbol,name));
                 }
                 emitOI(DEFINE+var->variable_num,var->index);
                 break;
             }
-		    default:	assert(!"this cannot happen YNOP");
+		    default:{
+                fatal("line %d %s this cannot happen unyop\n",exp->Unyop.line,ERROR_000);
+            }
 	    }
-	    break;
+        fatal("line %d %s this cannot happen unyop\n",exp->Unyop.line,ERROR_000);
+	    return -1;
     }
 
 	case SetVar:{
@@ -639,18 +538,38 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
                 get(value,Function,type) = t;
                 get(id,Symbol,value) = value;
+                oop funcVNT = newArray(0);          //Create symbol name table
                 emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
-                vnt = newArray(0);          //Create symbol name table
                 int jump = program->Array.number;
                 int jump_i = program->Array.size;
                 //CALL num: num is this number
                 get(value,Function,position) = program->Array.number;
             emitOI(MSUB,0);                 //rbp for variable
             int msub_loc = program->Array.size;
-                oop para = get(value,Function,parameters);
-                compPara(para,exp->SetVar.line);
-                // vnt = args! check them!
-                compOT(get(value,Function,body),t);
+                oop params = get(value,Function,parameters);
+
+                int index = 0;
+                while(getType(params) == Pair){
+                    oop para = params->Pair.a;
+                    if(assoc(para->Pair.b,vnt)!=nil)
+                        fatal("line %d type error: cannot apply same symbol in parameter\n",exp->SetVar.line);
+                    if(assoc(para->Pair.b,Global_VNT)!=nil)
+                        fatal("line %d variable error: %s parameter in Global variable\n",exp->SetVar.line,get(para->Pair.b,Symbol,name));
+                    /* LOCAL VNT */           
+                    oop ass  = newAssoc(para->Pair.b,getType(para->Pair.a),vnt->Array.size);
+                    Array_push(vnt,ass);
+                    /* +3: [stack]
+                    arg_num　
+                    ret_pc_num　
+                    rbp　
+                    */
+                    emitOII(MPICK, index + 3, ass->Assoc.index);//rbp - (2:return adress & arg num)
+                    params = params->Pair.b;
+                    index++;
+                }
+        ////
+                if(t == comp(get(value,Function,body),vnt,t))
+                    fatal("line %d type error: %s but %s\n",exp->SetVar.line,TYPENAME[t],TYPENAME[getType(value)]);
             int vnt_size = vnt->Array.size;
             Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
                 int end  = program->Array.number;
@@ -665,63 +584,37 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             #if DEBUG
                 DEBUG_LOG("notcoming\n");
             #endif
-                compile(program,value,vnt,t);
+                compile(program,value,newArray(0),t);
                 get(id,Symbol,value) = value;
                 break;
             }
             default:{
-                    oop ass = assoc(id,Global_VNT);
-                    if(ass!=nil){
-                        if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
-                        compOT(value,ass->Assoc.type);
-                        emitOI(DEFINE_G,ass->Assoc.index); 
+                oop ass = assoc(id,Global_VNT);
+                if(ass!=nil){
+                    if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
+                    comp(value,vnt,ass->Assoc.type);
+                    emitOI(DEFINE_G,ass->Assoc.index); 
+                }
+                else if((ass = assoc(id, Local_VNT))!=nil){
+                    if(t!=Undefined)fatal("line %d variable error: %s is defined in Local variable\n",exp->SetVar.line,get(id,Symbol,name));
+                    comp(value,vnt,ass->Assoc.type);
+                    emitOI(DEFINE_L,MAXTHREADSIZE + ass->Assoc.index); 
+                }
+                else{
+                    ass = assoc(id,vnt);
+                    if(ass == nil){
+                        if(t==Undefined)//it is first time defining this symbol, indicate type.
+                            fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
+                        //define new symbol with type
+                        ass = newAssoc(get(exp, SetVar,id),t,vnt->Array.size);
+                        Array_push(vnt, ass);
                     }
-                    else if((ass = assoc(id, Local_VNT))!=nil){
-                        if(t!=Undefined)fatal("line %d variable error: %s is defined in Local variable\n",exp->SetVar.line,get(id,Symbol,name));
-                        compOT(value,ass->Assoc.type);
-                        emitOI(DEFINE_L,MAXTHREADSIZE + ass->Assoc.index); 
+                    else if(t!=Undefined){
+                        fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
                     }
-                    else{
-                        ass = assoc(id,vnt);
-                        if(ass == nil){
-                            if(t==Undefined)//it is first time defining this symbol, indicate type.
-                                fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
-                            //define new symbol with type
-                            ass = newAssoc(get(exp, SetVar,id),t,vnt->Array.size);
-                            Array_push(vnt, ass);
-                        }
-                        else if(t!=Undefined){
-                            fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
-                        }
-                        compOT(value,ass->Assoc.type);
-                        emitOI(DEFINE,ass->Assoc.index); 
-                    }
-                
-            //FIXME with (2025/01/04): sttローカルがうまく実行できたなら下記を消す  
-                //else{ in the entry(){...}
-                //     oop ass = assoc(id,Global_VNT);
-                //     if(ass!=nil){
-                //         if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
-                //         compOT(value,ass->Assoc.type);
-                //         emitOI(DEFINE_G,ass->Assoc.index); 
-                //     }
-                //     else{
-                //         ass = assoc(id, Local_VNT);
-                //         if(ass == nil){
-                //             if(t==Undefined)//it is first time defining this symbol, indicate type.
-                //                 fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
-                //             //define new symbol with type
-                //             ass = newAssoc(get(exp, SetVar,id),t,Local_VNT->Array.size);
-                //             Array_push(Local_VNT, ass);
-                //         }
-                //         else if(t!=Undefined){
-                //             fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
-                //         }
-                //         compOT(value,ass->Assoc.type);
-                //         emitOI(DEFINE_L,ass->Assoc.index); 
-                //     }
-                //}
-            //end of remove
+                    comp(value,vnt,ass->Assoc.type);
+                    emitOI(DEFINE,ass->Assoc.index); 
+                }
             }
         }
 	    break;
@@ -731,14 +624,16 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         
-        int t     = get(exp,SetVar,typeset); //setting type of symbolfdfdfd
+        oop types     = get(exp,SetVar,types); //setting type of symbolfdfdfd
         oop id    = get(exp,SetVar,id);      //get symbol
         oop value = get(exp,SetVar,rhs);     //get value, = 10 or (int a,int b){return a + b}
 
         oop ass = assoc(id,Global_VNT);
         if(ass!=nil){
-            if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
-            compOT(value,ass->Assoc.type);
+            if(types->Types.type!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
+            types = ass->Assoc.types;
+            if(type->Types.isCount)fatal("line %d variable error: %s is constant variable",exp->SetVar.line,get(id,Symbol,name));
+            comp(value,vnt,ass->Assoc.type->Types.type);
             emitOI(DEFINE_G,ass->Assoc.index); 
         }
         else{
@@ -753,7 +648,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             else if(t!=Undefined){
                 fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
             }
-            compOT(value,ass->Assoc.type);
+            if(comp(value,vnt,ass->Assoc.type)!=ass->Assoc.type)
+                fatal("line $d type error: ...",exp->SetVar.line);
             emitOI(DEFINE_L, MAXTHREADSIZE + ass->Assoc.index); 
         }
         
@@ -769,20 +665,23 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         emitO(GLOBAL);
-        int t     = get(exp,SetVarG,typeset); //setting type of symbol
+        oop types     = get(exp,SetVarG,types); //setting type of symbold
         oop id    = get(exp,SetVarG,id);      //get symbol
         oop value = get(exp,SetVarG,rhs);     //get value, = 10 or (int a,int b){return a + b}
         oop ass = assoc(get(exp, SetVarG,id),Global_VNT);
         if(ass == nil){
-            if(t==Undefined){//it is first time defining this symbol, indicate type.
+            if(types->Types.type==Undefined){//it is first time defining this symbol, indicate type.
                 fatal("line %d variable error: Undefined variable %s\n",exp->SetVarG.line,get(exp, SetVarG,id)->Symbol.name);
             }
             //define new symbol with type
-            ass = newAssoc(get(exp, SetVarG,id),t,Global_VNT->Array.size);
+            ass = newAssoc(get(exp, SetVarG,id),types,Global_VNT->Array.size);
             Array_push(Global_VNT, ass);
+        }else{
+            fatal("line %d: Undefined variable", exp->SetVarG.line);
         }
-        t = ass->Assoc.type;
-        compOT(value,t);
+
+        if(comp(value,vnt,types->Types.type)!=t)fatal("line %d type error: ...\n",exp->SetVarG.line);
+
         emitOI(DEFINE_G,ass->Assoc.index);   
         emitO(GLOBAL_END);      
         break;
@@ -812,69 +711,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         else{     //sym is not define
             fatal("line %d variable error: Undefine variable, %s\n",exp->GetVar.line,id->Symbol.name);
         }
-        break;
+        return ass->Assoc.type;
     }
-    // in progress
-    case SetArray:{
-#if TEST
-printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
-#endif
-        int t =      get(exp,SetArray,typeset);
-        oop id =     get(exp,SetArray,array);
-        oop values = get(exp,SetArray,value);
-        oop index =  get(exp,SetArray,index);
-        oop ass   = nil;
-        printf("gt %2d\n",getType(Global_VNT));
-        printf("lt %2d\n",getType(Local_VNT));
-        printf("t  %2d\n",getType(vnt));
-        if((ass = assoc(id,Global_VNT))==nil){
-            if((ass = assoc(id,Local_VNT))==nil){
-                if((ass = assoc(id,vnt))==nil){
-                    if(t!=Undefined){
-                        //in progress
-                        user_error(getType(values)!=Block,"definitnion error: list\n",get(exp,SetArray,line));
-                        oop value = newList_d1(_IntegerArray);
-                        get(id,Symbol,value) = value;
-                        ass = newAssoc(id,t,vnt->Array.size);
-                        Array_push(vnt, ass);
-                        int size = get(values,Block,size);
-                        for(int i=0;i<size;i++){
-                            compOT(values->Block.statements[i],t);
-                        }
-                        compOT(index,_Integer);
-                        emitOI(il_load,ass->Assoc.index);
-                        return exp;
-                    }else{
-                        user_error(1,"definition error: Undefined variable\n",get(exp,SetArray,line));
-                    }
-                }
-            }
-        }
-        //　要素の変更
-        if(t==Undefined){
-            user_error(getType(values)==Block,"definition error: not allow muti values",get(exp,SetArray,line));
-            switch(get(ass,Assoc,type)){
-                case _Integer:{
-                    compOT(values,ass->Assoc.type);
-                    compOT(index,ass->Assoc.type);
-                    emitOI(DEFINE_List, MAXTHREADSIZE + ass->Assoc.index);
-                    break;
-                }
-                case _Long:
-                case _Double:
-                case _Float:
-                default:{
-                    fprintf(stderr,"line %d: type error: not match\n",get(exp,SetArray,line));
-                    exit(1);
-                }
-            }
-        }else{
-            fprintf(stderr,"line %d definition error: defined variable\n",get(exp,SetArray,line));
-            exit(1);
-        }
-        break;
-    }
-
     case SetVarEvent:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
@@ -888,17 +726,19 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
+        fatal("%s SetType for using struct is not developed now",ERROR_DEV);
         oop id = get(exp, SetType,id);
         oop child = get(exp,SetType,child);
         addStructTable(id,child);
-        break;
+        return -1;
     }
 
     case GetArray:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-        int t =     get(exp,SetArray,typeset);
+        fatal("%s GetArray for using array is not develped now",ERROR_DEV);
+        oop types =     get(exp,SetArray,typeset);
         oop id =    get(exp,SetArray,array);
         oop value = get(exp,SetArray,value);
         oop index = get(exp,SetArray,index);
@@ -942,17 +782,19 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                             if(args == nil){
                                 fatal("line %d: too few arguments\n",exp->GetElement.line);
                             }
-                            compile(program,args->Pair.a,vnt,prim->Primitive.args_type_array[i]);
+                            if(compile(program,args->Pair.a,vnt,Undefined)!=prim->Primitive.args_type_array[i]){
+                                fatal("line %d type error: %s type but %s type, function %s\n",exp->GetElement.line,TYPENAME[prim->Primitive.args_type_array[i]],TYPENAME[getType(args->Pair.a)],get(funcId,Symbol,name));
+                            }
                             args = args->Pair.b;
                         }
                         if(args != nil){
                             fatal("line %d: too many arguments\n",exp->GetElement.line);
                         }
                         //get_l core #into stack
-                        emitOI(GET_L, _Integer_value(index));//NEED TO FIX
+                        emitOI(GET_L, _Integer_value(index));
                         //call_p X X X
                         emitOIII(CALL_P,prim->Primitive.lib_num,prim->Primitive.func_num,prim->Primitive.size_of_args_type_array);
-                        break;
+                        return prim->Primitive.return_type;
                     }
                     eventPrimList = get(eventPrimList,Pair,b);
                 }
@@ -966,7 +808,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 fatal("line %d HACK: this cannot happen GetElement\n",exp->GetElement.line);
             }
         }
-        break;
+        return -1;
     }
 	case Call:{
 #if TEST
@@ -1008,7 +850,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     }else{
                         emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventBinaryPos);
                     }   
-                    break;
+                    return 0;//DUP_EVENT
                 }
                 case EventFunc:{
                     // set pin or trigger conditino value.
@@ -1038,7 +880,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     }else{
                         emitOIII(SETSUBCORE,eventFunc->EventFunc.lib_num,eventFunc->EventFunc.eve_num,/* pos of this event func */eventBinaryPos);
                     }                    
-                    break;
+                    return 0;//EVENT_FUNC
                 }
                 default:{
                     fatal("line %d HACK: this cannot happen init event function %s\n",exp->Call.line,get(id,Symbol,name));
@@ -1057,7 +899,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     int i = program->Array.number;
                                 /*number of args*/ /*function location*/
                     emitOII(CALL,num, get(function,Function,position) - i -(OPESIZE + INTSIZE*2));
-                    break;
+                    return t;
                 }
                 case Primitive:{
                     char t       = get(function,Primitive,return_type);
@@ -1072,17 +914,13 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                             fprintf(stderr,"error: PRIMITVE\n");
                             exit(1);
                         }
-                        compOT(args->Pair.a, para_t[i]);
+                        if(comp(args->Pair.a, vnt,para_t[i])!=para_t[i]){
+                            fatal("line %d type error: %s type but %s type, function %s\n",exp->Call.line,TYPENAME[para_t[i]],TYPENAME[getType(args->Pair.a)],id->Symbol.name);
+                        }
                         args = args->Pair.b;
                     }
                     emitOIII(CALL_P,get(function,Primitive, lib_num),get(function,Primitive,func_num),para_s);
-                    break;
-                }
-                case DupEvent: 
-                case EventFunc:{
-#if DEBUG
-                    DEBUG_ERROR("type %s\n",TYPENAME[getType(function)]);
-#endif
+                    return t;
                 }
                 default:{
                     printf("type %s\n",TYPENAME[getType(function)]);
@@ -1090,8 +928,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 }
             }
         }
-        
-	    break;
+        fatal("line %d HACK: this cannot happen CALL %s\n",exp->Call.line,get(id,Symbol,name));
+	    return -1;
     }
 
 	case Print:{
@@ -1102,8 +940,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         argsPair = rePair(argsPair,nil);
         while(argsPair!=nil){
             oop arg = get(argsPair,Pair,a);
-            int argType = child_type(arg,vnt);
-            compOT(arg,argType);
+            enum Type  argType = comp(arg,vnt,Undefined);
             switch(argType){
                 case _Integer:
                 case Integer:emitO(i_PRINT);break;
@@ -1123,28 +960,25 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             }
             argsPair = get(argsPair,Pair,b);
         }
-        break;
+        return 0;//PRINT
     }
 
 	case If:{// ENTRY...
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-        int c_type = child_type(get(exp, If,condition),vnt);
-        switch(c_type){
-            case Integer: c_type = _Integer;break;
-            case Float:   c_type = _Float;  break;
-            default:break;
+        if(comp(get(exp, If,condition),vnt,Undefined) != _Integer){
+            fatal("line %d type error: condition type is not Integer\n",exp->If.line);
         }
-        compOT(get(exp, If,condition),c_type);
         emitOI(JUMPF,0);//->done or else
         int jump1 = program->Array.number;
         int jump1_i = program->Array.size;
         int size =0;
-        compStatement(get(exp,If,statement1),type);
-        // size  = vnt->Array.size;//kill
-        // compOT(get(exp, If,statement1),type);/* if */
-        // kill_assoc(vnt,size);//kill
+
+        size  = vnt->Array.size;
+        comp(get(exp,If,statement1),vnt,type);
+        kill_assoc(vnt,size);
+
         oop stmt2 = get(exp,If,statement2);
         //else
         if(stmt2 != sys_false){
@@ -1154,10 +988,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             
             int p_else = jump2; /* else */
 
-            compStatement(stmt2,type);
-            // size = vnt->Array.size;//kill
-            // compOT(stmt2,type);
-            // kill_assoc(vnt,size);//kill
+            size  = vnt->Array.size;
+            comp(stmt2,vnt,type);
+            kill_assoc(vnt,size);
 
             int p_done = program->Array.number;/* done */
             Array_put(program, jump1_i- 1, _newInteger(p_else - jump1));/* jumpf -> else */
@@ -1166,7 +999,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         else{// not else
             Array_put(program, jump1_i- 1, _newInteger(program->Array.number - jump1));/* jumpf -> else */
         }
-        break;
+        return 0;//IF
     }
 
 	case While:{
@@ -1177,14 +1010,20 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         c_push(-1);//MEMO: negative value is mark for continue
         int L1 = program->Array.number;/*cond*/
         int size = 0;
-        compStatement(get(exp,While,condition),_Integer);
+
+        size  = vnt->Array.size;
+        if(comp(get(exp,While,condition),vnt,_Integer)!=_Integer){
+            fatal("line %d type error: condition type is not Integer\n",exp->While.line);
+        }
+        kill_assoc(vnt,size);
 
         emitOI(JUMPF,0);
         int L2 = program->Array.number;
         int L2_i = program->Array.size;
         
-
-        compStatement(get(exp,While,statement),type);
+        size  = vnt->Array.size;
+        comp(get(exp,While,statement),vnt,type);
+        kill_assoc(vnt,size);
         
         emitOI(JUMP, 0);
         int L4 = program->Array.number;/*done*/
@@ -1202,7 +1041,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             if(i<0)break;
             Array_put(program,b_pop() - 1,_newInteger(L4 - i));
         }
-        break;
+        return 0;
     }
 
     case For:{//for(initstate,condition,updata){ statement }
@@ -1211,39 +1050,35 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         b_push(-1);//MEMO: negative value is mark for break
         c_push(-1);//MEMO: negative value is mark for continue
-        int size = 0;
-        if(isEntry==0) size  = vnt->Array.size; 
-        else           size  = Local_VNT->Array.size; 
+        int size = size  = vnt->Array.size; 
         
         if(get(exp,For,initstate)!=nil)
-            compO(get(exp,For,initstate));//for(int i = 0,...)
+            comp(get(exp,For,initstate),vnt,Undefined);//for(int i = 0,...)
         
         emitOI(JUMP,0);//jump update
         int L1   = program->Array.number;
         int L1_s = program->Array.size;
         if(get(exp,For,update)!=nil)
-            compOT(get(exp,For,update),Undefined);
+            comp(get(exp,For,update),vnt,Undefined);
         int L2 = program->Array.number;
         int L2_s = program->Array.size;
         if(get(exp,For,condition)!=nil)
-            compOT(get(exp,For,condition),_Integer);
+            comp(get(exp,For,condition),vnt,_Integer);
         else{emitOI(i_load,1);}
         emitOI(JUMPF,0);
         int jumpf = program->Array.number;
         int jumpf_s = program->Array.size;
 
-        compOT(get(exp,For,statement),type);
+        comp(get(exp,For,statement),vnt,type);
         emitOI(JUMP,0);
         int done    = program->Array.number;
         int done_s  = program->Array.size;
 
-        if(isEntry==0)  kill_assoc(vnt,size); 
-        else            kill_assoc(Local_VNT,size);
+        kill_assoc(vnt,size); 
         
     Array_put(program,L1_s -1,_newInteger(L2 - L1));/* jump first update */
     Array_put(program,done_s -1,_newInteger(L1 - done));/*done -> update */
     Array_put(program,jumpf_s-1,_newInteger(done - jumpf)); /* jumf  -> done */
-    kill_assoc(vnt,size);//kill env
 
         for(;;){
             int i = c_pop();
@@ -1255,8 +1090,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             if(i<0)break;
             Array_put(program,b_pop() - 1,_newInteger(done - i));
         }
-        break;
-        break;
+        return 0;
     }
 
     case Break:{
@@ -1266,7 +1100,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         emitOI(JUMP,0);
         b_push(program->Array.size);
         b_push(program->Array.number);
-        break;
+        return 0;
     }
     case Continue:{
 #if TEST
@@ -1275,15 +1109,17 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         emitOI(JUMP,0);
         c_push(program->Array.size);
         c_push(program->Array.number);
-        break;
+        return 0;
     }
     case Return:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-        compOT(get(exp,Return,value),type);
+        if(comp(get(exp,Return,value),vnt,type) != type){
+            fatal("line %d type error: %s type but %s type, function %s\n",exp->Return.line,TYPENAME[type],TYPENAME[getType(get(exp, Return,value))],"return");
+        }
         emitO(RET);
-        break;
+        return type;
     }
 
 	case Block:{
@@ -1292,24 +1128,26 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         oop *statements = get(exp, Block,statements);
 	    int  size       = get(exp, Block,size);
+        enum Type ret   = Undefined;
 	    for (int i = 0;  i < size;  ++i){
 #if DEBUG
             SHICA_PRINTF("          > Block %d\n",i+1);
 #endif
-            compOT(statements[i],type);
+            enum Type retType = comp(statements[i],vnt,type);
+            if(retType != Undefined)ret = retType;
         }
 #if DEBUG
         SHICA_PRINTF("\n");
 #endif
-	    break;
+	    return ret;
     }
 
     case Event:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-        printf("%s line %d: this is not happen, check case state:\n",__FILE__,__LINE__);
-        break;
+        fatal("%s Event for using event is not develped now",ERROR_DEV);
+        return 0;
     }
 
     case State:{//from setVar
@@ -1354,7 +1192,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 case SetArray:
                 case SetVarL:{
                     stt_val_c++;
-                    compO(statement);
+                    comp(statement,vnt,Undefined);
                     break;
                 }
                 case SetVarEvent:{
@@ -1377,7 +1215,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     int jump_i = program->Array.size;
                     int jump = program->Array.number;
                     //init stt local variable
-                    vnt = newArray(0);
+                    oop eventVNT = newArray(0);
                     int m_loc = program->Array.size;
                     oop id    = get(statement, Event, id);
                     oop para  = get(statement, Event, parameters);
@@ -1422,6 +1260,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                         if(args_s==0 && para!=nil){
                             fatal("%s line %d over parameter\n",__FILE__,__LINE__);
                         }
+                        int isDefCond = 0;
                         for(int j=0;j<args_s;j++){
                             if(para==nil){fprintf(stderr,"event fuction args less parameter\n");exit(1);}
                             oop a = get(para,Pair,a);
@@ -1436,8 +1275,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                                 fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
                             
                         //<引数の追加>/<add args>    
-                            oop ass  = newAssoc(a->EventParam.symbol,args[j],vnt->Array.size);
-                            Array_push(vnt,ass);
+                            oop ass  = newAssoc(a->EventParam.symbol,args[j],eventVNT->Array.size);
+                            Array_push(eventVNT,ass);
 
                         //<Event条件のコンパイル>/<compile event condition>
                             oop cond = get(a,EventParam,cond);
@@ -1445,21 +1284,20 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                                 if(threadData->condRelPos == 0){
                                     threadData->condRelPos = program->Array.number;
                                 }
-                                //REMOVE ME: 3line
-                                // oop cond_vnt = newArray(1);
-                                // Array_push(cond_vnt,newAssoc(a->EventParam.symbol,args[j],cond_vnt->Array.size));//FIXME: coond_vnt->Array.size == 0|1, maybe 0
-                                //threadData->condLocs[j] = program->Array.number;
-                                compile(program,cond,vnt,_Integer);
+                                if(comp(cond,eventVNT,_Integer)!=_Integer){
+                                    fatal("type error");
+                                }
                                 emitO(COND);
+                                isDefCond = 1;
                             }
                             para = para->Pair.b;//move to next param
                         }//end of param
-                        emitO(EOC);
+                        if(isDefCond)emitO(EOC);
                     }
 
                     //define Event Action
                     threadData->eventLoc = program->Array.number;
-                    compO(block);
+                    comp(block,eventVNT,Undefined);
 #if DEBUG
                     SHICA_PRINTF("      > end of Event %s\n\n",get(id,Symbol,name));
 #endif
@@ -1653,14 +1491,14 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         get(exp,Advice,position) = program->Array.number;  //CALL num: num is this number
     emitOI(MSUB,0);                 //rbp for variable
     int msub_loc = program->Array.size;
-        compOT(get(exp,Advice,body),Undefined);
+        comp(get(exp,Advice,body),nil,Undefined);
         emitO(EOA);
     int vnt_size = vnt->Array.size;
     Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
         int end  = program->Array.number;
     Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
         id->Symbol.value = exp;
-        break;
+        return 0;
     }
     case Pointcut:{
         oop name = get(exp,Pointcut,id);
@@ -1681,14 +1519,13 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             id->Symbol.aspect = aspect;
             pair = pair->Pair.b;
         }
-        break;
+        return 0;
     }
 
     case Run:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
-
         oop id = get(exp,Run,state);
         oop state = get(id,Symbol,value);
         //<AOPの呼び出し>/<AOP call> AFTER OR AROUND
@@ -1743,7 +1580,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         }
         //MAKEME: need to make sturct of TRANSITION
         state_Pair = newPair(newPair(id,newPair(_newInteger(L_i),_newInteger(L))),state_Pair);
-        break;
+        return 0;
     }
 
     case TransAspect:{
@@ -1759,7 +1596,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         pos = program->Array.number;  //CALL num: num is this number
     emitOI(MSUB,0);                 //rbp for variable
     int msub_loc = program->Array.size;
-        compOT(body,Undefined);
+        comp(body,nil,Undefined);
         emitO(EOA);
     int vnt_size = vnt->Array.size;
     Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
@@ -1783,16 +1620,15 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 Array_push(specific_aop,jointp);
             }
         }
-        break;
+        return 0;
     }
     case END:{
 #if TEST
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         while(getType(state_Pair) == Pair){
-            
             oop node = state_Pair->Pair.a;
-            oop state = get(node->Pair.a,Symbol,value);
+            oop state = get(node->Pair.a,Symbol,value);                     
             if(getType(state)!=State){
                 fatal("Undefined state %s\n",get(node->Pair.a,Symbol,name));
             }
@@ -1804,7 +1640,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             state_Pair = state_Pair->Pair.b;
             
         }
-        return sys_false;
+        return END;
     }
 
 	default:{
@@ -1813,7 +1649,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
     }
     
     }
-    return exp;
+    return 0;
 }
 
 

@@ -268,7 +268,7 @@ struct Pair  	 { enum Type _type_;  oop a, b; };
 struct EventParam   { enum  Type _type_; oop type,symbol,cond;};
 struct DupEvent     { enum  Type _type_; oop eventFunc,event; };
 
-struct Assoc     { enum Type _type_;  oop symbol; enum Type type; int index; };
+struct Assoc     { enum Type _type_;  oop symbol; oop types; int index; };
 
 struct Array     { enum Type _type_;  oop *elements; int size/* related capacity */,number/* run time memory location */; int capacity;};
 
@@ -279,22 +279,22 @@ struct TransAspect{ enum Type _type_;  oop from; oop to; oop body; };
 
 struct GetVar  	 { enum Type _type_;  oop id;                             int line;};
 struct GetElement{ enum Type _type_;  oop parent, child;                   int line;};
-struct SetVar  	 { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
-struct SetVarG   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
-struct SetVarL   { enum Type _type_;  enum Type typeset; oop id; oop rhs; int line;};
+struct SetVar  	 { enum Type _type_;  oop types; oop id; oop rhs; int line;};
+struct SetVarG   { enum Type _type_;  oop types; oop id; oop rhs; int line;};
+struct SetVarL   { enum Type _type_;  oop types; oop id; oop rhs; int line;};
 struct SetVarEvent{ enum Type _type_;  oop id; oop rhs; int line;};
 struct SetType   { enum Type _type_;  oop id; oop child; int line;};
 struct Call 	 { enum Type _type_;  oop function, arguments; char callType;            int line;};//callType: 0: normal, 1: init Event func
 struct Run       { enum Type _type_; oop state; };
 
-struct Print   	 { enum Type _type_;  oop arguments;};
-struct If      	 { enum Type _type_;  oop condition, statement1, statement2; };
-struct While   	 { enum Type _type_;  oop condition, statement; };
-struct For       { enum Type _type_;  oop initstate, condition,  update, statement; };
+struct Print   	 { enum Type _type_;  oop arguments;int line;};
+struct If      	 { enum Type _type_;  oop condition, statement1, statement2; int line;};
+struct While   	 { enum Type _type_;  oop condition, statement; int line;};
+struct For       { enum Type _type_;  oop initstate, condition,  update, statement; int line;};
 struct Block   	 { enum Type _type_;  oop *statements;  int size; };
 struct Continue  { enum Type _type_; };
 struct Break     { enum Type _type_; };
-struct Return    { enum Type _type_; oop value;};
+struct Return    { enum Type _type_; oop value;int line;};
 
 struct END       { enum Type _type_; };
 
@@ -376,8 +376,8 @@ union Object {
     struct SetVarEvent SetVarEvent;
     struct SetType  SetType;
 
-    struct GetArray	 { enum Type __type_;enum Type typeset;  oop array, index; int line;}GetArray;
-    struct SetArray	 { enum Type __type_;enum Type typeset;  oop array, index, value; int line;}SetArray;
+    struct GetArray	 { enum Type __type_;oop types;  oop array, index; int line;}GetArray;
+    struct SetArray	 { enum Type __type_;oop types;  oop array, index, value; int line;}SetArray;
     struct GetElement GetElement;
 
     struct Call     Call;
@@ -727,41 +727,41 @@ oop newGetVar(oop id,int line)
     return node;
 }
 
-oop newSetVar(oop typeset, oop id, oop rhs,int line)
+oop newSetVar(oop types, oop id, oop rhs,int line)
 {
     oop node = newObject(SetVar);
     node->SetVar.id  = id;
-    node->SetVar.typeset = getType(typeset);
+    node->SetVar.types = types;
     node->SetVar.rhs = rhs;
     node->SetVar.line = line;
     return node;
 }
 
-oop newSetVarG(oop typeset, oop id, oop rhs,int line)
+oop newSetVarG(oop types, oop id, oop rhs,int line)
 {
     oop node = newObject(SetVarG);
     node->SetVarG.id  = id;
-    node->SetVarG.typeset = getType(typeset);
+    node->SetVarG.types = types;
     node->SetVarG.rhs = rhs;
     node->SetVarG.line = line;
     return node;
 }
 
-oop newSetVarL(oop typeset, oop id, oop rhs,int line)
+oop newSetVarL(oop types, oop id, oop rhs,int line)
 {
     oop node = newObject(SetVarL);
     node->SetVarL.id  = id;
-    node->SetVarL.typeset = getType(typeset);
+    node->SetVarL.types = types;
     node->SetVarL.rhs = rhs;
     node->SetVarL.line = line;
     return node;
 }
 
 //in progress
-oop newSetArray(oop typeset,oop array, oop index, oop value,int line)
+oop newSetArray(oop types,oop array, oop index, oop value,int line)
 {
     oop node = newObject(SetArray);
-    node->SetArray.typeset = getType(typeset);
+    node->SetArray.types = types;
     node->SetArray.array = array;
     node->SetArray.index = index;
     node->SetArray.value = value;
@@ -846,36 +846,40 @@ oop copyEventFunc(oop func){
     return node;
 }
 
-oop newPrint(oop arguments)
+oop newPrint(oop arguments,int line)
 {
     oop node = newObject(Print);
     node->Print.arguments = arguments;
+    node->Print.line = line;
     return node;
 }
 
-oop newIf(oop condition, oop s1, oop s2)
+oop newIf(oop condition, oop s1, oop s2,int line)
 {
     oop node = newObject(If);
     node->If.condition = condition;
     node->If.statement1 = s1;
     node->If.statement2 = s2;
+    node->If.line = line;
     return node;
 }
 
-oop newWhile(oop condition, oop s)
+oop newWhile(oop condition, oop s,int line)
 {
     oop node = newObject(While);
     node->While.condition = condition;
     node->While.statement = s;
+    node->While.line = line;
     return node;
 }
 
-oop newFor(oop initstate,oop condition,oop updata,oop statement){
+oop newFor(oop initstate,oop condition,oop updata,oop statement,int line){
     oop node = newObject(For);
     node->For.initstate = initstate;
     node->For.condition = condition;
     node->For.update    = updata;
     node->For.statement = statement;
+    node->For.line = line;
     return node;
 }
 
@@ -903,9 +907,10 @@ oop newContinue(){
 oop newBreak(){
     return newObject(Break);
 }
-oop newReturn(oop value){
+oop newReturn(oop value,int line){
     oop node =  newObject(Return);
     node->Return.value = value;
+    node->Return.line  = line;
     return node;
 }
 
@@ -972,10 +977,10 @@ oop new_Basepoint(int adress){
     return node;
 }
 
-oop newAssoc(oop symbol,enum Type type,int index){
+oop newAssoc(oop symbol,oop types,int index){
     oop node = newObject(Assoc);
     node->Assoc.symbol = symbol;
-    node->Assoc.type   = type;
+    node->Assoc.types   = types;
     node->Assoc.index  = index;
     return node;
 }

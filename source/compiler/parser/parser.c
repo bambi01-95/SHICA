@@ -1912,7 +1912,7 @@ YY_ACTION(void) yy_8_stmt(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_8_stmt\n"));
   {
 #line 78
-   __ = newReturn(e) ;
+   __ = newReturn(e,newline) ;
   }
 #undef yythunkpos
 #undef yypos
@@ -2002,7 +2002,7 @@ YY_ACTION(void) yy_5_stmt(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_5_stmt\n"));
   {
 #line 75
-   __ = newFor(i,e,u,s) ;
+   __ = newFor(i,e,u,s,newline) ;
   }
 #undef yythunkpos
 #undef yypos
@@ -2032,7 +2032,7 @@ YY_ACTION(void) yy_4_stmt(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_4_stmt\n"));
   {
 #line 74
-   __ = newWhile(c, s) ;
+   __ = newWhile(c, s, newline) ;
   }
 #undef yythunkpos
 #undef yypos
@@ -2062,7 +2062,7 @@ YY_ACTION(void) yy_3_stmt(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_3_stmt\n"));
   {
 #line 73
-   __ = newIf(c, s, sys_false) ;
+   __ = newIf(c, s, sys_false,newline) ;
   }
 #undef yythunkpos
 #undef yypos
@@ -2092,7 +2092,7 @@ YY_ACTION(void) yy_2_stmt(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_2_stmt\n"));
   {
 #line 72
-   __ = newIf(c, s, t) ;
+   __ = newIf(c, s, t,newline) ;
   }
 #undef yythunkpos
 #undef yypos
@@ -2122,7 +2122,7 @@ YY_ACTION(void) yy_1_stmt(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_stmt\n"));
   {
 #line 70
-   __ =  newPrint(a); ;
+   __ =  newPrint(a,newline); ;
   }
 #undef yythunkpos
 #undef yypos
