@@ -94,23 +94,7 @@ void debug_error_2ref(char* file1,int line1,char* file2,int line2,const char *fo
     } \
 })
 
-void _fatal(char*s, int line,char *msg, ...)
-{   
-    printf("\x1b[31m%s line %d:\n",s,line);
-    va_list ap;
-    va_start(ap, msg);
-    fprintf(stderr, "\n d-.-b ERROR:");
-    vfprintf(stderr, msg, ap);
-    fprintf(stderr, "\x1b[0m\n");
-    va_end(ap);
-    exit(1);
-}
-#define fatal(...) _fatal(__FILE__,__LINE__,__VA_ARGS__)
-#define fatal_cond(COND,...) ({ \
-    if(COND){ \
-        _fatal(__FILE__,__LINE__,__VA_ARGS__); \
-    } \
-})
+
 
 #define out(A) printf("line %4d: %s\n",__LINE__,A)
 #define line() printf("         line %4d: ",__LINE__)

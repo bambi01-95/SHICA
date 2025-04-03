@@ -2845,7 +2845,7 @@ YY_ACTION(void) yy_1_start(yycontext *yy, char *yytext, int yyleng)
 
 YY_RULE(int) yy_MkOne(yycontext *yy)
 {  int yypos0= yy->__pos, yythunkpos0= yy->__thunkpos;
-  yyprintf((stderr, "%s\n", "MkOne"));  if (!yymatchString(yy, "one")) goto l1;  if (!yy__(yy)) goto l1;  yyDo(yy, yy_1_MkOne, yy->__begin, yy->__end);
+  yyprintf((stderr, "%s\n", "MkOne"));  yyDo(yy, yy_1_MkOne, yy->__begin, yy->__end);
   yyprintf((stderr, "  ok   %s @ %s\n", "MkOne", yy->__buf+yy->__pos));
   return 1;
   l1:;	  yy->__pos= yypos0; yy->__thunkpos= yythunkpos0;
@@ -2854,7 +2854,7 @@ YY_RULE(int) yy_MkOne(yycontext *yy)
 }
 YY_RULE(int) yy_MkZero(yycontext *yy)
 {  int yypos0= yy->__pos, yythunkpos0= yy->__thunkpos;
-  yyprintf((stderr, "%s\n", "MkZero"));  if (!yymatchString(yy, "zero")) goto l2;  if (!yy__(yy)) goto l2;  yyDo(yy, yy_1_MkZero, yy->__begin, yy->__end);
+  yyprintf((stderr, "%s\n", "MkZero"));  yyDo(yy, yy_1_MkZero, yy->__begin, yy->__end);
   yyprintf((stderr, "  ok   %s @ %s\n", "MkZero", yy->__buf+yy->__pos));
   return 1;
   l2:;	  yy->__pos= yypos0; yy->__thunkpos= yythunkpos0;

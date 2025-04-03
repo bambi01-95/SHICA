@@ -1,0 +1,7 @@
+// o global varialbe
+// - local variable
+// - parameter
+// - normal varialbe
+//
+int gval= 10
+const int cgval = 10

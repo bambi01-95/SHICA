@@ -242,8 +242,8 @@ TYPE    = (c:CONST | c:MkZero ) ("int" -    {$$=newTypes(PtrToInt(c),_Integer)}
 								)
 
 CONST = "const" - {$$ = ONE_PTR;}
-MkZero = "zero" - {$$ = ZERO_PTR;}
-MkOne  = "one"  - {$$ = ONE_PTR; }
+MkZero =  {$$ = ZERO_PTR;}
+MkOne  =  {$$ = ONE_PTR; }
 
 ASSIGN	= "=" !"="  -
 ADDEQU  = "+="      -

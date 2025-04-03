@@ -1,6 +1,6 @@
 #define COMPILER_C 1
 #include "./compiler/setting.h"
-
+#include "./compiler/error.c"
 #include <stdio.h>
 FILE* SOURCE_FILE;
 #define getchar() fgetc(SOURCE_FILE)
