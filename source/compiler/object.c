@@ -134,6 +134,7 @@ typedef enum {F_NONE, F_EOE, F_TRANS, F_ERROR} FLAG;
 enum Type {
     Undefined,
     Operator,
+    Types,
     Integer, 
     Float, 
     String,
@@ -197,6 +198,7 @@ enum Type {
 char *TYPENAME[END+1] = {
     "Undefined",
     "Operator",
+    "Types",
     "Integer",
     "Float",
     "String",
@@ -264,13 +266,14 @@ enum unyop { NEG, AINC, BINC, ADEC, BDEC};
 enum jointp{ BEFORE, AFTER, AROUND,};
 
 struct Undefined { enum Type _type_; };
-struct Operator  { enum Type _type_; char value;};    // for operator
+struct Operator  { enum Type _type_; char value;};
+struct Types     { enum Type _type_; char isCount; enum Type type;};
 struct Integer 	 { enum Type _type_;  char* number; int line; };
 struct Float     { enum Type _type_;  char* number; int line;};
 struct String    { enum Type _type_;  char *value; };
 struct Key       { enum Type _type_;  char *pass; };
 struct Symbol  	 { enum Type _type_;  char *name;  oop value,aspect; };
-struct Function	 { enum Type _type_;  oop parameters, body;int position;enum Type kind;};
+struct Function	 { enum Type _type_;  oop parameters, body;int position;enum Type type;};
 struct Struct    { enum Type _type_;  oop symbol, members;};
 struct Event     { enum Type _type_; oop id, parameters, body; };
 struct State     { enum Type _type_; oop id; oop *events; int size,index; };
@@ -280,8 +283,8 @@ struct Pointcut  { enum Type _type_; oop id,pair; };
 struct Pair  	 { enum Type _type_;  oop a, b; };
 struct EventParam   { enum  Type _type_; oop type,symbol,cond;};
 struct DupEvent     { enum  Type _type_; oop eventFunc,event; };
-//struct Param   { enum Type _type_; oop type, symbol;};
-struct Assoc     { enum Type _type_;  oop symbol; enum Type kind; int index; };
+
+struct Assoc     { enum Type _type_;  oop symbol; enum Type type; int index; };
 
 struct Array     { enum Type _type_;  oop *elements; int size/* related capacity */,number/* run time memory location */; int capacity;};
 
@@ -365,6 +368,7 @@ struct Thread{
 union Object {
     enum   Type     _type_;
     struct Operator Operator;
+    struct Types    Types;
     struct Integer  Integer;
     struct Symbol   Symbol;
     struct String   String; 
@@ -549,19 +553,15 @@ oop _newStrChar(char* number)
 
 
 
-
-
-
 oop newArray(int);
 
-
-
-/*---------------------------------------------*/
-// oop newOperator(char value){
-//     oop node = newObject(Operator);
-//     node->Operator.value = value;
-//     return node;
-// }
+oop newTypes(char isCount,enum Type type)
+{
+    oop node = newObject(Types);
+    node->Types.type = type;
+    node->Types.isCount = isCount;
+    return node;
+}
 
 
 oop newInteger(char* number,int line)
@@ -674,7 +674,7 @@ oop newFunction(oop parameters, oop body)
     node->Function.parameters = parameters;
     node->Function.body       = body;
     node->Function.position   = 0;
-    node->Function.kind       = Undefined;
+    node->Function.type       = Undefined;
     return node;
 }
 
@@ -988,10 +988,10 @@ oop new_Basepoint(int adress){
     return node;
 }
 
-oop newAssoc(oop symbol,enum Type kind,int index){
+oop newAssoc(oop symbol,enum Type type,int index){
     oop node = newObject(Assoc);
     node->Assoc.symbol = symbol;
-    node->Assoc.kind   = kind;
+    node->Assoc.type   = type;
     node->Assoc.index  = index;
     return node;
 }

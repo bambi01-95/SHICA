@@ -8,6 +8,10 @@ YYSTYPE result;
 
 int newline = 1;
 
+oop ZERO_PTR = (oop)(intptr_t)0;
+oop ONE_PTR = (oop)(intptr_t)1;
+
+#define PtrToInt(x) ((intptr_t)(x))
 %}
 
 
@@ -228,13 +232,18 @@ NLINE   = "\n"  { ++newline }
 
 eol	= [\r\n]
 
-TYPE    = "int" -    { $$ = newObject(_Integer)}
-        | "long"-    { $$ = newObject(_Long)   }
-        | "dou" -    { $$ = newObject(_Double) }
-        | "flo" -    { $$ = newObject(_Float)  }
-        | "cha" -    { $$ = newObject(_Char)   }
-        | "str" -    { $$ = newObject(String)  }
-        | "key" -    { $$ = newObject(Key)     }
+TYPE    = (c:CONST | c:MkZero ) ("int" -    {$$=newTypes(PtrToInt(c),_Integer)}
+								| "long"-   {$$=newTypes(PtrToInt(c),_Long)} 
+								| "dou" -   {$$=newTypes(PtrToInt(c),_Double)} 
+								| "flo" -   {$$=newTypes(PtrToInt(c),_Float)} 
+								| "cha" -   {$$=newTypes(PtrToInt(c),_Char)} 
+								| "str" -   {$$=newTypes(PtrToInt(c),String)} 
+								| "key" -   {$$=newTypes(PtrToInt(c),Key)} 
+								)
+
+CONST = "const" - {$$ = ONE_PTR;}
+MkZero = "zero" - {$$ = ZERO_PTR;}
+MkOne  = "one"  - {$$ = ONE_PTR; }
 
 ASSIGN	= "=" !"="  -
 ADDEQU  = "+="      -

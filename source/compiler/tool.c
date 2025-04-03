@@ -174,7 +174,7 @@ void printlnObject(oop node, int indent){
         break;
     }
     case Assoc:{putIndent(indent);
-        printf("type %2d, index %3d",node->Assoc.kind,node->Assoc.index);
+        printf("type %2d, index %3d",node->Assoc.type,node->Assoc.index);
         printlnObject(node->Assoc.symbol,indent);
         break;
     }
