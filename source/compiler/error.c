@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+//SHOULD BE APPLIED TO ALL FILES
 #define ERROR_000 "unknown error:"
 #define ERROR_001 "syntax error:"
 #define ERROR_002 "undefined variable:"
@@ -11,6 +13,7 @@
 #define ERROR_005 "undefined event:"
 #define ERROR_006 "undefined state:"
 
+//SHOULD BE APPLIED ABOVE
 void _fatal(char*s, int line,char *msg, ...)
 {   
     printf("\x1b[31m%s line %d:\n",s,line);
