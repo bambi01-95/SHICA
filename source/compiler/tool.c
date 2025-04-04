@@ -97,6 +97,16 @@ void printlnObject(oop node, int indent){
 	    printlnObject(get(node, SetVar,rhs), indent+1);
 	    break;
 	}
+    case SetVarL: {
+        putIndent(indent);printf("SetVarL %s\n", get(get(node, SetVarL,id), Symbol,name));
+        printlnObject(get(node, SetVarL,rhs), indent+1);
+        break;
+    }
+    case SetVarG:{
+        putIndent(indent);printf("SetVarG %s\n", get(get(node, SetVarG,id), Symbol,name));
+        printlnObject(get(node, SetVarG,rhs), indent+1);
+        break;
+    }
 	case Call: {
 	    putIndent(indent);printf("Call\n");
 	    printlnObject(get(node, Call,function), indent+1);

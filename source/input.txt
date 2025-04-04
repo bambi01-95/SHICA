@@ -1,6 +1,8 @@
-// o global varialbe
-// - local variable
-// - parameter
-// - normal varialbe
-//
 int gval= 10
+const int b = 10
+state s{
+    int loca = 10
+    entry(){
+
+    }
+}

@@ -370,7 +370,7 @@ enum Type compile(const oop program,const oop exp,oop vnt,const enum Type type) 
                 exit(1);
             }
         }
-        return Integer;
+        return type;
     }
     case Float:{
         switch(type){
@@ -383,7 +383,7 @@ enum Type compile(const oop program,const oop exp,oop vnt,const enum Type type) 
                 exit(1);
             }
         }
-        return Float;
+        return type;
     }
     case String:{
         switch(type){
@@ -397,12 +397,12 @@ enum Type compile(const oop program,const oop exp,oop vnt,const enum Type type) 
                 fatal("line x type error: %s but %s",TYPENAME[type],TYPENAME[getType(exp)]);
             }
         }
-        return String;
+        return type;
     } 
     case Key:{
         fprintf(stderr,"key and string does not allowed now\n");
         exit(1);
-        break;
+        return type;
     }
 	case Symbol:    break;
 	case Pair:	    break;
@@ -512,7 +512,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         //int a = 10 or int add(int a,int b){return a + b} or state default{ event ... }
-        int t     = get(exp,SetVar,typeset); //setting type of symbolfdfdfd
+        oop types    = get(exp,SetVar,types); //setting type of symbolfdfdfd
         oop id    = get(exp,SetVar,id);      //get symbol
         oop value = get(exp,SetVar,rhs);     //get value, = 10 or (int a,int b){return a + b}
         switch(getType(get(id,Symbol,value))){
@@ -536,7 +536,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #if DEBUG
                 printf("    >Function\n");
 #endif
-                get(value,Function,type) = t;
+                get(value,Function,type) = types->Types.type;
                 get(id,Symbol,value) = value;
                 oop funcVNT = newArray(0);          //Create symbol name table
                 emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
@@ -556,7 +556,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     if(assoc(para->Pair.b,Global_VNT)!=nil)
                         fatal("line %d variable error: %s parameter in Global variable\n",exp->SetVar.line,get(para->Pair.b,Symbol,name));
                     /* LOCAL VNT */           
-                    oop ass  = newAssoc(para->Pair.b,getType(para->Pair.a),vnt->Array.size);
+                    oop ass  = newAssoc(para->Pair.b,para->Pair.a,vnt->Array.size);
                     Array_push(vnt,ass);
                     /* +3: [stack]
                     arg_num　
@@ -568,8 +568,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     index++;
                 }
         ////
-                if(t == comp(get(value,Function,body),vnt,t))
-                    fatal("line %d type error: %s but %s\n",exp->SetVar.line,TYPENAME[t],TYPENAME[getType(value)]);
+                if(types->Types.type == comp(get(value,Function,body),vnt,types->Types.type))
+                    fatal("line %d type error: %s but %s\n",exp->SetVar.line,TYPENAME[types->Types.type],TYPENAME[getType(value)]);
             int vnt_size = vnt->Array.size;
             Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
                 int end  = program->Array.number;
@@ -584,35 +584,38 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             #if DEBUG
                 DEBUG_LOG("notcoming\n");
             #endif
-                compile(program,value,newArray(0),t);
+                compile(program,value,newArray(0),Undefined);
                 get(id,Symbol,value) = value;
                 break;
             }
-            default:{
+            default:{//Variable
                 oop ass = assoc(id,Global_VNT);
+                enum Type setType = types->Types.type;
                 if(ass!=nil){
-                    if(t!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
-                    comp(value,vnt,ass->Assoc.type);
+                    if(setType!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
+                    if(ass->Assoc.types->Types.isCount)fatal("line %d variable error: %s is constant variable\n", exp->SetVar.line,get(id,Symbol,name));
+                    comp(value,vnt,ass->Assoc.types->Types.type);
                     emitOI(DEFINE_G,ass->Assoc.index); 
                 }
                 else if((ass = assoc(id, Local_VNT))!=nil){
-                    if(t!=Undefined)fatal("line %d variable error: %s is defined in Local variable\n",exp->SetVar.line,get(id,Symbol,name));
-                    comp(value,vnt,ass->Assoc.type);
+                    if(setType!=Undefined)fatal("line %d variable error: %s is defined in Local variable\n",exp->SetVar.line,get(id,Symbol,name));
+                    if(ass->Assoc.types->Types.isCount)fatal("line %d variable error: %s is constant variable\n", exp->SetVar.line,get(id,Symbol,name));
+                    comp(value,vnt,ass->Assoc.types->Types.type);
                     emitOI(DEFINE_L,MAXTHREADSIZE + ass->Assoc.index); 
                 }
                 else{
                     ass = assoc(id,vnt);
                     if(ass == nil){
-                        if(t==Undefined)//it is first time defining this symbol, indicate type.
+                        if(setType==Undefined)//it is first time defining this symbol, indicate type.
                             fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
                         //define new symbol with type
-                        ass = newAssoc(get(exp, SetVar,id),t,vnt->Array.size);
+                        ass = newAssoc(get(exp, SetVar,id),types,vnt->Array.size);
                         Array_push(vnt, ass);
                     }
-                    else if(t!=Undefined){
+                    else if(setType!=Undefined){
                         fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
-                    }
-                    comp(value,vnt,ass->Assoc.type);
+                    }else if(ass->Assoc.types->Types.isCount)fatal("line %d variable error: %s is constant variable\n", exp->SetVar.line,get(id,Symbol,name));
+                    comp(value,vnt,ass->Assoc.types->Types.type);
                     emitOI(DEFINE,ass->Assoc.index); 
                 }
             }
@@ -624,38 +627,38 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         
-        oop types     = get(exp,SetVar,types); //setting type of symbolfdfdfd
-        oop id    = get(exp,SetVar,id);      //get symbol
-        oop value = get(exp,SetVar,rhs);     //get value, = 10 or (int a,int b){return a + b}
+        oop types     = get(exp,SetVarL,types); //setting type of symbolfdfdfd
+        oop id    = get(exp,SetVarL,id);      //get symbol
+        oop value = get(exp,SetVarL,rhs);     //get value, = 10 or (int a,int b){return a + b}
 
         oop ass = assoc(id,Global_VNT);
         if(ass!=nil){
-            if(types->Types.type!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVar.line,get(id,Symbol,name));
+            if(types->Types.type!=Undefined)fatal("line %d variable error: %s is defined in Global variable\n",exp->SetVarL.line,get(id,Symbol,name));
             types = ass->Assoc.types;
-            if(type->Types.isCount)fatal("line %d variable error: %s is constant variable",exp->SetVar.line,get(id,Symbol,name));
-            comp(value,vnt,ass->Assoc.type->Types.type);
+            if(types->Types.isCount)fatal("line %d variable error: %s is constant variable",exp->SetVarL.line,get(id,Symbol,name));
+            comp(value,vnt,ass->Assoc.types->Types.type);
             emitOI(DEFINE_G,ass->Assoc.index); 
         }
         else{
             ass = assoc(id, Local_VNT);
             if(ass == nil){
-                if(t==Undefined)//it is first time defining this symbol, indicate type.
-                    fatal("line %d variable error: Undefined variable %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
+                if(types->Types.type==Undefined)//it is first time defining this symbol, indicate type.
+                    fatal("line %d variable error: Undefined variable %s\n",exp->SetVarL.line,get(exp, SetVarL,id)->Symbol.name);
                 //define new symbol with type
-                ass = newAssoc(get(exp, SetVar,id),t,Local_VNT->Array.size);
+                ass = newAssoc(get(exp, SetVarL,id),types,Local_VNT->Array.size);
                 Array_push(Local_VNT, ass);
             }
-            else if(t!=Undefined){
-                fatal("line %d variable error:    %s\n",exp->SetVar.line,get(exp, SetVar,id)->Symbol.name);
+            else if(types->Types.type!=Undefined){
+                fatal("line %d variable error:    %s\n",exp->SetVarL.line,get(exp, SetVarL,id)->Symbol.name);
             }
-            if(comp(value,vnt,ass->Assoc.type)!=ass->Assoc.type)
-                fatal("line $d type error: ...",exp->SetVar.line);
+            if(comp(value,vnt,ass->Assoc.types->Types.type)!=ass->Assoc.types->Types.type)
+                fatal("line $d type error: ...",exp->SetVarL.line);
             emitOI(DEFINE_L, MAXTHREADSIZE + ass->Assoc.index); 
         }
         
         #if DEBUG
-        //FIXME with (2025/01/04): sttローカルがうまく実行できたなら、SetVarのFIXMEを消す
-        SHICA_PRINTF("SetVarL\n is it work?");
+        //FIXME with (2025/01/04): sttローカルがうまく実行できたなら、SetVarLのFIXMEを消す
+        SHICA_PRINTF("SetVarLL\n is it work?");
         #endif
         break;
     }
@@ -680,11 +683,11 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
             fatal("line %d: Undefined variable", exp->SetVarG.line);
         }
 
-        if(comp(value,vnt,types->Types.type)!=t)fatal("line %d type error: ...\n",exp->SetVarG.line);
+        if(comp(value,vnt,types->Types.type)!=types->Types.type)fatal("line %d type error: %s\n",exp->SetVarG.line,TYPENAME[types->Types.type]);
 
         emitOI(DEFINE_G,ass->Assoc.index);   
         emitO(GLOBAL_END);      
-        break;
+        return Undefined;
     }
 
 	case GetVar:{
@@ -694,24 +697,25 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         oop id = get(exp,GetVar,id);
         oop ass = assoc(id,Global_VNT);
         if(ass!=nil){
-            if(ass->Assoc.type != type)//The requested type and symbol do not match
-                fatal("line %d type error: requared [%s] type but [%s] type, global variable %s\n",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.type],id->Symbol.name);
+            if(ass->Assoc.types->Types.type != type && (type!= Undefined))
+                fatal("line %d type error: requared [%s] type but [%s] type, global variable %s\n",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.types->Types.type],id->Symbol.name);
             emitOI(GET_G,ass->Assoc.index);
         }
         else if((ass=assoc(id,Local_VNT))!=nil){
-            if(ass->Assoc.type!=type)
-                fatal("line %d type error: requared %s type but %s type, local variable %s",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.type],id->Symbol.name);
-            emitOI(GET_L,ass->Assoc.index); 
+            if(ass->Assoc.types->Types.type != type && (type!= Undefined))
+                fatal("line %d type error: requared %s type but %s type, local variable %s",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.types->Types.type],id->Symbol.name);
+            
+            emitOI(GET_L,ass->Assoc.index + MAXTHREADSIZE); 
         }
         else if((ass = assoc(id,vnt))!=nil){
-            if(ass->Assoc.type!=type)
-                fatal("line %d type error: requared %s type but %s type, nomal variable %s",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.type],id->Symbol.name);
+            if(ass->Assoc.types->Types.type != type && (type!= Undefined))
+                fatal("line %d type error: requared %s type but %s type, nomal variable %s",exp->GetVar.line,TYPENAME[type],TYPENAME[ass->Assoc.types->Types.type],id->Symbol.name);
             emitOI(GET,ass->Assoc.index);
         }
         else{     //sym is not define
             fatal("line %d variable error: Undefine variable, %s\n",exp->GetVar.line,id->Symbol.name);
         }
-        return ass->Assoc.type;
+        return ass->Assoc.types->Types.type;
     }
     case SetVarEvent:{
 #if TEST
@@ -738,7 +742,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
 #endif
         fatal("%s GetArray for using array is not develped now",ERROR_DEV);
-        oop types =     get(exp,SetArray,typeset);
+        oop types =     get(exp,SetArray,types);
         oop id =    get(exp,SetArray,array);
         oop value = get(exp,SetArray,value);
         oop index = get(exp,SetArray,index);
@@ -1275,7 +1279,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                                 fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
                             
                         //<引数の追加>/<add args>    
-                            oop ass  = newAssoc(a->EventParam.symbol,args[j],eventVNT->Array.size);
+                            oop ass  = newAssoc(a->EventParam.symbol,newTypes(0,args[j]),eventVNT->Array.size);
                             Array_push(eventVNT,ass);
 
                         //<Event条件のコンパイル>/<compile event condition>
