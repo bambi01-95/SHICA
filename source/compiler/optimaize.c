@@ -364,6 +364,10 @@ enum Type compile(const oop program,const oop exp,const oop vnt,const enum Type 
                 emitIO(i_load,_newCharInteger(get(exp,Integer,number)),_Integer);
                 break;
             }
+            case Undefined:{
+                emitIO(i_load,_newCharInteger(get(exp,Integer,number)),_Integer);
+                return _Integer;
+            }
             default:{
                 fatal("line %d type error: %s but %s, ",exp->Integer.line ,TYPENAME[type],TYPENAME[getType(exp)]);
                 printlnObject(exp,0);
@@ -1588,6 +1592,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
     }
 
     case TransAspect:{
+#if TEST
+printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
+#endif
         oop fromId = get(exp,TransAspect,from);
         oop toId = get(exp,TransAspect,to);
         oop body = get(exp,TransAspect,body);
@@ -1600,7 +1607,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         pos = program->Array.number;  //CALL num: num is this number
     emitOI(MSUB,0);                 //rbp for variable
     int msub_loc = program->Array.size;
-        comp(body,nil,Undefined);
+        comp(body,transVNT,Undefined);
         emitO(EOA);
     int vnt_size = transVNT->Array.size;
     Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num

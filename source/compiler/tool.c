@@ -193,6 +193,11 @@ void printlnObject(oop node, int indent){
         }
         break;
     }
+    case TransAspect:{
+        putIndent(indent);
+        printf("TransAspect\n");
+        break;
+    }
     case _Integer:putIndent(indent);printf("%d\n",_Integer_value(node));break;
     case _Long:   putIndent(indent);printf("%lld\n",get(node,_Long,value));break;
     case _Float:  putIndent(indent);printf("%f\n",_Float_value(node));break;

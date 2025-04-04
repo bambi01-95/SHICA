@@ -29,11 +29,7 @@ define  = t:STATE i:id s:state                { $$ = setState(i,s)  }
         | !.                                  { $$ = newEND() }
 	    | < (!eol &. .)* >                    { fatal("line %d syntax error: [%s]",newline, yytext); }
 
-trans   = STAR COMMA ( STAR b:block { $$ = newTransAspect(nil,nil,b); printf("1\n"); }
-					 | i:id b:block { $$ = newTransAspect(nil,i,b) ; printf("2\n");})
-		| i:id COMMA (STAR b:block  { $$ = newTransAspect(i, nil,b); printf("3\n"); }
-		             |j:id b:block  { $$ = newTransAspect(i,  j,b) ; printf("4\n");})
-
+trans   = (STAR i:mkNil | i:id) COMMA (STAR j:mkNil | j:id) ( p:params | p:mkNil) b:block { $$ = newTransAspect(i,j,p,b,newline)}
 
 jointps  = LBRACE p:mkNil
 		( bln !RBRACE j:jointp COMMA { p = newPair(j, p) }

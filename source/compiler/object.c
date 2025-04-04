@@ -277,7 +277,7 @@ struct Array     { enum Type _type_;  oop *elements; int size/* related capacity
 struct Binop   	 { enum Type _type_;  enum binop op;  oop lhs, rhs;       int line;};
 struct Unyop   	 { enum Type _type_;  enum unyop op;  oop rhs;            int line;};
 struct Jointp    { enum Type _type_;  enum jointp point; oop id; int position;};
-struct TransAspect{ enum Type _type_;  oop from; oop to; oop body; };
+struct TransAspect{ enum Type _type_;  oop from; oop to;oop params; oop body; int line;};
 
 struct GetVar  	 { enum Type _type_;  oop id;                             int line;};
 struct GetElement{ enum Type _type_;  oop parent, child;                   int line;};
@@ -706,12 +706,14 @@ oop newJointp(enum jointp point, oop id)
     return node;
 }
 
-oop newTransAspect(oop from, oop to, oop body)
+oop newTransAspect(oop from, oop to,oop params, oop body,int line)
 {
     oop node = newObject(TransAspect);
     node->TransAspect.from = from;
     node->TransAspect.to   = to;
+    node->TransAspect.params = params;
     node->TransAspect.body = body;
+    node->TransAspect.line = line;
     return node;
 }
 
