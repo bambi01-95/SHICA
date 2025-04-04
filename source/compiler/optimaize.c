@@ -351,7 +351,7 @@ struct CoreData *inseartCoreData(struct CoreData *core,oop id){
 }
 
 
-enum Type compile(const oop program,const oop exp,oop vnt,const enum Type type) //add enum Type type
+enum Type compile(const oop program,const oop exp,const oop vnt,const enum Type type) //add enum Type type
 {
     switch (getType(exp)) {
 	case Undefined:
@@ -387,9 +387,10 @@ enum Type compile(const oop program,const oop exp,oop vnt,const enum Type type) 
     }
     case String:{
         switch(type){
-            case String:{
+            case _String:{
                 int str_size = strlen(get(exp,String,value)) ;
                 if(str_size > 255)fatal("line x type error: over 255 charactor \n");
+                exp->_type_ = _String;
                 emitIS(s_load,exp,str_size);
                 break;
             }
@@ -551,13 +552,13 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                 int index = 0;
                 while(getType(params) == Pair){
                     oop para = params->Pair.a;
-                    if(assoc(para->Pair.b,vnt)!=nil)
+                    if(assoc(para->Pair.b,funcVNT)!=nil)
                         fatal("line %d type error: cannot apply same symbol in parameter\n",exp->SetVar.line);
                     if(assoc(para->Pair.b,Global_VNT)!=nil)
                         fatal("line %d variable error: %s parameter in Global variable\n",exp->SetVar.line,get(para->Pair.b,Symbol,name));
                     /* LOCAL VNT */           
-                    oop ass  = newAssoc(para->Pair.b,para->Pair.a,vnt->Array.size);
-                    Array_push(vnt,ass);
+                    oop ass  = newAssoc(para->Pair.b,para->Pair.a,funcVNT->Array.size);
+                    Array_push(funcVNT,ass);
                     /* +3: [stack]
                     arg_num　
                     ret_pc_num　
@@ -568,9 +569,9 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     index++;
                 }
         ////
-                if(types->Types.type == comp(get(value,Function,body),vnt,types->Types.type))
+                if(types->Types.type == comp(get(value,Function,body),funcVNT,types->Types.type))
                     fatal("line %d type error: %s but %s\n",exp->SetVar.line,TYPENAME[types->Types.type],TYPENAME[getType(value)]);
-            int vnt_size = vnt->Array.size;
+            int vnt_size = funcVNT->Array.size;
             Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
                 int end  = program->Array.number;
                 Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
@@ -1273,7 +1274,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                                 fatal("%s arg[%d] type is %s, not %s\n",get(id,Symbol,name),j,TYPENAME[args[j]],TYPENAME[getType(a->EventParam.type)]);
                                 exit(1);
                             }
-                            if(assoc(a->EventParam.symbol,vnt)!=nil)
+                            if(assoc(a->EventParam.symbol,eventVNT)!=nil)
                                 fatal("variable error: %s cannot apply same symbol in parameter\n",get(id,Symbol,name));
                             if(assoc(a->EventParam.symbol,Global_VNT)!=nil)
                                 fatal("variable error: %s parameter in Global variable\n",get(para->Pair.b,Symbol,name));
@@ -1306,9 +1307,8 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
                     SHICA_PRINTF("      > end of Event %s\n\n",get(id,Symbol,name));
 #endif
                     //2 line: make a space for varialbe
-                    int m_size = vnt->Array.size;
+                    int m_size = eventVNT->Array.size;
                     Array_put(program,m_loc -1, _newInteger(m_size));
-                    vnt = nil;
                     isEntry = 0;//entry() is not in the entry(){} block
                         emitO(MPOP);
                         emitO(EOE);
@@ -1489,7 +1489,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         //FIXME: check get(id,Symbol,value) is empty
 
     emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
-        vnt = newArray(0);          //Create symbol name table
+        oop AdviceVNT = newArray(0);          //Create symbol name table
         int jump = program->Array.number;
         int jump_i = program->Array.size;
         get(exp,Advice,position) = program->Array.number;  //CALL num: num is this number
@@ -1497,7 +1497,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
     int msub_loc = program->Array.size;
         comp(get(exp,Advice,body),nil,Undefined);
         emitO(EOA);
-    int vnt_size = vnt->Array.size;
+    int vnt_size = AdviceVNT->Array.size;
     Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
         int end  = program->Array.number;
     Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num
@@ -1594,7 +1594,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
         int pos  = 0;
 //BODY 
         emitOI(JUMP,0);             //First, when the code is loaded, the function is ignored (JUMP).
-        vnt = newArray(0);          //Create symbol name table
+        oop transVNT = newArray(0);          //Create symbol name table
         int jump = program->Array.number;
         int jump_i = program->Array.size;
         pos = program->Array.number;  //CALL num: num is this number
@@ -1602,7 +1602,7 @@ printf("line %d: %s\n",__LINE__,TYPENAME[getType(exp)]);
     int msub_loc = program->Array.size;
         comp(body,nil,Undefined);
         emitO(EOA);
-    int vnt_size = vnt->Array.size;
+    int vnt_size = transVNT->Array.size;
     Array_put(program,msub_loc  - 1, _newInteger(vnt_size));//change MSUB num
         int end  = program->Array.number;
     Array_put(program,jump_i - 1, _newInteger(end-jump));//change jump num

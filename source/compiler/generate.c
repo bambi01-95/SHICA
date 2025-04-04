@@ -83,7 +83,7 @@ oop CodeWrite(oop program){
             case f_load: genFloat(_Float_value(Array_get(program,pc++)));continue;
             case d_load: genDouble(Array_get(program,pc++)->_Double.value);continue;
             case c_load: genChar(_Char_value(Array_get(program,pc++)));continue;
-            case s_load: genString(Array_get(program,pc++)->String.value);continue;
+            case s_load: genString(Array_get(program,pc++)->_String.value);continue;
             case il_load:genInt(_Integer_value(Array_get(program,pc++)));continue;
             case i_EQ:   continue; 
             case i_NE:   continue; 

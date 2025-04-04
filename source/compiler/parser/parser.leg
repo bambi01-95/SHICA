@@ -237,7 +237,7 @@ TYPE    = (c:CONST | c:MkZero ) ("int" -    {$$=newTypes(PtrToInt(c),_Integer)}
 								| "dou" -   {$$=newTypes(PtrToInt(c),_Double)} 
 								| "flo" -   {$$=newTypes(PtrToInt(c),_Float)} 
 								| "cha" -   {$$=newTypes(PtrToInt(c),_Char)} 
-								| "str" -   {$$=newTypes(PtrToInt(c),String)} 
+								| "str" -   {$$=newTypes(PtrToInt(c),_String)} 
 								| "key" -   {$$=newTypes(PtrToInt(c),Key)} 
 								)
 

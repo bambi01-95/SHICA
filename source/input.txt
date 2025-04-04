@@ -1,8 +1,5 @@
-int gval= 10
-const int b = 10
-state s{
-    int loca = 10
-    entry(){
-
+int ret(int a){
+    if(a){
+        return 1
     }
 }

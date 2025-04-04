@@ -174,6 +174,7 @@ enum Type {
     _Float,
     _Double,
     _Char,
+    _String,
     _IntegerArray,
     Thread,
     END,   
@@ -238,6 +239,7 @@ char *TYPENAME[END+1] = {
     "_Float",
     "_Double",
     "_Char",
+    "_String",
     "_IntegerArray",
     "Thread",
     "END",
@@ -333,7 +335,7 @@ struct _Long     { enum Type _type_; long long int value; };
 struct _Float    { enum Type _type_; float _value; };
 struct _Double   { enum Type _type_; double value; };
 struct _Char     { enum Type _type_; char _value; };
-
+struct _String    { enum Type _type_;  char *value; };
 
 
 
@@ -409,6 +411,7 @@ union Object {
     struct _Float     _Float    ;
     struct _Double    _Double   ;
     struct _Char      _Char     ;
+    struct _String    _String   ;
 };
 
 
@@ -505,7 +508,12 @@ oop _newCharDouble(char* number){
     return _newDouble(value);
 }
 
-
+oop _newString(char* value)
+{
+    oop node = newObject(_String);
+    node->_String.value = strdup(value);
+    return node;
+}
 
 /////////CHAR
 // #define _newChar(A) (oop)(((intptr_t)A << TAGBITS) | TAGCHA)
